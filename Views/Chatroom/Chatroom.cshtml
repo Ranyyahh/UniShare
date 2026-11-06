@@ -1,0 +1,40 @@
+﻿@{
+    ViewBag.Title = "Messages";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link rel="stylesheet" href="@Url.Content("~/Content/chatroom.css")" />
+
+<main class="cr-page">
+    <header class="cr-page-heading"><div><span class="cr-kicker">UNISHARE - RENTAL MESSAGES</span><h1>Messages</h1><p>Coordinate your next rental with your campus community.</p></div><button class="cr-primary" id="cr-new">+ New message</button></header>
+    <section class="cr-shell">
+        <aside class="cr-inbox"><div class="cr-inbox-heading"><h2>Inbox <b id="cr-count">3</b></h2><button class="cr-icon" title="Inbox options">...</button></div>
+            <label class="cr-search"><span class="cr-search-icon" aria-hidden="true"></span><input id="cr-search" type="search" placeholder="Search conversations" aria-label="Search conversations"><kbd>Ctrl K</kbd></label>
+            <div class="cr-filters"><button class="selected" data-filter="all">All <i>6</i></button><button data-filter="unread">Unread <i id="cr-unread-count">3</i></button><button data-filter="rentals">Rentals</button></div>
+            <div class="cr-list" id="cr-list">
+                <button class="cr-conversation selected" data-id="maya" data-unread="true"><span class="cr-avatar lavender">MC<i></i></span><span class="cr-convo-copy"><b>Maya Chen <i class="cr-unread"></i></b><small>That works! I can meet you near the library.</small></span><span class="cr-meta"><time>2m</time><i>2</i></span></button>
+                <button class="cr-conversation" data-id="jordan" data-unread="true"><span class="cr-avatar peach">JL<i></i></span><span class="cr-convo-copy"><b>Jordan Lee <i class="cr-unread"></i></b><small>Is the camera still available this weekend?</small></span><span class="cr-meta"><time>18m</time><i>1</i></span></button>
+                <button class="cr-conversation" data-id="alex" data-unread="true"><span class="cr-avatar mint">AP</span><span class="cr-convo-copy"><b>Alex Park <i class="cr-unread"></i></b><small>I've sent over the rental details.</small></span><span class="cr-meta"><time>1h</time><i>1</i></span></button>
+                <label class="cr-day">YESTERDAY</label>
+                <button class="cr-conversation" data-id="sam" data-unread="false"><span class="cr-avatar blue">SK</span><span class="cr-convo-copy"><b>Sam Kim</b><small>You: Perfect, thanks so much!</small></span><span class="cr-meta"><time>Yesterday</time></span></button>
+                <button class="cr-conversation" data-id="priya" data-unread="false"><span class="cr-avatar gold">PN</span><span class="cr-convo-copy"><b>Priya Nair</b><small>Pickup is at the student center.</small></span><span class="cr-meta"><time>Yesterday</time></span></button>
+                <button class="cr-conversation" data-id="noah" data-unread="false"><span class="cr-avatar rose">NW</span><span class="cr-convo-copy"><b>Noah Williams</b><small>You: Would Friday morning work?</small></span><span class="cr-meta"><time>Tue</time></span></button>
+            </div><div class="cr-inbox-foot">Privacy: &nbsp; Your conversations are private</div>
+        </aside>
+        <section class="cr-thread"><header class="cr-thread-head"><button class="cr-back" id="cr-back" aria-label="Back to conversations">Back</button><span class="cr-avatar lavender" id="cr-person-avatar">MC</span><div class="cr-person"><b id="cr-person">Maya Chen <span class="cr-verified">Verified</span></b><small id="cr-status"><i></i> Active now - Usually replies in a few minutes</small></div><div class="cr-head-actions"><button class="cr-icon" title="Conversation details">Details</button><button class="cr-icon" title="More options">...</button></div></header>
+            <div class="cr-rental"><div class="cr-product" id="cr-item-emoji">Camera</div><div class="cr-rental-copy"><small>ABOUT THIS RENTAL</small><b id="cr-item">Canon EOS M50 Mark II</b><span id="cr-category">Camera - $18 <i>/ day</i> - <em>Available</em></span></div><strong id="cr-price">$18 <i>/ day</i></strong></div>
+            <div class="cr-history" id="cr-history" aria-live="polite"><div class="cr-date"><i></i><span>Today</span><i></i></div><div class="cr-event">Rental conversation started</div>
+                <div class="cr-message theirs"><span class="cr-avatar lavender">MC</span><div><small>Maya <time>10:32 AM</time></small><p>Hey! Thanks for reaching out about the camera.</p></div></div>
+                <div class="cr-message mine"><div><small><time>10:36 AM</time></small><p>Hi Maya! I'm hoping to borrow it for a photography project this weekend. Is Saturday still open?</p></div></div>
+                <div class="cr-message theirs"><span class="cr-avatar lavender">MC</span><div><small>Maya <time>10:41 AM</time></small><p>It is! What time were you thinking for pickup? I'm on campus most of the day.</p></div></div>
+                <div class="cr-message mine"><div><small><time>10:44 AM</time></small><p>Would around 11 am near the main library work for you?</p><small class="cr-receipt">Read - 10:44 AM</small></div></div>
+                <div class="cr-message theirs"><span class="cr-avatar lavender">MC</span><div><small>Maya <time>10:46 AM</time></small><p>That works! I can meet you near the library. The camera comes with two batteries and the kit lens.</p></div></div>
+                <div class="cr-message mine"><div><small><time>10:48 AM</time></small><p>Perfect, thank you! I'll send over a rental request now.</p></div></div>
+            </div><form class="cr-composer" id="cr-form"><div class="cr-compose-box"><textarea id="cr-input" rows="1" maxlength="1200" placeholder="Message Maya..." aria-label="Write a message"></textarea><div class="cr-compose-tools"><div><button type="button" id="cr-attach" title="Attach a file">Attach</button><button type="button" id="cr-emoji" title="Add emoji">Emoji</button><span>Keep it friendly - you're chatting with a neighbor!</span></div><button type="submit" id="cr-send" disabled>Send </button></div></div><small class="cr-safety"> &nbsp; Never share payment details outside UniShare.</small></form>
+        </section>
+        <aside class="cr-details"><div class="cr-detail-heading"><h2>Rental details</h2><button class="cr-icon">...</button></div><div class="cr-photo" id="cr-photo">Camera<span>Rental photos</span></div><small class="cr-category-label" id="cr-label">CAMERAS &amp; PHOTO</small><div class="cr-title-row"><h3 id="cr-detail-item">Canon EOS M50 Mark II</h3><button id="cr-save" aria-label="Save rental">Save</button></div><div class="cr-detail-price"><b id="cr-detail-price">$18</b> / day <small>$50 refundable deposit</small></div><div class="cr-fact"><span>Location</span><div><b>North Campus</b><small>0.4 miles away</small></div></div><div class="cr-fact"><span>Pickup</span><div><b>Flexible pickup</b><small>Meet on campus</small></div></div><hr><div class="cr-owner"><span class="cr-avatar lavender" id="cr-owner-avatar">MC</span><div><b id="cr-owner-name">Maya Chen <span class="cr-verified">Verified</span></b><small>Member since 2023</small></div><strong>Rating 4.9 <small>(12)</small></strong></div><div class="cr-tip"><b>Safety tip</b><p>Meet in a public place on campus and confirm the item together.</p><a href="#safety">Safety tips </a></div><small class="cr-payment">Secure payments are handled through UniShare.</small></aside>
+    </section>
+</main><div id="cr-toast" role="status" class="cr-toast"></div>
+
+@section scripts {
+    <script src="@Url.Content("~/Scripts/chatroom.js")"></script>
+}
