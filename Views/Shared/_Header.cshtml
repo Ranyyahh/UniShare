@@ -1,0 +1,38 @@
+<header class="site-header">
+    <div class="site-header__inner">
+        <a class="brand" href="@Url.Action("Index", "Home")" aria-label="UniShare home">
+            <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3" /></svg></span>
+            <span class="brand__copy"><span class="brand__name">UniShare</span><span class="brand__school">QUEZON CITY UNIVERSITY</span></span>
+        </a>
+        <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="site-navigation" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+        <nav class="site-navigation" id="site-navigation" aria-label="Main navigation">
+            <div class="site-navigation__links">
+                @Html.ActionLink("Dashboard", "Index", "Home", null, new { @class = "site-navigation__link" })
+                <a class="site-navigation__link" href="@Url.Action("About", "Home")">Browse Items</a>
+                <a class="site-navigation__link is-active" href="@Url.Action("Contact", "Home")" aria-current="page">My Listings</a>
+                <a class="site-navigation__link" href="@Url.Action("Contact", "Home")">My Rentals</a>
+            </div>
+            <div class="site-navigation__actions">
+                <a class="post-listing" href="@Url.Action("Contact", "Home")"><span aria-hidden="true">＋</span> Post Listing</a>
+                <button class="icon-button notification-button" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg><span class="notification-dot"></span></button>
+                <button class="account-button" type="button" aria-label="Julian Vance, QCU Verified; account menu">
+                    <span class="account-avatar" aria-hidden="true">JV<span class="account-avatar__status"></span></span>
+                    <span class="account-copy"><span class="account-copy__top">Julian Vance <span class="verified-badge">QCU Verified</span></span><span class="account-copy__bottom">BSIT &bull; 3rd Year</span></span>
+                    <svg class="account-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+                </button>
+            </div>
+        </nav>
+    </div>
+</header>
+<script>
+    (function () {
+        var toggle = document.querySelector('.site-menu-toggle');
+        var navigation = document.getElementById('site-navigation');
+        if (!toggle || !navigation) return;
+        toggle.addEventListener('click', function () {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            navigation.classList.toggle('is-open', !expanded);
+        });
+    }());
+</script>
