@@ -9,7 +9,7 @@
             <div class="site-navigation__links">
                 @Html.ActionLink("Dashboard", "Index", "Dashboard", null, new { @class = "site-navigation__link" })
                 @Html.ActionLink("Browse Items", "Index", "BrowseItems", null, new { @class = "site-navigation__link" })
-                @Html.ActionLink("My Listings", "Index", "MyListings", null, new { @class = "site-navigation__link" })
+                @Html.ActionLink("My Listings", "ItemListings", "MyListings", null, new { @class = "site-navigation__link" })
                 <a class="site-navigation__link" href="@Url.Action("Index", "MyListings")">My Rentals</a>
                 @Html.ActionLink("Borrowed Items", "Index", "BorrowedItems", null, new { @class = "site-navigation__link" })
                 @Html.ActionLink("Sales Report", "Index", "SalesReport", null, new { @class = "site-navigation__link" })
