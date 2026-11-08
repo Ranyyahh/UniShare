@@ -1,0 +1,95 @@
+@{
+    Layout = null;
+    dynamic details = Model;
+
+    string pClass = details.Priority == "Urgent" ? "badge-urgent" : (details.Priority == "High" ? "badge-high" : "badge-medium");
+    string sClass = details.Status == "Open" ? "badge-open" : (details.Status == "Under Review" ? "badge-review" : "badge-resolved");
+}
+
+<div class="modal-form-wrapper">
+    <!-- Top Bar with Title, Badges, and Close Button -->
+    <div class="modal-header-bar">
+        <div class="modal-title-group">
+            <h3 class="modal-dispute-id">@details.DisputeId</h3>
+            <span class="badge @pClass">@details.Priority</span>
+            <span class="badge @sClass">@details.Status</span>
+        </div>
+        <button type="button" id="btnCloseModal" class="btn-close-modal" title="Close Modal">&times;</button>
+    </div>
+
+    <div class="modal-body-scroll">
+        <!-- Item in Custody Section with Larger Image Placeholder -->
+        <div class="modal-section">
+            <label class="form-section-title">Item in Custody</label>
+            <div class="modal-item-card">
+                <div class="modal-item-img-placeholder">
+                    <i class="glyphicon glyphicon-picture"></i>
+                </div>
+                <div class="modal-item-fields">
+                    <div class="form-group form-group-compact">
+                        <label class="form-field-label">Item Name</label>
+                        <div class="form-input-display form-input-highlight">@details.ItemName</div>
+                    </div>
+                    <div class="modal-item-subfields">
+                        <div class="form-group form-group-compact form-group-half">
+                            <label class="form-field-label">Booking Reference</label>
+                            <div class="form-input-display form-code">@details.BookingId</div>
+                        </div>
+                        <div class="form-group form-group-compact form-group-half">
+                            <label class="form-field-label">Serial Number</label>
+                            <div class="form-input-display form-code">@details.SerialNumber</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parties Involved (Two Columns for Reporter and Respondent) -->
+        <div class="modal-section">
+            <label class="form-section-title">Parties Involved</label>
+            <div class="parties-form-grid">
+                <div class="party-form-box party-form-reporter">
+                    <div class="party-role-tag role-reporter">REPORTER (Lender)</div>
+                    <div class="form-group form-group-compact">
+                        <label class="form-field-label">Full Name</label>
+                        <div class="form-input-display">@details.ReporterName</div>
+                    </div>
+                    <div class="form-group form-group-compact">
+                        <label class="form-field-label">Student ID</label>
+                        <div class="form-input-display form-code">@details.ReporterId</div>
+                    </div>
+                </div>
+
+                <div class="party-form-box party-form-respondent">
+                    <div class="party-role-tag role-respondent">RESPONDENT (Borrower)</div>
+                    <div class="form-group form-group-compact">
+                        <label class="form-field-label">Full Name</label>
+                        <div class="form-input-display">@details.RespondentName</div>
+                    </div>
+                    <div class="form-group form-group-compact">
+                        <label class="form-field-label">Student ID</label>
+                        <div class="form-input-display form-code">@details.RespondentId</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Statement (Styled Form Read-Only Input) -->
+        <div class="modal-section">
+            <div class="form-group form-group-compact">
+                <label class="form-section-title">Incident Statement</label>
+                <textarea class="form-control form-textarea" readonly rows="4">@details.IncidentStatement</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Bar with Resolve (Purple) and Request Info (White) Action Buttons -->
+    <div class="modal-actions-bar">
+        <button type="button" class="btn btn-resolve" id="btnResolveModal">
+            <i class="glyphicon glyphicon-ok"></i> Resolve
+        </button>
+        <button type="button" class="btn btn-request-info" id="btnRequestInfoModal">
+            <i class="glyphicon glyphicon-question-sign"></i> Request Info
+        </button>
+    </div>
+</div>
