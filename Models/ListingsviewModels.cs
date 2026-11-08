@@ -37,7 +37,16 @@ namespace UniShare.Models
         public string PriceNote { get; set; }       // e.g. "₱50 whole day" or "Fixed flat rate"
         public string Location { get; set; }
         public ListingStatus Status { get; set; }
+        // New fields to store handover schedule
+        public string EarliestHandoverTime { get; set; } = "08:00";
+        public string LatestReturnTime { get; set; } = "17:30";
+        public int CategoryId { get; set; }
+        public string Description { get; set; }
+        public bool EnableFullDayBundle { get; set; }
+        public List<string> AvailableDays { get; set; } = new List<string>();
+        public string Checkpoint { get; set; }
 
         public bool IsAvailable => Status == ListingStatus.Available;
     }
+
 }
