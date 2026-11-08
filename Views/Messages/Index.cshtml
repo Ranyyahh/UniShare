@@ -1,0 +1,43 @@
+@model List<UniShare.Models.Conversation>
+@{
+    ViewBag.Title = "Messages";
+    var active = ViewBag.Active as UniShare.Models.Conversation;
+}
+
+<div class="us-page-head"><div><h1>Messages</h1><p>Chat with owners and renters.</p></div></div>
+
+<div class="us-chat">
+    <aside class="us-chat__list">
+        @foreach (var c in Model)
+        {
+            <a class="us-chat__row @(active != null && active.Id == c.Id ? "is-active" : "")" href="@Url.Action("Index", "Messages", new { id = c.Id })">
+                <span class="us-avatar">@c.Initials</span>
+                <span class="us-chat__meta"><strong>@c.With @if (c.Unread) { <i class="us-dot"></i> }</strong><small>@c.ItemName</small><em>@c.LastMessage</em></span>
+                <small>@c.Time</small>
+            </a>
+        }
+    </aside>
+    <section class="us-chat__panel">
+        @if (active == null)
+        {
+            <div class="us-empty">Select a conversation.</div>
+        }
+        else
+        {
+            <header><strong>@active.With</strong><span class="us-muted"> &bull; @active.ItemName</span></header>
+            <div class="us-chat__body">
+                @foreach (var m in active.Messages)
+                {
+                    <div class="us-bubble @(m.Mine ? "is-mine" : "")"><p>@m.Text</p><small>@m.Time</small></div>
+                }
+            </div>
+            using (Html.BeginForm("Send", "Messages", FormMethod.Post, new { @class = "us-chat__form" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@active.Id" />
+                <input type="text" name="text" placeholder="Type a message..." autocomplete="off" required />
+                <button type="submit" class="us-btn us-btn--primary">Send</button>
+            }
+        }
+    </section>
+</div>

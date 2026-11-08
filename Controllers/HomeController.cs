@@ -1,29 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 
 namespace UniShare.Controllers
 {
     public class HomeController : Controller
     {
+        // "/" -> Dashboard
         public ActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Dashboard");
         }
 
         public ActionResult About()
         {
-            ViewBag.Message = "Your application description page.";
-
+            ViewBag.Message = "UniShare is the Quezon City University campus marketplace for renting and sharing items.";
             return View();
         }
 
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
-
+            ViewBag.Message = "Questions or concerns? Reach the UniShare team.";
             return View();
         }
     }
