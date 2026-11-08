@@ -48,8 +48,6 @@ namespace UniShare.Models
         public string Review { get; set; }
         public string DisputeReason { get; set; }
         public string Theme { get; set; }           // indigo / peach / mint (tile background)
-        public string Icon { get; set; }            // calculator / book / pen / ball / case / board (shown only if the photo is missing)
-        public string ImageUrl { get; set; }        // item photo, e.g. "~/Content/images/items/casio-fx991ex.jpg"
         public DateTime? RequestedOn { get; set; }
         public DateTime? ApprovedOn { get; set; }
         public DateTime? HandoverOn { get; set; }
@@ -176,6 +174,12 @@ namespace UniShare.Models
             new Rental { Id = 3, ItemName = "Badminton Racket", Owner = "Jose Ramos", StartDate = DateTime.Today.AddDays(-20), EndDate = DateTime.Today.AddDays(-17), Total = 105, Status = "Completed" }
         };
 
+        
+        public const decimal LateFeeMultiplier = 1m;
+
+       
+        public const int LateGraceMinutes = 30;
+
         public static readonly string[] BorrowedCategories = { "Electronics & Gadgets", "Books & References", "School Supplies", "Sports Equipment", "Accessories" };
 
         public static List<BorrowedItem> Borrowed = new List<BorrowedItem>
@@ -185,28 +189,28 @@ namespace UniShare.Models
                 Start = new DateTime(2026, 11, 8, 13, 0, 0), End = new DateTime(2026, 11, 8, 15, 0, 0),
                 PickupPoint = "CS Building Lobby", PaymentMethod = "Cash", TransactionId = "#UNI-20451",
                 About = "Allowed in most exams. Comes with its hard cover and fresh batteries.",
-                Status = "Ongoing", Theme = "indigo", Icon = "calculator", ImageUrl = "~/Content/images/items/casio-fx991ex.jpg",
+                Status = "Ongoing", Theme = "indigo",
                 RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 7) },
             new BorrowedItem { Id = 2, ItemName = "Engineering Mechanics (Statics)", Category = "Books & References",
                 Lender = "Carlo Reyes", LenderInitials = "CR", LenderProgram = "BSCE 4th Year", PricePerHour = 75,
                 Start = new DateTime(2026, 11, 8, 14, 0, 0), End = new DateTime(2026, 11, 8, 16, 0, 0),
                 PickupPoint = "University Library Entrance", PaymentMethod = "Cash", TransactionId = "#UNI-20466",
                 About = "14th edition. No missing pages, light highlighting in chapters 3 to 5.",
-                Status = "Ongoing", Theme = "indigo", Icon = "book", ImageUrl = "~/Content/images/items/engineering-mechanics-statics.jpg",
-                RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 8) },
+                Status = "Ongoing", HandoverConfirmed = true, HandoverAt = DateTime.Now.AddMinutes(-165), Theme = "indigo",
+                RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 8), HandoverOn = DateTime.Today },
             new BorrowedItem { Id = 3, ItemName = "Rotring Isograph Junior Pen Set", Category = "School Supplies",
                 Lender = "Jessa Villanueva", LenderInitials = "JV", LenderProgram = "BSArch 2nd Year", PricePerHour = 30,
                 Start = new DateTime(2026, 11, 8, 9, 0, 0), End = new DateTime(2026, 11, 8, 11, 0, 0),
                 PickupPoint = "Architecture Building Steps", PaymentMethod = "Cash", TransactionId = "#UNI-20472",
                 About = "Set of 3 technical pens (0.2, 0.4, 0.6). Cleaned and filled with ink.",
-                Status = "Ongoing", HandoverConfirmed = true, HandoverAt = DateTime.Now.AddMinutes(-30), Theme = "indigo", Icon = "pen", ImageUrl = "~/Content/images/items/rotring-isograph-pen-set.jpg",
+                Status = "Ongoing", HandoverConfirmed = true, HandoverAt = DateTime.Now.AddMinutes(-30), Theme = "indigo",
                 RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 7), HandoverOn = DateTime.Today },
             new BorrowedItem { Id = 4, ItemName = "Molten GG7X Official Basketball", Category = "Sports Equipment",
                 Lender = "Miguel Santos", LenderInitials = "MS", LenderProgram = "BSCpE 3rd Year", PricePerHour = 20,
                 Start = new DateTime(2026, 10, 30, 15, 0, 0), End = new DateTime(2026, 10, 30, 17, 0, 0),
                 PickupPoint = "QCU Gymnasium Entrance", PaymentMethod = "Cash", TransactionId = "#UNI-19877",
                 About = "Official size 7 game ball. Please return it clean and properly inflated.",
-                Status = "Completed", HandoverConfirmed = true, Theme = "peach", Icon = "ball", ImageUrl = "~/Content/images/items/molten-gg7x-basketball.jpg",
+                Status = "Completed", HandoverConfirmed = true, Theme = "peach",
                 RequestedOn = new DateTime(2026, 10, 29), ApprovedOn = new DateTime(2026, 10, 29),
                 HandoverOn = new DateTime(2026, 10, 30), CompletedOn = new DateTime(2026, 10, 30) },
             new BorrowedItem { Id = 5, ItemName = "Casio Calculator Hard Slide-on Case", Category = "Accessories",
@@ -214,7 +218,7 @@ namespace UniShare.Models
                 Start = new DateTime(2026, 10, 28, 13, 0, 0), End = new DateTime(2026, 10, 28, 15, 0, 0),
                 PickupPoint = "Student Center Lobby", PaymentMethod = "Cash", TransactionId = "#UNI-19734",
                 About = "Hard slide-on case that fits the fx-991 series.",
-                Status = "Completed", HandoverConfirmed = true, Rating = 4, Review = "Fits perfectly, thanks!", Theme = "peach", Icon = "case", ImageUrl = "~/Content/images/items/casio-calculator-case.jpg",
+                Status = "Completed", HandoverConfirmed = true, Rating = 4, Review = "Fits perfectly, thanks!", Theme = "peach",
                 RequestedOn = new DateTime(2026, 10, 27), ApprovedOn = new DateTime(2026, 10, 27),
                 HandoverOn = new DateTime(2026, 10, 28), CompletedOn = new DateTime(2026, 10, 28) },
             new BorrowedItem { Id = 6, ItemName = "Arduino Uno R3 Starter Kit", Category = "Electronics & Gadgets",
@@ -222,7 +226,7 @@ namespace UniShare.Models
                 Start = new DateTime(2026, 11, 4, 10, 0, 0), End = new DateTime(2026, 11, 4, 13, 0, 0),
                 PickupPoint = "Engineering Lab 2", PaymentMethod = "Cash", TransactionId = "#UNI-20310",
                 About = "Uno R3 board with breadboard, jumper wires, LEDs and resistors.",
-                Status = "Disputed", Theme = "mint", Icon = "board", ImageUrl = "~/Content/images/items/arduino-uno-r3-kit.jpg",
+                Status = "Disputed", Theme = "mint",
                 DisputeReason = "Item not working as described.",
                 RequestedOn = new DateTime(2026, 11, 3), ApprovedOn = new DateTime(2026, 11, 3), HandoverOn = new DateTime(2026, 11, 4) }
         };

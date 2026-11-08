@@ -100,9 +100,9 @@ body {
     .site-footer__copyright { max-width: 330px; }
 }
 
-/* =====================================================================
-   PAGE STYLES (us- prefix) - used by the views. Header/footer rules above are untouched.
-   ===================================================================== */
+/* =========================
+   PAGE STYLES (us- prefix) 
+   ========================= */
 .site-main h1 { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -.3px; }
 .site-main h2 { margin: 0; font-size: 16px; font-weight: 650; }
 .site-main h3 { margin: 8px 0 2px; font-size: 15px; font-weight: 600; }
@@ -228,9 +228,9 @@ a.us-stat:hover { border-color: #c7d2fe; }
     .us-page-head { flex-direction: column; }
 }
 
-/* =====================================================================
-   BORROWED ITEMS PAGE (bi- prefix). Uses the existing palette only.
-   ===================================================================== */
+/* ====================
+   BORROWED ITEMS PAGE 
+   ==================== */
 .bi-page [hidden] { display: none !important; }
 .bi-page h1 { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -.3px; }
 .bi-page .us-page-head { margin-bottom: 32px; }
@@ -430,20 +430,19 @@ a.us-stat:hover { border-color: #c7d2fe; }
 .bi-toast { display: none; position: fixed; inset: auto auto 28px 50%; transform: translateX(-50%); margin: 0; max-width: calc(100vw - 32px); padding: 12px 18px; border: 0; border-radius: 10px; background: #0f172a; color: #fff; font-size: 13px; font-weight: 500; box-shadow: 0 12px 28px rgba(15, 23, 42, .3); overflow: visible; }
 .bi-toast.is-on { display: block; z-index: 3000; }
 
-/* =====================================================================
-   PAGE FRAME FIX: header and footer always span the full window.
-   Bootstrap 6 sets "scrollbar-gutter: stable" on :root, which keeps a blank strip
-   on the right of the page even when there is no scrollbar. Reset it here.
-   ===================================================================== */
-/* "html:root" + !important so this beats Bootstrap's unlayered ":root" rule (a plain "html" selector loses to it) */
+
+
+
+
 html:root { scrollbar-gutter: auto !important; color-scheme: light !important; }
 html { width: 100%; }
 body { width: 100%; max-width: 100%; overflow-x: clip; }
 .site-header, .site-footer { width: 100%; box-sizing: border-box; }
 .site-header__inner, .site-footer__inner { box-sizing: border-box; }
 
-/* Between 761px and 1180px the full header does not fit on one line (it used to spill
-   past the window edge). Use the same collapsed menu that already exists for phones. */
+
+
+
 @media (max-width: 1180px) and (min-width: 761px) {
     .site-header__inner { min-height: 60px; flex-wrap: wrap; }
     .brand__mark { width: 34px; height: 34px; flex-basis: 34px; }
@@ -462,7 +461,7 @@ body { width: 100%; max-width: 100%; overflow-x: clip; }
 }
 @media (max-width: 560px) { .bi-result { margin-top: -12px; } }
 
-/* ---------- Navbar stays fixed at the top while the page scrolls ---------- */
+
 .site-header { position: sticky; top: 0; z-index: 100; }
 html { scroll-padding-top: 64px; }
 @media (max-width: 1180px) {
@@ -480,22 +479,22 @@ html { scroll-padding-top: 64px; }
 .bi-grid[hidden] { display: none !important; }
 @media (max-width: 600px) { .bi-grid { max-height: calc(100vh - 300px); } }
 
-/* Bootstrap 6 underlines every link by default; the account button never had a rule to turn that off. */
+
 .site-header a, .site-footer a, .account-button { text-decoration: none; }
 
-/* ---------- Borrowed Items: real item photos ---------- */
+/* ---------- Borrowed Items photos ---------- */
 .bi-tile { overflow: hidden; }
 .bi-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .bi-tile .bi-status, .bi-tile .bi-duration { z-index: 2; }
 
-/* ---------- Navbar: highlight the page you are on (uses the same colors as the hover state) ---------- */
+/* ---------- Navbar: highlight the page you are on ---------- */
 .site-navigation__link.is-active { color: #a5b4fc; }
 .site-navigation__link.is-active:after { opacity: 1; }
 .icon-button.is-active { color: #a5b4fc; }
 .account-button.is-active .account-copy__top { color: #a5b4fc; }
 .account-button.is-active .account-avatar { background: #c7d2fe; }
 
-/* Messages / Notifications icons: clearly highlighted while you are on their page */
+/* Messages / Notifications icons highlighted */
 .icon-button.is-active { color: #a5b4fc; background: #34465a; border-radius: 8px; box-shadow: inset 0 -2px 0 #818cf8; }
 .icon-button.is-active svg { stroke-width: 2; }
 .icon-button.is-active .notification-dot { box-shadow: 0 0 0 2px #34465a; }
@@ -521,3 +520,24 @@ html { scroll-padding-top: 64px; }
 .pm-dialog button.us-chat__row { width: 100%; border: 0; border-bottom: 1px solid var(--border); background: transparent; font: inherit; text-align: left; cursor: pointer; }
 .pm-dialog button.us-chat__row.is-active, .pm-dialog button.us-chat__row:hover { background: #eef2ff; }
 @media (max-width: 900px) { .pm-dialog .us-chat { height: min(620px, calc(100vh - 150px)); grid-template-rows: auto 1fr; } }
+
+/* ---------- Overdue step + late fee ---------- */
+.bi-step--late .bi-step__dot { border-color: #dc2626; background: #dc2626; color: #fff; }
+.bi-step--late strong { color: #991b1b; }
+.bi-step--late:not(:last-child)::after { background: #fca5a5; }
+.bi-step__fee { color: #991b1b !important; font-weight: 600; }
+.bi-facts__late { color: #991b1b !important; }
+
+.bi-nophoto { color: #94a3b8; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+
+/* ---------- Details box: fee + overdue rows ---------- */
+.bi-factbox .bi-facts dt small { color: #94a3b8; font-size: 10px; font-weight: 400; }
+.bi-facts__note { margin: 8px 2px 0; color: var(--text-secondary); font-size: 11px; line-height: 1.5; }
+.bi-factbox .bi-facts__total { font-size: 14px; }
+
+/* ---------- Grace period ---------- */
+.bi-step--grace .bi-step__dot { border-color: #f59e0b; background: #f59e0b; color: #fff; }
+.bi-step--grace strong { color: #92400e; }
+.bi-step--grace:not(:last-child)::after { background: #fde68a; }
+.bi-step__fee--grace { color: #92400e !important; }
+.bi-facts__grace { color: #92400e !important; }

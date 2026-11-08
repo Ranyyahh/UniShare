@@ -6,10 +6,11 @@
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     Func<DateTime?, string> fmt = d => d.HasValue ? d.Value.ToString("MMM d", inv) : null;
 
-    // All page data goes to the browser as JSON; Scripts/borrowed-items.js renders and runs the page.
     var payload = new
     {
         categories = UniShare.Models.SampleData.BorrowedCategories,
+        lateRate = UniShare.Models.SampleData.LateFeeMultiplier,
+        graceMinutes = UniShare.Models.SampleData.LateGraceMinutes,
         items = Model.Select(b => new
         {
             id = b.Id,
@@ -32,8 +33,6 @@
             review = b.Review,
             dispute = b.DisputeReason,
             theme = b.Theme,
-            icon = b.Icon,
-            image = string.IsNullOrEmpty(b.ImageUrl) ? null : Url.Content(b.ImageUrl),
             steps = new { requested = fmt(b.RequestedOn), approved = fmt(b.ApprovedOn), handover = fmt(b.HandoverOn), completed = fmt(b.CompletedOn) },
             remaining = (b.Status == "Ongoing" && b.HandoverConfirmed && b.HandoverAt.HasValue)
                 ? (long?)Math.Round((b.HandoverAt.Value.AddHours(b.Hours) - DateTime.Now).TotalSeconds)
@@ -80,12 +79,22 @@
         </div>
     </div>
 
+   
+    <div id="bi-images" hidden>
+        <img data-item="1" src="~/Content/images/items/casio-fx991ex.jpg" alt="Casio fx-991EX ClassWiz Calculator" />
+        <img data-item="2" src="~/Content/images/items/engineering-mechanics-statics.jpg" alt="Engineering Mechanics (Statics)" />
+        <img data-item="3" src="~/Content/images/items/rotring-isograph-pen-set.jpg" alt="Rotring Isograph Junior Pen Set" />
+        <img data-item="4" src="~/Content/images/items/molten-gg7x-basketball.jpg" alt="Molten GG7X Official Basketball" />
+        <img data-item="5" src="~/Content/images/items/casio-calculator-case.jpg" alt="Casio Calculator Hard Slide-on Case" />
+        <img data-item="6" src="~/Content/images/items/arduino-uno-r3-kit.jpg" alt="Arduino Uno R3 Starter Kit" />
+    </div>
+
     <p class="bi-result" id="bi-result" aria-live="polite"></p>
 
     <div class="bi-grid" id="bi-grid"></div>
     <div class="us-empty" id="bi-empty" hidden>No borrowed items match your search or filters.</div>
 
-    @* ===== Rental Details modal (filled by JavaScript) ===== *@
+    @* ===== Rental Details modal ===== *@
     <dialog class="bi-dialog" id="bi-detail" aria-labelledby="bi-detail-title">
         <header class="bi-dialog__head">
             <h2 id="bi-detail-title">Rental Details</h2>
