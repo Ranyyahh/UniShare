@@ -22,31 +22,56 @@
     };
 </script>
 
-<div class="font-sans bg-[#f8f9fc] text-slate-800 antialiased min-h-screen px-4 sm:px-6 lg:px-8 py-8">
+<div class="font-sans bg-[#f7f8fd] text-slate-800 antialiased min-h-screen px-4 sm:px-6 lg:px-8 py-7">
     <main class="max-w-[1360px] mx-auto">
 
         @* ===== Page header ===== *@
-        <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-6 @(Model.HasListings ? "border-b border-slate-200" : "")">
+        <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-1">
             <div class="max-w-3xl">
                 <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">My Listings</h1>
-                <p class="mt-2 text-slate-600 text-base leading-relaxed">
+                <p class="mt-1 text-slate-500 text-sm leading-relaxed max-w-3xl">
                     Manage academic gear, textbooks, and calculators you offer for campus rental. Update rates, pause availability, or list new items.
                 </p>
             </div>
             @if (Model.HasListings)
             {
-                <a href="@Url.Action("Create", "MyListings")" class="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-brand text-white font-semibold text-sm shadow-md shadow-indigo-900/20 hover:bg-brand-700 transition active:scale-[0.98]">
+                <a href="@Url.Action("Create", "MyListings")" class="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-sm hover:bg-indigo-700 transition active:scale-[0.98]">
                     <i data-lucide="circle-plus" class="w-4 h-4"></i>
                     <span>Create Listing</span>
                 </a>
             }
         </header>
 
+        @if (TempData["Message"] != null || TempData["Error"] != null)
+        {
+            var hasError = TempData["Error"] != null;
+            <div role="status" class="mt-4 rounded-xl border px-4 py-3 text-sm @(hasError ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-800")">
+                @(hasError ? TempData["Error"] : TempData["Message"])
+            </div>
+        }
+
+        <nav class="mt-5 flex justify-center" aria-label="Listing sections">
+            <div class="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-slate-200 bg-slate-100/80 p-1.5">
+                <a href="@Url.Action("ItemListings", "MyListings")" aria-current="page" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm">
+                    My Items <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">@Model.TotalCount</span>
+                </a>
+                <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-slate-900">
+                    Rental Requests <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">2</span>
+                </button>
+                <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-slate-900">
+                    Ongoing Rentals <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">1</span>
+                </button>
+                <button type="button" class="inline-flex shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-slate-900">
+                    Past Transactions
+                </button>
+            </div>
+        </nav>
+
         @if (Model.HasListings)
         {
             @* ===== Stats ===== *@
             <section class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold tracking-wider text-slate-600 uppercase">Total Listings</p>
                         <div class="mt-2 flex items-baseline gap-3">
@@ -59,7 +84,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold tracking-wider text-slate-600 uppercase">Available</p>
                         <div class="mt-2 flex items-baseline gap-3">
@@ -74,7 +99,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold tracking-wider text-slate-600 uppercase">Unavailable</p>
                         <div class="mt-2 flex items-baseline gap-3">
@@ -91,7 +116,7 @@
             </section>
 
             @* ===== Search + filters ===== *@
-            <section class="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col lg:flex-row lg:items-center gap-3">
+            <section class="mt-6 bg-white rounded-2xl border border-slate-200 p-3.5 flex flex-col lg:flex-row lg:items-center gap-3">
                 <div class="relative flex-1">
                     <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                     <input id="listing-search" type="text" placeholder="Search your listings by name, category, or model..."
@@ -99,29 +124,29 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" data-filter="all" data-active="true"
-                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 data-[active=true]:bg-brand data-[active=true]:border-brand data-[active=true]:text-white transition">
+                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-slate-100 text-sm font-medium text-slate-700 data-[active=true]:bg-indigo-600 data-[active=true]:border-indigo-600 data-[active=true]:text-white transition">
                         All Listings
                         <span class="px-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">@Model.TotalCount</span>
                     </button>
                     <button type="button" data-filter="available"
-                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 data-[active=true]:bg-brand data-[active=true]:border-brand data-[active=true]:text-white transition">
+                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-slate-100 text-sm font-medium text-slate-700 data-[active=true]:bg-indigo-600 data-[active=true]:border-indigo-600 data-[active=true]:text-white transition">
                         Available
                         <span class="px-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">@Model.AvailableCount</span>
                     </button>
                     <button type="button" data-filter="unavailable"
-                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 data-[active=true]:bg-brand data-[active=true]:border-brand data-[active=true]:text-white transition">
+                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-slate-100 text-sm font-medium text-slate-700 data-[active=true]:bg-indigo-600 data-[active=true]:border-indigo-600 data-[active=true]:text-white transition">
                         Unavailable
                         <span class="px-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">@Model.UnavailableCount</span>
                     </button>
                     <button type="button" id="filter-reset" title="Reset filters"
-                            class="w-10 h-10 inline-flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                            class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition">
                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     </button>
                 </div>
             </section>
 
             @* ===== Listing cards ===== *@
-            <section class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <section class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 @foreach (var item in Model.Listings)
                 {
                     var conditionBadge = item.Condition == "Like New" ? "Like New (9.5-10/10)"
@@ -130,7 +155,7 @@
                         : "Good (8-9/10)";
                     <article data-listing data-status="@(item.IsAvailable ? "available" : "unavailable")"
                              data-search="@((item.Title + " " + item.CategoryLabel + " " + item.CategoryBadge).ToLowerInvariant())"
-                             class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                             class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
 
                         <div class="relative h-48 bg-slate-100">
                             <img src="@Url.Content(item.ImageUrl)" alt="@item.Title" class="w-full h-full object-cover" />
@@ -138,13 +163,13 @@
                                 <div class="flex items-center gap-1.5 min-w-0">
                                     @if (item.IsAvailable)
                                     {
-                                        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-1 rounded shadow-sm">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Available
+                                        <span class="inline-flex items-center gap-1.5 bg-emerald-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full shadow-sm">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>Available
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-[11px] font-semibold px-2 py-1 rounded shadow-sm whitespace-nowrap">
+                                        <span class="inline-flex items-center gap-1.5 bg-amber-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Unavailable (@item.Status)
                                         </span>
                                     }
@@ -152,13 +177,13 @@
                                         @conditionBadge
                                     </span>
                                 </div>
-                                <span class="bg-indigo-50 text-brand text-[11px] font-semibold px-2 py-1 rounded shadow-sm whitespace-nowrap">@item.CategoryBadge</span>
+                                <span class="bg-indigo-600 text-white text-[11px] font-semibold px-2 py-1 rounded shadow-sm whitespace-nowrap uppercase">@item.CategoryBadge</span>
                             </div>
                         </div>
 
-                        <div class="p-5 flex-1 flex flex-col">
+                        <div class="p-4 flex-1 flex flex-col">
                             <p class="text-xs text-slate-600">@item.CategoryLabel</p>
-                            <h3 class="mt-1 text-lg font-semibold text-slate-900 truncate" title="@item.Title">@item.Title</h3>
+                            <h3 class="mt-1 text-sm font-semibold text-slate-900 truncate" title="@item.Title">@item.Title</h3>
 
                             <div class="mt-2 flex items-baseline gap-1.5">
                                 <span class="text-xl font-bold text-brand">&#8369;@item.Price.ToString("0.##")</span>
@@ -166,7 +191,7 @@
                                 <span class="text-xs text-slate-500">(@Html.Raw((item.PriceNote ?? "").Replace("₱", "&#8369;").Replace("\u20B1", "&#8369;")))</span>
                             </div>
 
-                            <div class="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
+                            <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <a href="@Url.Action("Edit", "MyListings", new { id = item.Id })"
                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">

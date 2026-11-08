@@ -25,10 +25,10 @@ namespace UniShare.Controllers
                         const string img = "~/Content/img/placeholder.png";
                         _listings = new List<ListingItemViewModel>
                         {
-                            new ListingItemViewModel { Id = 1, Title = "Casio fx-991EX ClassWiz Scientific Calculator", CategoryLabel = "Electronics & Gadgets", CategoryBadge = "Electronics", ImageUrl = img, Condition = "Like New", ConditionScore = 9.5m, Price = 25, PriceNote = "\u20B150 whole day", Location = "CEA Building Lobby (San Bartolome Campus)", Status = ListingStatus.Available },
+                            new ListingItemViewModel { Id = 1, Title = "Casio fx-991EX ClassWiz Scientific Calculator", CategoryLabel = "Electronic Gadgets", CategoryBadge = "Gadgets", CategoryId = 1, ImageUrl = img, Condition = "Like New", ConditionScore = 9.5m, Price = 25, PriceNote = "\u20B150 whole day", Location = "CEA Building Lobby (San Bartolome Campus)", Status = ListingStatus.Available },
                             new ListingItemViewModel { Id = 2, Title = "Engineering Mechanics: Statics & Dynamics", CategoryLabel = "Books & References", CategoryBadge = "Books", ImageUrl = img, Condition = "Excellent", ConditionScore = 9m, Price = 15, PriceNote = "\u20B130 whole day", Location = "University Library Front Desk", Status = ListingStatus.Available },
                             new ListingItemViewModel { Id = 3, Title = "Rotring Isograph Junior Pen Set (0.2, 0.3, 0.5)", CategoryLabel = "School Supplies (Drafting)", CategoryBadge = "Drafting", ImageUrl = img, Condition = "Like New", ConditionScore = 10m, Price = 30, PriceNote = "\u20B160 whole day", Location = "CEA Drafting Studio Room 304", Status = ListingStatus.Available },
-                            new ListingItemViewModel { Id = 4, Title = "Casio Calculator Hard Slide-on Case", CategoryLabel = "Electronics & Accessories", CategoryBadge = "Accessories", ImageUrl = img, Condition = "Good", ConditionScore = 8m, Price = 10, PriceNote = "Fixed flat rate", Location = "Student Canteen Guard Station", Status = ListingStatus.Rented },
+                            new ListingItemViewModel { Id = 4, Title = "Casio Calculator Hard Slide-on Case", CategoryLabel = "Electronic Accessories", CategoryBadge = "Accessories", CategoryId = 2, ImageUrl = img, Condition = "Good", ConditionScore = 8m, Price = 10, PriceNote = "Fixed flat rate", Location = "Student Canteen Guard Station", Status = ListingStatus.Rented },
                             new ListingItemViewModel { Id = 5, Title = "Molten GG7X Official Indoor/Outdoor Basketball", CategoryLabel = "Sports Equipment", CategoryBadge = "Sports", ImageUrl = img, Condition = "Good", ConditionScore = 8.5m, Price = 20, PriceNote = "Standard match ball", Location = "QCU Gymnasium Entrance", Status = ListingStatus.Available }
                         };
                     }
@@ -243,8 +243,8 @@ namespace UniShare.Controllers
                 {
                     Id = id,
                     Title = "Academic Course Gear",
-                    CategoryLabel = "Electronics & Gadgets",
-                    CategoryBadge = "Electronics",
+                    CategoryLabel = "Electronic Gadgets",
+                    CategoryBadge = "Gadgets",
                     ImageUrl = "~/Content/img/placeholder.png",
                     Condition = "Like New",
                     Price = 25,
@@ -496,8 +496,8 @@ namespace UniShare.Controllers
         {
             return new List<CategoryOptionViewModel>
             {
-                new CategoryOptionViewModel { Id = 1, Name = "Electronics & Gadgets",       Group = "Electronics" },
-                new CategoryOptionViewModel { Id = 2, Name = "Electronics & Accessories",   Group = "Electronics" },
+                new CategoryOptionViewModel { Id = 1, Name = "Electronic Gadgets",          Group = "Gadgets" },
+                new CategoryOptionViewModel { Id = 2, Name = "Electronic Accessories",      Group = "Accessories" },
                 new CategoryOptionViewModel { Id = 3, Name = "Books & References",          Group = "Books" },
                 new CategoryOptionViewModel { Id = 4, Name = "School Supplies (Drafting)",  Group = "School Supplies" },
                 new CategoryOptionViewModel { Id = 5, Name = "Sports Equipment",            Group = "Sports" },
