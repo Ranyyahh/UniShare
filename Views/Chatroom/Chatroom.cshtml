@@ -19,23 +19,44 @@
     <section class="cr-shell">
 
         <!-- LEFT: CONVERSATIONS -->
+        <!-- LEFT: CONVERSATIONS -->
         <aside class="cr-inbox">
 
             <div class="cr-inbox-heading">
                 <h2>Conversations</h2>
-                <span id="cr-count">6</span>
+                <span id="cr-count">4</span>
             </div>
 
+            <!-- Conversation Search -->
+            <div class="cr-inbox-search">
+                <span class="cr-search-icon">⌕</span>
+                <input type="search"
+                       id="cr-search"
+                       placeholder="Search conversations..."
+                       aria-label="Search conversations"
+                       autocomplete="off" />
+                <button type="button"
+                        id="cr-clear-search"
+                        title="Clear search"
+                        aria-label="Clear search">
+                    ×
+                </button>
+            </div>
+
+            <!-- Conversation List -->
             <div class="cr-list" id="cr-list">
 
                 <button class="cr-conversation selected"
                         data-id="maya" data-unread="true">
+
                     <span class="cr-avatar lavender">MD</span>
+
                     <span class="cr-convo-copy">
                         <b>Mika Dela Rosa</b>
-                        <small>Perfect, see you there. I will brih...</small>
+                        <small>Perfect, see you there. I will bring...</small>
                         <small class="cr-item-preview">Casio fx-991EX ClassWiz</small>
                     </span>
+
                     <span class="cr-meta">
                         <time>2:15 PM</time>
                     </span>
@@ -43,12 +64,15 @@
 
                 <button class="cr-conversation"
                         data-id="jordan" data-unread="true">
+
                     <span class="cr-avatar blue">PG</span>
+
                     <span class="cr-convo-copy">
                         <b>Paolo Garcia</b>
-                        <small>Sure, Student Center Lobby agai...</small>
-                        <small class="cr-item-preview">Steadler 36-inch T-Square</small>
+                        <small>Sure, Student Center Lobby again...</small>
+                        <small class="cr-item-preview">Staedtler 36-inch T-Square</small>
                     </span>
+
                     <span class="cr-meta">
                         <time>Yesterday</time>
                     </span>
@@ -56,12 +80,15 @@
 
                 <button class="cr-conversation"
                         data-id="alex" data-unread="false">
+
                     <span class="cr-avatar lavender">AR</span>
+
                     <span class="cr-convo-copy">
                         <b>Ana Reyes</b>
                         <small>Let me check my schedule and...</small>
                         <small class="cr-item-preview">Sony WH-CH520 Wireless Headset</small>
                     </span>
+
                     <span class="cr-meta">
                         <time>Mon</time>
                     </span>
@@ -69,12 +96,15 @@
 
                 <button class="cr-conversation"
                         data-id="sam" data-unread="false">
+
                     <span class="cr-avatar blue">LR</span>
+
                     <span class="cr-convo-copy">
                         <b>Liza Ramos</b>
                         <small>Thank you, it was a big help for t...</small>
                         <small class="cr-item-preview">Engineering Mechanics (textbook)</small>
                     </span>
+
                     <span class="cr-meta">
                         <time>Oct 30</time>
                     </span>
@@ -82,7 +112,15 @@
 
             </div>
 
+            <!-- No Search Results -->
+            <div class="cr-no-results" id="cr-no-results" hidden>
+                <span>⌕</span>
+                <b>No conversations found</b>
+                <small>Try searching another name or item.</small>
+            </div>
+
         </aside>
+
 
 
         <!-- CENTER: CHAT WINDOW -->
