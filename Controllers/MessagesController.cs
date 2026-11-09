@@ -4,6 +4,9 @@ namespace UniShare.Controllers
 {
     public class MessagesController : Controller
     {
-        public ActionResult Index() { return View(); }
+        public ActionResult Index()
+        {
+            return View("~/Views/Chatroom/Chatroom.cshtml");
+        }
     }
 }
