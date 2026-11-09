@@ -1,0 +1,1099 @@
+
+/* =========================================
+   FULL-WIDTH MESSAGES PAGE
+========================================= */
+
+.cr-page {
+    position: relative;
+    /* Break out of Bootstrap container */
+    width: 100vw;
+    max-width: none;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    min-height: calc(100vh - 65px);
+    background: #f5f5ff;
+    padding: 20px 2.5%;
+    color: #172033;
+    font-family: Arial, sans-serif;
+}
+
+    .cr-page,
+    .cr-page * {
+        box-sizing: border-box;
+    }
+
+.cr-page-heading {
+    margin-bottom: 16px;
+}
+
+    .cr-page-heading h1 {
+        font-size: 23px;
+        font-weight: 700;
+        margin: 0 0 4px;
+        color: #172033;
+    }
+
+    .cr-page-heading p {
+        font-size: 12px;
+        color: #667085;
+        margin: 0;
+    }
+
+
+/* =========================================
+   MAIN THREE-COLUMN LAYOUT
+========================================= */
+
+.cr-shell {
+    display: grid;
+    grid-template-columns: minmax(250px, 1.05fr) minmax(450px, 2fr) minmax(240px, 1fr);
+    gap: 14px;
+    align-items: stretch;
+    width: 100%;
+    height: calc(100vh - 175px);
+    min-height: 520px;
+}
+
+
+/* =========================================
+   CONVERSATIONS PANEL
+========================================= */
+
+.cr-inbox,
+.cr-thread,
+.cr-item-card,
+.cr-safety-card {
+    background: #fff;
+    border: 1px solid #e4e7f0;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.cr-inbox {
+    display: flex;
+    flex-direction: column;
+}
+
+.cr-inbox-heading {
+    height: 42px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #edf0f5;
+}
+
+    .cr-inbox-heading h2 {
+        font-size: 12px;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .cr-inbox-heading > span {
+        display: none;
+    }
+
+.cr-list {
+    overflow-y: auto;
+}
+
+.cr-conversation {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 13px 10px;
+    border: 0;
+    border-bottom: 1px solid #f0f1f5;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+    .cr-conversation:hover,
+    .cr-conversation.selected {
+        background: #f0f2ff;
+    }
+
+.cr-avatar {
+    width: 29px;
+    height: 29px;
+    min-width: 29px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #5146df;
+    background: #e5e7ff;
+}
+
+    .cr-avatar.blue {
+        color: #4161b8;
+        background: #e1e9ff;
+    }
+
+    .cr-avatar.lavender {
+        color: #5146df;
+        background: #e5e7ff;
+    }
+
+.cr-convo-copy {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    .cr-convo-copy b {
+        font-size: 10px;
+        font-weight: 700;
+        color: #172033;
+    }
+
+    .cr-convo-copy small {
+        font-size: 9px;
+        line-height: 1.4;
+        color: #667085;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .cr-convo-copy .cr-item-preview {
+        color: #5146df;
+    }
+
+.cr-meta {
+    font-size: 8px;
+    color: #8b93a5;
+    white-space: nowrap;
+}
+
+
+/* =========================================
+   CHAT THREAD
+========================================= */
+
+.cr-thread {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cr-thread-head {
+    min-height: 49px;
+    padding: 9px 13px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.cr-person {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+    .cr-person b {
+        font-size: 11px;
+        color: #172033;
+    }
+
+    .cr-person small {
+        font-size: 9px;
+        color: #667085;
+    }
+
+.cr-request-status {
+    padding: 4px 9px;
+    border-radius: 20px;
+    background: #e8fff3;
+    color: #008b5b;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+    .cr-request-status i {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        background: #00a66c;
+        border-radius: 50%;
+        margin-right: 3px;
+    }
+
+.cr-back {
+    display: none;
+}
+
+
+/* =========================================
+   CHAT HISTORY
+========================================= */
+
+.cr-history {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fafaff;
+}
+
+.cr-date {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+
+    .cr-date span {
+        font-size: 9px;
+        color: #667085;
+        background: #fff;
+        padding: 3px 12px;
+    }
+
+.cr-message {
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+    max-width: 100%;
+}
+
+    .cr-message > div {
+        max-width: 75%;
+    }
+
+    .cr-message p {
+        padding: 9px 11px;
+        margin: 0;
+        border-radius: 12px;
+        font-size: 10px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .cr-message.theirs {
+        justify-content: flex-start;
+    }
+
+        .cr-message.theirs p {
+            background: #fff;
+            color: #344054;
+            border: 1px solid #edf0f5;
+            border-bottom-left-radius: 4px;
+        }
+
+    .cr-message.mine {
+        justify-content: flex-end;
+    }
+
+        .cr-message.mine p {
+            background: #5146e5;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+    .cr-message small {
+        display: block;
+        font-size: 8px;
+        color: #8992a5;
+        margin-top: 3px;
+    }
+
+    .cr-message.mine small {
+        text-align: right;
+    }
+
+    .cr-message.theirs .cr-avatar {
+        margin-bottom: 15px;
+    }
+
+
+/* =========================================
+   SUGGESTED REPLIES
+========================================= */
+
+.cr-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px;
+    border-top: 1px solid #edf0f5;
+}
+
+    .cr-suggestions button {
+        background: #fff;
+        border: 1px solid #dcdfff;
+        color: #5146df;
+        border-radius: 18px;
+        padding: 5px 10px;
+        font-size: 9px;
+        cursor: pointer;
+    }
+
+        .cr-suggestions button:hover {
+            background: #f0f0ff;
+        }
+
+
+/* =========================================
+   MESSAGE INPUT
+========================================= */
+
+.cr-composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 11px;
+    background: #fff;
+}
+
+    .cr-composer textarea {
+        flex: 1;
+        min-width: 0;
+        height: 33px;
+        resize: none;
+        outline: none;
+        border: 1px solid #dce1ed;
+        border-radius: 9px;
+        padding: 9px 11px;
+        font-size: 10px;
+        font-family: inherit;
+    }
+
+        .cr-composer textarea:focus {
+            border-color: #5146e5;
+        }
+
+    .cr-composer button {
+        height: 33px;
+        padding: 0 14px;
+        background: #5146e5;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 10px;
+        cursor: pointer;
+    }
+
+        .cr-composer button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+
+/* =========================================
+   RIGHT: ITEM DETAILS
+========================================= */
+
+.cr-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.cr-item-card {
+    padding: 13px;
+}
+
+.cr-section-label {
+    display: block;
+    color: #667085;
+    font-size: 9px;
+    margin-bottom: 10px;
+}
+
+.cr-photo {
+    width: 100%;
+    height: 63px;
+    border-radius: 9px;
+    background: #f0f3f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667085;
+    font-size: 9px;
+    margin-bottom: 10px;
+}
+
+.cr-item-card h3 {
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0 0 7px;
+    color: #172033;
+}
+
+.cr-detail-price {
+    font-size: 10px;
+    color: #475467;
+    margin-bottom: 11px;
+}
+
+    .cr-detail-price b {
+        color: #172033;
+        font-weight: 600;
+    }
+
+.cr-detail-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.cr-outline-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 9px;
+    color: #5146df;
+    border: 1px solid #dce0ef;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 9px;
+}
+
+    .cr-outline-btn:hover {
+        background: #f2f2ff;
+    }
+
+
+/* =========================================
+   SAFE EXCHANGE REMINDER
+========================================= */
+
+.cr-safety-card {
+    padding: 13px;
+    border-color: #dce0ff;
+}
+
+    .cr-safety-card h3 {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        margin: 0 0 10px;
+        color: #172033;
+    }
+
+.cr-shield {
+    color: #5146e5;
+    font-size: 13px;
+}
+
+.cr-safety-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px;
+    border: 1px solid #edf0f5;
+    border-radius: 8px;
+    margin-bottom: 7px;
+}
+
+    .cr-safety-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .cr-safety-item span {
+        color: #00a66c;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .cr-safety-item p {
+        font-size: 9px;
+        color: #667085;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+
+/* =========================================
+   SCROLLBARS
+========================================= */
+
+.cr-history::-webkit-scrollbar,
+.cr-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.cr-history::-webkit-scrollbar-thumb,
+.cr-list::-webkit-scrollbar-thumb {
+    background: #d9dcef;
+    border-radius: 10px;
+}
+
+
+/* =========================================
+   TOAST
+========================================= */
+
+.cr-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #252b45;
+    color: #fff;
+    padding: 11px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+    z-index: 9999;
+}
+
+    .cr-toast.show {
+        opacity: 1;
+    }
+
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 1000px) {
+    .cr-shell {
+        grid-template-columns: minmax(200px, 1fr) minmax(350px, 2fr);
+        height: auto;
+    }
+
+    .cr-details {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .cr-page {
+        padding: 15px 10px;
+    }
+
+    .cr-shell {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+    }
+
+    .cr-inbox {
+        width: 100%;
+        margin-bottom: 12px;
+    }
+
+    .cr-thread {
+        width: 100%;
+        min-height: 550px;
+        margin-bottom: 12px;
+    }
+
+    .cr-details {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .cr-back {
+        display: block;
+    }
+
+    .cr-message > div {
+        max-width: 85%;
+    }
+}
+
+
+/* ==========================================
+   UNISHARE MESSAGES - READABLE DESKTOP DESIGN
+========================================== */
+
+/* Main page */
+.cr-page {
+    position: relative;
+    width: 100vw;
+    max-width: none;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    min-height: calc(100vh - 65px);
+    padding: 32px 24px 40px;
+    background: #f5f5ff;
+    color: #172033;
+    font-family: Arial, sans-serif;
+}
+
+/* Center content while using available browser width */
+.cr-page-heading,
+.cr-shell {
+    width: 100%;
+    max-width: 1320px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Page heading */
+.cr-page-heading {
+    margin-bottom: 26px;
+}
+
+    .cr-page-heading h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .cr-page-heading p {
+        font-size: 15px;
+        color: #667085;
+    }
+
+/* Three-column layout */
+.cr-shell {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.05fr) minmax(500px, 2fr) minmax(280px, 1fr);
+    gap: 20px;
+    align-items: stretch;
+    height: calc(100vh - 245px);
+    min-height: 620px;
+}
+
+/* All panels */
+.cr-inbox,
+.cr-thread,
+.cr-item-card,
+.cr-safety-card {
+    border-radius: 17px;
+    border: 1px solid #e0e5f0;
+    background: #fff;
+}
+
+/* ==========================================
+   CONVERSATIONS
+========================================== */
+
+.cr-inbox-heading {
+    height: 58px;
+    padding: 0 18px;
+}
+
+    .cr-inbox-heading h2 {
+        font-size: 16px;
+    }
+
+.cr-conversation {
+    padding: 17px 16px;
+    gap: 12px;
+}
+
+.cr-avatar {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    font-size: 12px;
+}
+
+.cr-convo-copy {
+    gap: 5px;
+}
+
+    .cr-convo-copy b {
+        font-size: 14px;
+    }
+
+    .cr-convo-copy small {
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+.cr-meta {
+    font-size: 11px;
+}
+
+/* ==========================================
+   CHAT HEADER
+========================================== */
+
+.cr-thread-head {
+    min-height: 80px;
+    padding: 14px 20px;
+    gap: 12px;
+}
+
+.cr-person b {
+    font-size: 15px;
+}
+
+.cr-person small {
+    font-size: 13px;
+}
+
+.cr-request-status {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+/* ==========================================
+   CHAT MESSAGES
+========================================== */
+
+.cr-history {
+    padding: 24px 22px;
+    gap: 18px;
+}
+
+.cr-date {
+    margin-bottom: 6px;
+}
+
+    .cr-date span {
+        font-size: 13px;
+        padding: 5px 14px;
+    }
+
+.cr-message {
+    gap: 10px;
+}
+
+    .cr-message > div {
+        max-width: 85%;
+    }
+
+    .cr-message p {
+        font-size: 14px;
+        line-height: 1.55;
+        padding: 13px 15px;
+        border-radius: 16px;
+    }
+
+    .cr-message small {
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+/* ==========================================
+   SUGGESTED REPLIES
+========================================== */
+
+.cr-suggestions {
+    padding: 12px 20px;
+    gap: 9px;
+}
+
+    .cr-suggestions button {
+        font-size: 12px;
+        padding: 8px 13px;
+        border-radius: 20px;
+    }
+
+/* ==========================================
+   MESSAGE COMPOSER
+========================================== */
+
+.cr-composer {
+    padding: 0 20px 18px;
+    gap: 10px;
+}
+
+    .cr-composer textarea {
+        height: 46px;
+        font-size: 13px;
+        padding: 13px 15px;
+        border-radius: 11px;
+    }
+
+    .cr-composer button {
+        height: 46px;
+        padding: 0 20px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+/* ==========================================
+   ITEM DETAILS
+========================================== */
+
+.cr-details {
+    gap: 16px;
+}
+
+.cr-item-card {
+    padding: 20px;
+}
+
+.cr-section-label {
+    font-size: 12px;
+    margin-bottom: 14px;
+}
+
+.cr-photo {
+    height: 105px;
+    font-size: 12px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.cr-item-card h3 {
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+
+.cr-detail-price {
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+.cr-detail-actions {
+    gap: 8px;
+}
+
+.cr-outline-btn {
+    font-size: 12px;
+    padding: 9px 13px;
+    border-radius: 10px;
+}
+
+/* ==========================================
+   SAFE EXCHANGE REMINDER
+========================================== */
+
+.cr-safety-card {
+    padding: 20px;
+}
+
+    .cr-safety-card h3 {
+        font-size: 15px;
+        margin-bottom: 14px;
+    }
+
+.cr-safety-item {
+    padding: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+}
+
+    .cr-safety-item span {
+        font-size: 15px;
+    }
+
+    .cr-safety-item p {
+        font-size: 12px;
+        line-height: 1.55;
+    }
+
+/* ==========================================
+   DESKTOP AND LAPTOP
+========================================== */
+
+@media (max-width: 1100px) {
+    .cr-shell {
+        grid-template-columns: minmax(230px, 1fr) minmax(380px, 2fr);
+        height: auto;
+    }
+
+    .cr-details {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ==========================================
+   TABLET AND MOBILE
+========================================== */
+
+@media (max-width: 700px) {
+    .cr-page {
+        padding: 20px 12px;
+    }
+
+    .cr-page-heading h1 {
+        font-size: 25px;
+    }
+
+    .cr-shell {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 0;
+    }
+
+    .cr-inbox {
+        width: 100%;
+    }
+
+    .cr-thread {
+        width: 100%;
+        min-height: 600px;
+    }
+
+    .cr-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cr-message > div {
+        max-width: 90%;
+    }
+
+    .cr-thread-head {
+        flex-wrap: wrap;
+    }
+
+    .cr-request-status {
+        font-size: 10px;
+    }
+}
+
+/* ==========================================
+   CONVERSATION SEARCH FILTER
+========================================== */
+
+.cr-inbox {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cr-inbox-heading {
+    min-height: 62px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #edf0f5;
+}
+
+    .cr-inbox-heading h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .cr-inbox-heading > span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 25px;
+        height: 25px;
+        padding: 0 7px;
+        border-radius: 20px;
+        background: #eeeeff;
+        color: #5146df;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+/* Search container */
+.cr-inbox-search {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 13px 14px;
+    padding: 0 12px;
+    height: 43px;
+    min-height: 43px;
+    background: #f8f9fc;
+    border: 1px solid #e1e5ef;
+    border-radius: 9px;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+    .cr-inbox-search:focus-within {
+        background: #fff;
+        border-color: #5146e5;
+        box-shadow: 0 0 0 3px rgba(81, 70, 229, .08);
+    }
+
+.cr-search-icon {
+    font-size: 23px;
+    color: #8b93a5;
+    line-height: 1;
+}
+
+.cr-inbox-search input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #172033;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+    .cr-inbox-search input::placeholder {
+        color: #98a0b1;
+    }
+
+.cr-inbox-search button {
+    display: none;
+    border: none;
+    background: transparent;
+    color: #8b93a5;
+    font-size: 21px;
+    cursor: pointer;
+    padding: 2px 5px;
+}
+
+.cr-inbox-search.has-value button {
+    display: block;
+}
+
+.cr-inbox-search button:hover {
+    color: #5146e5;
+}
+
+/* Conversation list */
+.cr-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* No search results */
+.cr-no-results {
+    padding: 35px 15px;
+    text-align: center;
+    color: #667085;
+}
+
+    .cr-no-results[hidden] {
+        display: none !important;
+    }
+
+    .cr-no-results > span {
+        display: block;
+        font-size: 28px;
+        margin-bottom: 10px;
+        color: #a0a6b8;
+    }
+
+    .cr-no-results b {
+        display: block;
+        font-size: 13px;
+        color: #344054;
+        margin-bottom: 5px;
+    }
+
+    .cr-no-results small {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+/* Hidden conversations */
+.cr-conversation.search-hidden {
+    display: none !important;
+}
