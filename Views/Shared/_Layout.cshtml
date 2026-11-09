@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - UniShare</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    @RenderSection("Styles", required: false)
 </head>
 <body>
     <header class="site-header">
@@ -59,6 +60,11 @@
             </div>
         </footer>
     </div>
+    @Html.Partial("_Header")
+    <main class="site-main" id="main-content">
+        @RenderBody()
+    </main>
+    @Html.Partial("_Footer")
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
