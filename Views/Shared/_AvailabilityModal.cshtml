@@ -1,0 +1,60 @@
+@model UniShare.Models.ItemDetailsViewModel
+@using System.Linq
+
+@* Booked dates are read by Scripts/availability.js from data-booked (yyyy-MM-dd, comma separated). *@
+<div class="ua-overlay" id="avail-modal" aria-hidden="true"
+     data-item-id="@Model.ItemId"
+     data-item-name="@Model.Name"
+     data-booked="@string.Join(",", Model.BookedDates.Select(d => d.ToString("yyyy-MM-dd")))">
+    <div class="ua-dialog-wrap">
+        <div class="ua-dialog" role="dialog" aria-modal="true" aria-labelledby="av-title">
+
+            <div class="d-flex align-items-start gap-3 pb-3 border-bottom">
+                <div class="ico-box"><i class="bi bi-calendar-event"></i></div>
+                <div class="flex-grow-1">
+                    <h2 id="av-title" class="h5 fw-bold mb-1">Check Availability</h2>
+                    <div id="av-sub" class="small text-secondary">
+                        @Model.Name &bull; Listed by <strong class="text-body">@Model.Lender.Name (@Model.Lender.ProgramCode)</strong>
+                    </div>
+                </div>
+                <button type="button" class="ua-close" data-ua-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center my-3">
+                <div class="d-flex align-items-center gap-2">
+                    <h3 id="cal-title" class="h6 fw-bold mb-0"></h3>
+                    <span id="cal-badge" class="tag blue d-none"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="modal-nav" id="cal-prev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+                    <button type="button" class="modal-nav" id="cal-next" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+
+            <div class="cal-grid"><div class="dow">SU</div><div class="dow">MO</div><div class="dow">TU</div><div class="dow">WE</div><div class="dow">TH</div><div class="dow">FR</div><div class="dow">SA</div></div>
+            <div id="cal-days" class="cal-grid"></div>
+
+            <div class="legend">
+                <span><i style="background:#1fa463"></i>Available for Rent</span>
+                <span><i style="background:#f59e0b"></i>Booked / Reserved</span>
+                <span><i style="background:var(--primary)"></i>Selected Date</span>
+            </div>
+
+            <div class="sel-box">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span><i class="bi bi-calendar-check text-primary me-2"></i><strong id="sel-text"></strong></span>
+                    <span class="tag green"><i class="bi bi-check2 me-1"></i>Available All Day (8:00 AM &ndash; 5:30 PM)</span>
+                </div>
+                <hr class="my-2">
+                <div class="small text-secondary">Hourly campus rate: <strong class="text-body">₱@Model.HourlyRate.ToString("0.##")/hr</strong></div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-3 mt-3 border-top">
+                <button type="button" class="btn btn-outline-soft px-4" data-ua-close>Cancel</button>
+                <button type="button" id="av-confirm" class="btn btn-brand px-4"><i class="bi bi-calendar-event me-2"></i><span id="av-confirm-text">Request to Rent</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ua-toast" class="ua-toast" role="status" aria-live="polite"></div>

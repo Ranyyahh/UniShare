@@ -1,0 +1,114 @@
+@* Delete confirmation dialog. Open it from any element that has: data-delete, data-id, data-title,
+   data-category, data-status (Available | Rented | Paused), data-price, data-image, data-active-rental.
+   Render this partial OUTSIDE of any <form>. *@
+
+<div id="delete-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+    <div data-dm-close class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+
+    <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl p-6">
+        <button type="button" data-dm-close aria-label="Close" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-start gap-4 pr-6">
+            <span class="w-12 h-12 shrink-0 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </span>
+            <div>
+                <h2 id="delete-modal-title" class="text-xl font-semibold text-slate-900">Delete this listing?</h2>
+                <p class="mt-1 text-sm text-slate-600 leading-relaxed">
+                    This listing will be permanently removed from your active campus catalog. Classmates won't be able to discover or request this item for peer rental.
+                </p>
+            </div>
+        </div>
+
+        @* Item summary *@
+        <div class="mt-5 flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+            <img id="dm-image" src="" alt="" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0" />
+            <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                    <span id="dm-category" class="bg-indigo-100 text-brand text-[11px] font-semibold px-2 py-0.5 rounded truncate"></span>
+                    <span id="dm-status" class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded border"></span>
+                </div>
+                <p id="dm-title" class="mt-1 text-sm font-semibold text-slate-900 truncate"></p>
+                <p id="dm-price" class="text-xs text-slate-600"></p>
+            </div>
+        </div>
+
+        @* Safe / blocked notice *@
+        <div id="dm-safe" class="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-700">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+            No active rental requests or ongoing loans are attached to this item.
+        </div>
+        <div id="dm-blocked" class="hidden mt-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+            <i data-lucide="triangle-alert" class="w-4 h-4 shrink-0"></i>
+            This item is currently rented out. You can delete it once it has been returned.
+        </div>
+
+        <form id="delete-form" method="post" action="@Url.Action("Delete", "MyListings")" class="mt-5 pt-5 border-t border-slate-200 flex justify-end gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="dm-id" value="" />
+            <button type="button" data-dm-close class="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Cancel</button>
+            <button type="submit" id="dm-confirm" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold shadow-md shadow-red-900/20 hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>Delete Listing
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    var modal = document.getElementById('delete-modal');
+    var lastFocus = null;
+
+    function $(id) { return document.getElementById(id); }
+
+    function open(d) {
+        lastFocus = document.activeElement;
+        $('dm-id').value = d.id || '';
+        $('dm-image').src = d.image || '';
+        $('dm-image').alt = d.title || '';
+        $('dm-category').textContent = d.category || '';
+        $('dm-title').textContent = d.title || '';
+        $('dm-price').innerHTML = d.price || '';
+
+        var available = d.status === 'Available';
+        var badge = $('dm-status');
+        badge.className = 'inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded border ' +
+            (available ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200');
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full ' + (available ? 'bg-emerald-500' : 'bg-amber-500') + '"></span>' +
+            (available ? 'Available' : 'Unavailable (' + (d.status || 'Paused') + ')');
+
+        var blocked = d.activeRental === 'true';
+        $('dm-safe').classList.toggle('hidden', blocked);
+        $('dm-blocked').classList.toggle('hidden', !blocked);
+        $('dm-confirm').disabled = blocked;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.documentElement.classList.add('overflow-hidden');
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
+        var closeBtn = $('delete-form').querySelector('[data-dm-close]');
+        if (closeBtn) closeBtn.focus();
+    }
+
+    function close() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.documentElement.classList.remove('overflow-hidden');
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+    }
+
+    document.addEventListener('click', function (e) {
+        var opener = e.target.closest('[data-delete]');
+        if (opener) { e.preventDefault(); open(opener.dataset); return; }
+        if (e.target.closest('[data-dm-close]')) { close(); }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) close();
+    });
+})();
+</script>
