@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Web.Mvc;
@@ -93,7 +93,12 @@ namespace UniShare.Controllers
             t5.DateRange = "Last 7 Days";
             transactions.Add(t5);
 
-            return View(transactions);
+            return View("TransactionPaymentRecords", transactions);
+        }
+
+        public ActionResult TransactionPaymentRecords()
+        {
+            return Index();
         }
 
         [HttpGet]
@@ -208,7 +213,7 @@ namespace UniShare.Controllers
                 details.Method = "GCash";
             }
 
-            return PartialView("_TransactionDetails", (object)details);
+            return PartialView("TransactionDetails", (object)details);
         }
     }
 }

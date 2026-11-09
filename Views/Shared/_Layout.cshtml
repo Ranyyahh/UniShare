@@ -1,38 +1,49 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
+    <title>@(string.IsNullOrEmpty(ViewBag.Title as string) ? "UniShare Admin Portal" : ViewBag.Title + " - UniShare Admin")</title>
+    
     @Styles.Render("~/Content/css")
+    <link href="@Url.Content("~/Content/bootstrap.css")" rel="stylesheet" type="text/css" />
+    <link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" type="text/css" />
     @Scripts.Render("~/bundles/modernizr")
 </head>
-<body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse" title="more options">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                @Html.ActionLink("Application name", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+<body class="admin-body">
+    <div class="admin-layout-wrapper">
+        <!-- 1. Left Column: Sidebar Partial View -->
+        @Html.Partial("AdminSidebar")
+
+        <!-- 2. Right Column: Main Content Area -->
+        <main class="main-content" role="main" style="margin-left: 260px; padding: 24px;">
+            <!-- Top Right Floating Header (Notification Bell & Profile) -->
+            <div class="top-header-right">
+                <div class="admin-notification" title="Notifications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge"></span>
+                </div>
+
+                <div class="admin-user-profile" title="Administrator Profile">
+                    <div class="admin-avatar">JV</div>
+                    <div class="admin-user-meta hidden-xs">
+                        <div class="admin-user-name-row">
+                            <span class="admin-user-name">Julian Vance</span>
+                            <span class="badge-admin">Admin</span>
+                        </div>
+                        <span class="admin-user-sub">Student Affairs &bull; QCU</span>
+                    </div>
+                </div>
             </div>
-            <div class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("About", "About", "Home")</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
-                </ul>
+
+            <!-- Page Body Content -->
+            <div class="admin-page-content">
+                @RenderBody()
             </div>
-        </div>
-    </div>
-    <div class="container body-content">
-        @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
-        </footer>
+        </main>
     </div>
 
     @Scripts.Render("~/bundles/jquery")

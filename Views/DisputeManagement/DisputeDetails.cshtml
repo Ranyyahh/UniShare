@@ -81,6 +81,32 @@
                 <textarea class="form-control form-textarea" readonly rows="4">@details.IncidentStatement</textarea>
             </div>
         </div>
+
+        <!-- Photo Evidence Section (Simulate Owner's Uploaded Photo of Damage) -->
+        <div class="modal-section">
+            <label class="form-section-title">Photo Evidence (Submitted by Reporter)</label>
+            <div class="photo-evidence-container">
+                <div class="photo-evidence-box">
+                    <div class="photo-evidence-placeholder">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span class="photo-evidence-caption">damage_inspection_proof_01.jpg</span>
+                        <span class="photo-evidence-meta">Captured at Item Handover &bull; Verified QCU Guardhouse Log</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Remarks Section (Mediation Notes) -->
+        <div class="modal-section" style="margin-bottom: 8px;">
+            <div class="form-group form-group-compact" style="margin-bottom: 0;">
+                <label class="form-section-title">Admin Remarks</label>
+                <textarea class="form-control form-textarea admin-remarks-textarea" rows="3" placeholder="Enter administrative mediation notes, verified campus inspection logs, or settlement terms prior to dispute resolution..."></textarea>
+            </div>
+        </div>
     </div>
 
     <!-- Bottom Bar with Resolve (Purple) and Request Info (White) Action Buttons -->

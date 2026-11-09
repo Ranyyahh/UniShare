@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Dynamic;
 using System.Web.Mvc;
 
@@ -56,7 +56,12 @@ namespace UniShare.Controllers
             d4.Status = "Resolved";
             disputes.Add(d4);
 
-            return View(disputes);
+            return View("DisputeManagement", disputes);
+        }
+
+        public ActionResult DisputeManagement()
+        {
+            return Index();
         }
 
         [HttpGet]
@@ -122,7 +127,7 @@ namespace UniShare.Controllers
                 details.Status = "Under Review";
             }
 
-            return PartialView("_DisputeDetails", (object)details);
+            return PartialView("DisputeDetails", (object)details);
         }
     }
 }
