@@ -136,6 +136,11 @@
     <Content Include="Content\bootstrap-utilities.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\engineering-mechanics-statics.jpg" />
+    <Content Include="Content\images\casio-fx991ex.jpg" />
+    <Content Include="Content\images\engineering-mechanics-statics.jpg" />
+    <Content Include="Content\images\molten-gg7x-basketball.jpg" />
+    <Content Include="Content\images\rotring-isograph-pen-set.jpg" />
     <Content Include="Content\Site.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
@@ -201,7 +206,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Content\images\items\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

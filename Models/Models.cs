@@ -42,7 +42,7 @@ namespace UniShare.Models
         public string PaymentMethod { get; set; }
         public string TransactionId { get; set; }
         public string About { get; set; }
-        public string Status { get; set; }          // Ongoing / Completed / Disputed
+        public string Status { get; set; }          // Pending / Ongoing / Completed / Disputed
         public bool HandoverConfirmed { get; set; }
         public int? Rating { get; set; }
         public string Review { get; set; }
@@ -144,8 +144,6 @@ namespace UniShare.Models
         public int Transactions { get; set; }
     }
 
-    // In-memory demo data so every page works without a database.
-    // Replace with Entity Framework later.
     public static class SampleData
     {
         public static readonly string[] Categories = { "Electronics", "Books", "Lab & Tools", "Clothing", "Sports", "Other" };
@@ -174,23 +172,24 @@ namespace UniShare.Models
             new Rental { Id = 3, ItemName = "Badminton Racket", Owner = "Jose Ramos", StartDate = DateTime.Today.AddDays(-20), EndDate = DateTime.Today.AddDays(-17), Total = 105, Status = "Completed" }
         };
 
-        
         public const decimal LateFeeMultiplier = 1m;
 
-       
         public const int LateGraceMinutes = 30;
 
         public static readonly string[] BorrowedCategories = { "Electronics & Gadgets", "Books & References", "School Supplies", "Sports Equipment", "Accessories" };
 
         public static List<BorrowedItem> Borrowed = new List<BorrowedItem>
         {
+            // 1. PENDING (Testing dual-confirmation handover)
             new BorrowedItem { Id = 1, ItemName = "Casio fx-991EX ClassWiz Calculator", Category = "Electronics & Gadgets",
                 Lender = "Maria Santos", LenderInitials = "MS", LenderProgram = "BSIT 3rd Year", PricePerHour = 25,
                 Start = new DateTime(2026, 11, 8, 13, 0, 0), End = new DateTime(2026, 11, 8, 15, 0, 0),
                 PickupPoint = "CS Building Lobby", PaymentMethod = "Cash", TransactionId = "#UNI-20451",
                 About = "Allowed in most exams. Comes with its hard cover and fresh batteries.",
-                Status = "Ongoing", Theme = "indigo",
+                Status = "Pending", Theme = "indigo",
                 RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 7) },
+
+            // 2. ONGOING (Testing live timer)
             new BorrowedItem { Id = 2, ItemName = "Engineering Mechanics (Statics)", Category = "Books & References",
                 Lender = "Carlo Reyes", LenderInitials = "CR", LenderProgram = "BSCE 4th Year", PricePerHour = 75,
                 Start = new DateTime(2026, 11, 8, 14, 0, 0), End = new DateTime(2026, 11, 8, 16, 0, 0),
@@ -198,6 +197,8 @@ namespace UniShare.Models
                 About = "14th edition. No missing pages, light highlighting in chapters 3 to 5.",
                 Status = "Ongoing", HandoverConfirmed = true, HandoverAt = DateTime.Now.AddMinutes(-165), Theme = "indigo",
                 RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 8), HandoverOn = DateTime.Today },
+
+            // 3. ONGOING (Testing live timer)
             new BorrowedItem { Id = 3, ItemName = "Rotring Isograph Junior Pen Set", Category = "School Supplies",
                 Lender = "Jessa Villanueva", LenderInitials = "JV", LenderProgram = "BSArch 2nd Year", PricePerHour = 30,
                 Start = new DateTime(2026, 11, 8, 9, 0, 0), End = new DateTime(2026, 11, 8, 11, 0, 0),
@@ -205,14 +206,18 @@ namespace UniShare.Models
                 About = "Set of 3 technical pens (0.2, 0.4, 0.6). Cleaned and filled with ink.",
                 Status = "Ongoing", HandoverConfirmed = true, HandoverAt = DateTime.Now.AddMinutes(-30), Theme = "indigo",
                 RequestedOn = new DateTime(2026, 11, 7), ApprovedOn = new DateTime(2026, 11, 7), HandoverOn = DateTime.Today },
+
+            // 4. COMPLETED (No rating yet - Testing "To Rate" button and modal)
             new BorrowedItem { Id = 4, ItemName = "Molten GG7X Official Basketball", Category = "Sports Equipment",
                 Lender = "Miguel Santos", LenderInitials = "MS", LenderProgram = "BSCpE 3rd Year", PricePerHour = 20,
                 Start = new DateTime(2026, 10, 30, 15, 0, 0), End = new DateTime(2026, 10, 30, 17, 0, 0),
                 PickupPoint = "QCU Gymnasium Entrance", PaymentMethod = "Cash", TransactionId = "#UNI-19877",
                 About = "Official size 7 game ball. Please return it clean and properly inflated.",
-                Status = "Completed", HandoverConfirmed = true, Theme = "peach",
+                Status = "Completed", HandoverConfirmed = true, Theme = "peach", // Rating is null here
                 RequestedOn = new DateTime(2026, 10, 29), ApprovedOn = new DateTime(2026, 10, 29),
                 HandoverOn = new DateTime(2026, 10, 30), CompletedOn = new DateTime(2026, 10, 30) },
+
+            // 5. COMPLETED (Already rated - Testing rating display)
             new BorrowedItem { Id = 5, ItemName = "Casio Calculator Hard Slide-on Case", Category = "Accessories",
                 Lender = "Leah Mendoza", LenderInitials = "LM", LenderProgram = "BSEd 2nd Year", PricePerHour = 10,
                 Start = new DateTime(2026, 10, 28, 13, 0, 0), End = new DateTime(2026, 10, 28, 15, 0, 0),
@@ -221,6 +226,8 @@ namespace UniShare.Models
                 Status = "Completed", HandoverConfirmed = true, Rating = 4, Review = "Fits perfectly, thanks!", Theme = "peach",
                 RequestedOn = new DateTime(2026, 10, 27), ApprovedOn = new DateTime(2026, 10, 27),
                 HandoverOn = new DateTime(2026, 10, 28), CompletedOn = new DateTime(2026, 10, 28) },
+
+            // 6. DISPUTED (Testing dispute layout without buttons)
             new BorrowedItem { Id = 6, ItemName = "Arduino Uno R3 Starter Kit", Category = "Electronics & Gadgets",
                 Lender = "Kevin Lim", LenderInitials = "KL", LenderProgram = "BSCpE 4th Year", PricePerHour = 40,
                 Start = new DateTime(2026, 11, 4, 10, 0, 0), End = new DateTime(2026, 11, 4, 13, 0, 0),

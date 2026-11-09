@@ -30,13 +30,13 @@
 
 <dialog class="bi-dialog pm-dialog pm-dialog--sm" id="pm-notes" aria-labelledby="pm-notes-title">
     <header class="bi-dialog__head">
-        <h2 id="pm-notes-title">Notifications <span class="pm-count" id="pm-notes-count" hidden></span></h2>
+        <h2 id="pm-notes-title">Notifications <span id="pm-notes-count" class="pm-count" hidden>0 new</span></h2>
         <div class="pm-head-actions">
-            <button type="button" class="us-btn us-btn--outline us-btn--sm" id="pm-notes-readall">Mark all as read</button>
-            <button type="button" class="bi-x" data-pm-close aria-label="Close">
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-            </button>
+            <button type="button" id="pm-notes-readall" class="us-btn us-btn--sm">Mark all as read</button>
         </div>
+        <button type="button" class="bi-x" data-pm-close aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        </button>
     </header>
     <ul class="us-list pm-notes" id="pm-notes-list"></ul>
 </dialog>
