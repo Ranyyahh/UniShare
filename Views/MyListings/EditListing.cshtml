@@ -1,0 +1,587 @@
+@model UniShare.Models.EditListingViewModel
+@using UniShare.Models
+@using System.Web.Helpers
+@{
+    ViewBag.Title = "Edit Listing";
+
+    var inputCls = "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-brand transition";
+    var errCls = "mt-1 block text-xs text-red-600 font-medium";
+    var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    var units = new[] { new { V = 1, T = "per hour" }, new { V = 2, T = "per 2 hours" }, new { V = 4, T = "per 4 hours" }, new { V = 8, T = "per 8 hours" } };
+    var conditions = new[]
+    {
+        new { V = ConditionGrade.LikeNew,  Title = "Like New (9.5-10/10)",  Desc = "Zero scratches, fully responsive buttons, complete casing." },
+        new { V = ConditionGrade.Good,     Title = "Good (8-9/10)",         Desc = "Minor cosmetic wear, 100% operational functionality." },
+        new { V = ConditionGrade.Fair,     Title = "Fair (6.5-7.5/10)",     Desc = "Visible scratches or student markings, working perfectly." },
+        new { V = ConditionGrade.HeavyUse, Title = "Heavy Use (5-6/10)",    Desc = "Aesthetic blemishes; works for exams or quick sessions." }
+    };
+
+    var categoryName = Model.Categories.Where(c => c.Id == Model.CategoryId).Select(c => c.Name).FirstOrDefault() ?? "";
+    var photosJson = Json.Encode(Model.ExistingPhotos.Select(p => new { id = p.Id, url = Url.Content(p.Url), label = p.Label, caption = p.Caption }));
+}
+
+@* ===== Page-scoped assets (loaded only on this page) ===== *@
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: { brand: { 50: '#eef2ff', 100: '#e0e7ff', DEFAULT: '#3525cd', 700: '#2a1da6' } }
+            }
+        }
+    };
+</script>
+
+<style>
+    /* Red broken line border around empty/invalid boxes */
+    .broken-red-border,
+    .input-validation-error {
+        border: 2px dashed #dc2626 !important;
+        border-color: #dc2626 !important;
+        outline: none !important;
+        background-color: #fff8f8 !important;
+        box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.15) !important;
+    }
+</style>
+
+<div class="font-sans bg-[#f8f9fc] text-slate-800 antialiased min-h-screen px-4 sm:px-6 lg:px-8 py-8">
+<main class="max-w-[1360px] mx-auto">
+
+    <header>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">Edit Listing</h1>
+        <p class="mt-2 text-slate-600">Update information, adjust rental rates, manage photos, and modify availability for your listed item.</p>
+    </header>
+
+    @using (Html.BeginForm("Edit", "MyListings", new { id = Model.Id }, FormMethod.Post, new { id = "listing-form", enctype = "multipart/form-data", novalidate = "novalidate", @class = "mt-8 space-y-6", data_fresh = (ViewData.ModelState.Count == 0 ? "true" : "false") }))
+    {
+        @Html.AntiForgeryToken()
+
+        @* =====================  SECTION 1: ITEM INFORMATION  ===================== *@
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <div class="flex items-center justify-between gap-4 pb-5 border-b border-slate-200">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-md bg-indigo-50 text-brand font-semibold flex items-center justify-center">1</span>
+                    <h2 class="text-lg font-semibold text-slate-900">Item Information</h2>
+                </div>
+                <span class="bg-indigo-50 text-brand text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded">Required Section</span>
+            </div>
+
+            @* Name + category *@
+            <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="flex items-center justify-between">
+                        <label for="ItemName" class="block text-sm font-semibold text-slate-900">Item Name <span class="text-red-500">*</span></label>
+                        <span id="title-valid" class="hidden items-center gap-1.5 text-xs font-medium text-emerald-700"><i data-lucide="circle-check" class="w-3.5 h-3.5"></i>Valid item title</span>
+                    </div>
+                    <div class="relative mt-2">
+                        <input type="text" id="ItemName" name="ItemName" value="@Model.ItemName" maxlength="120" required class="@inputCls pr-11" />
+                        <i id="title-ok" data-lucide="badge-check" class="hidden w-5 h-5 text-emerald-600 absolute right-3.5 top-1/2 -translate-y-1/2"></i>
+                    </div>
+                    <p class="mt-1.5 text-xs text-slate-600">Include brand, precise model code, and main academic purpose.</p>
+                    <p id="name-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please enter the item name.</span>
+                    </p>
+                    @Html.ValidationMessage("ItemName", new { @class = errCls })
+                </div>
+                <div>
+                    <label for="CategoryId" class="block text-sm font-semibold text-slate-900">Equipment Category <span class="text-red-500">*</span></label>
+                    <select id="CategoryId" name="CategoryId" required data-note="@Model.CategoryApprovalNote" class="@inputCls mt-2">
+                        <option value="">Select a category</option>
+                        @foreach (var c in Model.Categories)
+                        {
+                            <option value="@c.Id" data-group="@c.Group" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                        }
+                    </select>
+                    <p id="category-hint" class="mt-1.5 text-xs text-slate-600">&nbsp;</p>
+                    <p id="cat-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please select an equipment category.</span>
+                    </p>
+                    @Html.ValidationMessage("CategoryId", new { @class = errCls })
+                </div>
+            </div>
+
+            @* Condition *@
+            <div class="mt-6">
+                <p class="text-sm font-semibold text-slate-900">Condition Assessment <span class="text-red-500">*</span></p>
+                <div id="condition-group" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-xl p-1 transition">
+                    @foreach (var c in conditions)
+                    {
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="Condition" value="@c.V" class="peer sr-only" checked="@(Model.Condition == c.V)" required />
+                            <div class="h-full rounded-xl border border-slate-300 bg-white p-4 transition hover:border-slate-400
+                                        peer-checked:border-brand peer-checked:ring-1 peer-checked:ring-brand peer-checked:bg-indigo-50/40
+                                        peer-checked:[&_.ttl]:text-brand peer-checked:[&_.sel]:inline-block">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="ttl font-medium text-slate-900 text-sm">@c.Title</span>
+                                    <span class="sel hidden bg-brand text-white text-[10px] font-bold px-2 py-0.5 rounded">Selected</span>
+                                </div>
+                                <p class="mt-2 text-xs text-slate-600 leading-relaxed">@c.Desc</p>
+                            </div>
+                        </label>
+                    }
+                </div>
+                <p id="cond-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please select the item's condition assessment.</span>
+                </p>
+                @Html.ValidationMessage("Condition", new { @class = errCls })
+            </div>
+
+            @* Description *@
+            <div class="mt-6">
+                <div class="flex items-center justify-between">
+                    <label for="Description" class="block text-sm font-semibold text-slate-900">Description <span class="text-red-500">*</span></label>
+                    <span id="desc-count" class="text-[11px] text-slate-500 font-mono">0 / 500 characters</span>
+                </div>
+                <textarea id="Description" name="Description" rows="4" maxlength="500" required class="@inputCls mt-2">@Model.Description</textarea>
+                <p class="mt-1.5 text-xs text-slate-600">Mention what accessories are included and any specific subjects this item has aided you with.</p>
+                <p id="desc-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please provide a description of the item.</span>
+                </p>
+                @Html.ValidationMessage("Description", new { @class = errCls })
+            </div>
+
+            @* Photos *@
+            <div class="mt-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-900">Item Photographs (<span id="photo-count">0</span> uploaded / 4 maximum) <span class="text-red-500">*</span></p>
+                        <p class="text-xs text-slate-600 mt-0.5">Clear, well-lit photos taken inside QCU facilities help rent faster.</p>
+                    </div>
+                    <span class="hidden sm:inline-block shrink-0 bg-indigo-50 text-brand text-[11px] font-semibold px-2.5 py-1 rounded">High resolution photos build peer trust</span>
+                </div>
+                <div id="photo-grid" data-photos="@photosJson" class="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                <p id="photo-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Keep or upload at least one photo.</span>
+                </p>
+                @Html.ValidationMessage("Photos", new { @class = errCls })
+
+                <input id="photo-input" type="file" accept="image/*" multiple class="hidden" />
+                <input id="photo-submit" name="Photos" type="file" multiple class="hidden" />
+                <div id="kept-ids"></div>
+            </div>
+        </section>
+
+        @* =====================  SECTION 2: RENTAL DETAILS & SCHEDULE  ===================== *@
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <div class="flex items-center justify-between gap-4 pb-5 border-b border-slate-200">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-md bg-indigo-50 text-brand font-semibold flex items-center justify-center">2</span>
+                    <h2 class="text-lg font-semibold text-slate-900">Rental Details &amp; Schedule</h2>
+                </div>
+                <span class="bg-indigo-50 text-brand text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded">Required Section</span>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                @* Pricing *@
+                <div>
+                    <p class="text-sm font-semibold text-slate-900">Rental Rate &amp; Pricing Unit <span class="text-red-500">*</span></p>
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="Price" class="block text-xs font-medium text-slate-700">Rate Amount</label>
+                            <div class="relative mt-1.5">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">&#8369;</span>
+                                <input type="number" id="Price" name="Price" min="1" max="10000" step="1" required value="@(Model.Price.HasValue ? Model.Price.Value.ToString("0.##") : "")" class="@inputCls pl-9 py-3 text-base font-medium" />
+                            </div>
+                            <p id="price-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                                <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please enter a rental rate between &#8369;1 and &#8369;10,000.</span>
+                            </p>
+                            @Html.ValidationMessage("Price", new { @class = errCls })
+                        </div>
+                        <div>
+                            <label for="PricingUnitHours" class="block text-xs font-medium text-slate-700">Duration Unit</label>
+                            <select id="PricingUnitHours" name="PricingUnitHours" class="@inputCls mt-1.5 py-3">
+                                @foreach (var u in units)
+                                {
+                                    <option value="@u.V" selected="@(Model.PricingUnitHours == u.V)">@u.T</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                @* Full day bundle *@
+                <div>
+                    <p class="text-sm font-semibold text-slate-900">Full-Day Rental Option</p>
+                    <label class="mt-3 flex items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50/40 px-4 py-3 cursor-pointer">
+                        <input type="checkbox" id="EnableFullDayBundle" name="EnableFullDayBundle" value="true" checked="@Model.EnableFullDayBundle" class="mt-0.5 w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand" />
+                        <input type="hidden" name="EnableFullDayBundle" value="false" />
+                        <span class="flex-1">
+                            <span id="bundle-title" class="block text-sm font-semibold text-slate-900">Enable full day bundle</span>
+                            <span class="block text-xs text-slate-600 mt-0.5">Students can borrow before their 8 AM class and return by the morning after without hourly penalties.</span>
+                        </span>
+                        <span id="bundle-badge" class="shrink-0 bg-indigo-100 text-brand text-[11px] font-semibold px-2.5 py-1 rounded">Active Bundle</span>
+                    </label>
+
+                    <p class="mt-3 flex items-center gap-1.5 text-xs text-slate-600">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i>Maximum standard peer rental limit is 24 consecutive hours to ensure fair campus circulation.
+                    </p>
+                </div>
+            </div>
+
+            @* Weekly availability *@
+            <div class="mt-8 pt-6 border-t border-slate-200">
+                <p class="text-sm font-semibold text-slate-900">Weekly Handover Availability <span class="text-red-500">*</span></p>
+                <p class="text-xs text-slate-600 mt-0.5">Select days you are physically on campus for exchange.</p>
+                <div id="days-group" class="mt-3 flex flex-wrap items-center gap-2.5 rounded-xl p-1 transition">
+                    @foreach (var d in days)
+                    {
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="AvailableDays" value="@d" class="peer sr-only" checked="@(Model.AvailableDays != null && Model.AvailableDays.Contains(d))" />
+                            <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-medium text-slate-700 transition
+                                         peer-checked:bg-brand peer-checked:border-brand peer-checked:text-white peer-checked:[&_.chk]:inline-block">
+                                <i data-lucide="check" class="chk hidden w-3.5 h-3.5"></i>@d
+                            </span>
+                        </label>
+                    }
+                </div>
+                <p id="days-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please select at least one day for weekly availability.</span>
+                </p>
+                @Html.ValidationMessage("AvailableDays", new { @class = errCls })
+
+                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="EarliestHandoverTime" class="block text-xs font-medium text-slate-700">Earliest Handover Time <span class="text-red-500">*</span></label>
+                        <input type="time" id="EarliestHandoverTime" name="EarliestHandoverTime" value="@Model.EarliestHandoverTime" required class="@inputCls mt-1.5" />
+                        <p id="earliest-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                            <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please set an earliest handover time.</span>
+                        </p>
+                        @Html.ValidationMessage("EarliestHandoverTime", new { @class = errCls })
+                    </div>
+                    <div>
+                        <label for="LatestReturnTime" class="block text-xs font-medium text-slate-700">Latest Return Time <span class="text-red-500">*</span></label>
+                        <input type="time" id="LatestReturnTime" name="LatestReturnTime" value="@Model.LatestReturnTime" required class="@inputCls mt-1.5" />
+                        <p id="latest-error" class="hidden mt-1 text-xs text-red-600 font-medium flex items-center gap-1">
+                            <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Latest return must be set and after earliest handover.</span>
+                        </p>
+                        @Html.ValidationMessage("LatestReturnTime", new { @class = errCls })
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @* =====================  STICKY ACTION BAR  ===================== *@
+        <div class="sticky bottom-4 z-30 bg-white rounded-xl border border-slate-200 shadow-lg px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-4">
+                <button type="button" data-delete
+                        data-id="@Model.Id"
+                        data-title="@Model.ItemName"
+                        data-category="@categoryName"
+                        data-status="@Model.Status"
+                        data-price="@Model.PriceSummary"
+                        data-image="@Url.Content(Model.CoverImageUrl)"
+                        data-active-rental="@(Model.HasActiveRental ? "true" : "false")"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 bg-white text-sm font-semibold text-red-600 hover:bg-red-50 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>Delete Listing
+                </button>
+                <span class="hidden md:inline-flex items-center gap-1.5 text-xs text-slate-600"><i data-lucide="cloud" class="w-4 h-4 text-emerald-600"></i>All changes saved locally</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <a id="cancel-link" href="@Url.Action("ItemListings", "MyListings")" class="px-6 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Cancel</a>
+                <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-brand text-white text-sm font-semibold shadow-md shadow-indigo-900/20 hover:bg-brand-700 transition active:scale-[0.98]">
+                    <i data-lucide="save" class="w-4 h-4"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    }
+
+    @* Delete confirmation dialog (must be outside the form) *@
+    @Html.Partial("_DeleteListingModal")
+
+</main>
+</div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script>
+(function () {
+    var form = document.getElementById('listing-form');
+    var KEY = 'unishare-edit-draft-@Model.Id';
+
+    // ---------- form element references ----------
+    var nameEl = document.getElementById('ItemName'), nameErr = document.getElementById('name-error');
+    var titleOk = document.getElementById('title-ok'), titleValid = document.getElementById('title-valid');
+    var catEl = document.getElementById('CategoryId'), catHint = document.getElementById('category-hint'), catErr = document.getElementById('cat-error');
+    var descEl = document.getElementById('Description'), descCount = document.getElementById('desc-count'), descErr = document.getElementById('desc-error');
+    var priceEl = document.getElementById('Price'), bundleEl = document.getElementById('EnableFullDayBundle'), priceErr = document.getElementById('price-error');
+    var bundleTitle = document.getElementById('bundle-title'), bundleBadge = document.getElementById('bundle-badge');
+    var earliestEl = document.getElementById('EarliestHandoverTime'), earliestErr = document.getElementById('earliest-error');
+    var latestEl = document.getElementById('LatestReturnTime'), latestErr = document.getElementById('latest-error');
+    var condGroup = document.getElementById('condition-group'), condErr = document.getElementById('cond-error');
+    var daysGroup = document.getElementById('days-group'), daysErr = document.getElementById('days-error');
+    var photoErr = document.getElementById('photo-error');
+
+    function refresh() {
+        var hasName = nameEl.value.trim().length > 0;
+        var ok = nameEl.value.trim().length >= 3;
+        titleOk.classList.toggle('hidden', !ok);
+        titleValid.classList.toggle('hidden', !ok);
+        titleValid.classList.toggle('inline-flex', ok);
+        if (hasName) {
+            nameEl.classList.remove('broken-red-border');
+            if (nameErr) nameErr.classList.add('hidden');
+        }
+
+        var opt = catEl.options[catEl.selectedIndex];
+        var note = catEl.dataset.note ? ' \u2022 ' + catEl.dataset.note : '';
+        catHint.textContent = (opt && opt.dataset.group) ? 'Categorized under ' + opt.dataset.group + note : '\u00A0';
+        if (catEl.value) {
+            catEl.classList.remove('broken-red-border');
+            if (catErr) catErr.classList.add('hidden');
+        }
+
+        descCount.textContent = descEl.value.length + ' / 500 characters';
+        if (descEl.value.trim().length > 0) {
+            descEl.classList.remove('broken-red-border');
+            if (descErr) descErr.classList.add('hidden');
+        }
+
+        var price = parseFloat(priceEl.value) || 0;
+        bundleTitle.textContent = 'Enable full day bundle \u2014 \u20B1' + (price * 2) + ' / whole day (max 24 hrs)';
+        bundleBadge.classList.toggle('hidden', !bundleEl.checked);
+        if (price > 0 && price <= 10000) {
+            priceEl.classList.remove('broken-red-border');
+            if (priceErr) priceErr.classList.add('hidden');
+        }
+
+        if (earliestEl && earliestEl.value) {
+            earliestEl.classList.remove('broken-red-border');
+            if (earliestErr) earliestErr.classList.add('hidden');
+        }
+        if (latestEl && latestEl.value) {
+            if (!earliestEl.value || latestEl.value > earliestEl.value) {
+                latestEl.classList.remove('broken-red-border');
+                if (latestErr) latestErr.classList.add('hidden');
+            }
+        }
+    }
+
+    if (condGroup) {
+        condGroup.addEventListener('change', function () {
+            condGroup.classList.remove('broken-red-border');
+            if (condErr) condErr.classList.add('hidden');
+        });
+    }
+    if (daysGroup) {
+        daysGroup.addEventListener('change', function () {
+            var anyDay = daysGroup.querySelector('input[type="checkbox"]:checked');
+            if (anyDay) {
+                daysGroup.classList.remove('broken-red-border');
+                if (daysErr) daysErr.classList.add('hidden');
+            }
+        });
+    }
+
+    // ---------- draft in sessionStorage ----------
+    function saveDraft() {
+        var d = {};
+        new FormData(form).forEach(function (v, k) {
+            if (v instanceof File || k === '__RequestVerificationToken' || k === 'KeptPhotoIds') return;
+            (d[k] = d[k] || []).push(v);
+        });
+        try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { }
+    }
+    function restoreDraft() {
+        var raw; try { raw = sessionStorage.getItem(KEY); } catch (e) { }
+        if (!raw) return;
+        var d = JSON.parse(raw);
+        Array.prototype.forEach.call(form.elements, function (el) {
+            if (!el.name || !d[el.name] || el.type === 'hidden' || el.type === 'file') return;
+            if (el.type === 'checkbox' || el.type === 'radio') el.checked = d[el.name].indexOf(el.value) !== -1;
+            else el.value = d[el.name][0];
+        });
+    }
+    function clearDraft() { try { sessionStorage.removeItem(KEY); } catch (e) { } }
+
+    if (form.dataset.fresh === 'true') restoreDraft();
+    form.addEventListener('input', function () { refresh(); saveDraft(); });
+    form.addEventListener('change', function () { refresh(); saveDraft(); });
+    form.addEventListener('submit', clearDraft);
+    var cancelBtn = document.getElementById('cancel-link');
+    if (cancelBtn) cancelBtn.addEventListener('click', clearDraft);
+
+    // ---------- photos: existing (kept by id) + new uploads, max 4, first = cover ----------
+    var MAX = 4, MAX_BYTES = 10 * 1024 * 1024;
+    var grid = document.getElementById('photo-grid'), pick = document.getElementById('photo-input');
+    var submitInput = document.getElementById('photo-submit'), countEl = document.getElementById('photo-count');
+    var keptBox = document.getElementById('kept-ids');
+
+    var items = JSON.parse(grid.dataset.photos || '[]').map(function (p) {
+        return { existing: true, id: p.id, url: p.url, label: p.label, caption: p.caption };
+    });
+
+    function syncInputs() {
+        var dt = new DataTransfer();
+        items.forEach(function (it) { if (!it.existing) dt.items.add(it.file); });
+        submitInput.files = dt.files;
+
+        keptBox.innerHTML = '';
+        items.forEach(function (it) {
+            if (!it.existing) return;
+            var h = document.createElement('input');
+            h.type = 'hidden'; h.name = 'KeptPhotoIds'; h.value = it.id;
+            keptBox.appendChild(h);
+        });
+    }
+
+    function render() {
+        grid.innerHTML = '';
+        items.forEach(function (it, i) {
+            var tile = document.createElement('div');
+            tile.className = 'relative h-44 rounded-xl overflow-hidden bg-slate-100 ' + (i === 0 ? 'border-2 border-brand' : 'border border-slate-200');
+
+            var label = i === 0 ? 'Cover Photo' : (it.existing ? it.label : 'New photo');
+            var caption = it.existing ? it.caption : it.file.name;
+
+            tile.innerHTML =
+                '<img class="w-full h-full object-cover" alt="">' +
+                '<span class="absolute top-2 left-2 text-[11px] font-semibold px-2 py-1 rounded ' + (i === 0 ? 'bg-brand text-white' : 'bg-slate-900/80 text-white') + '"></span>' +
+                '<button type="button" title="Remove photo" class="absolute top-2 right-2 w-7 h-7 rounded-md bg-white text-red-600 flex items-center justify-center shadow-sm hover:bg-red-600 hover:text-white transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>' +
+                '<span class="absolute bottom-0 inset-x-0 px-2.5 py-2 text-[11px] text-white bg-gradient-to-t from-slate-900/80 to-transparent truncate"></span>';
+
+            tile.querySelector('img').src = it.existing ? it.url : URL.createObjectURL(it.file);
+            tile.children[1].textContent = label || '';
+            tile.children[3].textContent = caption || '';
+            tile.querySelector('button').addEventListener('click', function () { items.splice(i, 1); render(); });
+            grid.appendChild(tile);
+        });
+
+        if (items.length < MAX) {
+            var left = MAX - items.length;
+            var add = document.createElement('button');
+            add.type = 'button';
+            add.id = 'photo-add-btn';
+            add.className = 'h-44 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50 transition flex flex-col items-center justify-center text-center';
+            add.innerHTML = '<span class="w-10 h-10 rounded-lg bg-indigo-100 text-brand flex items-center justify-center"><i data-lucide="image-plus" class="w-5 h-5"></i></span>' +
+                '<span class="mt-3 text-sm font-semibold text-brand">+ Add photo</span>' +
+                '<span class="text-xs text-slate-600">' + left + ' slot' + (left === 1 ? '' : 's') + ' left (Max 10MB)</span>';
+            add.addEventListener('click', function () { pick.click(); });
+            grid.appendChild(add);
+        }
+
+        countEl.textContent = items.length;
+        syncInputs();
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
+    }
+
+    pick.addEventListener('change', function () {
+        var addBtn = document.getElementById('photo-add-btn');
+        if (addBtn) addBtn.classList.remove('broken-red-border');
+        if (photoErr) photoErr.classList.add('hidden');
+        Array.prototype.forEach.call(pick.files, function (f) {
+            if (f.type.indexOf('image/') !== 0) {
+                if (photoErr) {
+                    photoErr.querySelector('span').textContent = 'Only image files are allowed.';
+                    photoErr.classList.remove('hidden');
+                }
+                return;
+            }
+            if (f.size > MAX_BYTES) {
+                if (photoErr) {
+                    photoErr.querySelector('span').textContent = 'Each photo must be 10 MB or less.';
+                    photoErr.classList.remove('hidden');
+                }
+                return;
+            }
+            if (items.length >= MAX) {
+                if (photoErr) {
+                    photoErr.querySelector('span').textContent = 'A listing can have up to 4 photos.';
+                    photoErr.classList.remove('hidden');
+                }
+                return;
+            }
+            items.push({ existing: false, file: f });
+        });
+        pick.value = '';
+        render();
+    });
+
+    // ---------- Validation & Broken Red Border + Warning Labels ----------
+    function validateForm() {
+        var isValid = true;
+        var firstInvalid = null;
+
+        function flag(el, condition, errorEl, focusTarget) {
+            if (condition) {
+                if (el) el.classList.add('broken-red-border');
+                if (errorEl) errorEl.classList.remove('hidden');
+                isValid = false;
+                if (!firstInvalid) firstInvalid = focusTarget || el;
+            } else {
+                if (el) el.classList.remove('broken-red-border');
+                if (errorEl) errorEl.classList.add('hidden');
+            }
+        }
+
+        // 1. Item Name
+        flag(nameEl, !nameEl.value.trim(), nameErr);
+
+        // 2. Category
+        flag(catEl, !catEl.value, catErr);
+
+        // 3. Condition Assessment
+        var condChecked = form.querySelector('input[name="Condition"]:checked');
+        flag(condGroup, !condChecked, condErr);
+
+        // 4. Description
+        flag(descEl, !descEl.value.trim(), descErr);
+
+        // 5. Photos (at least 1 photo)
+        var addBtn = document.getElementById('photo-add-btn');
+        if (items.length === 0) {
+            if (addBtn) addBtn.classList.add('broken-red-border');
+            if (photoErr) {
+                photoErr.querySelector('span').textContent = 'Keep or upload at least one photo.';
+                photoErr.classList.remove('hidden');
+            }
+            isValid = false;
+            if (!firstInvalid) firstInvalid = addBtn || grid;
+        } else {
+            if (addBtn) addBtn.classList.remove('broken-red-border');
+            if (photoErr) photoErr.classList.add('hidden');
+        }
+
+        // 6. Rental Rate (Price)
+        var priceVal = parseFloat(priceEl.value);
+        flag(priceEl, !priceEl.value || isNaN(priceVal) || priceVal < 1 || priceVal > 10000, priceErr);
+
+        // 7. Weekly Available Days
+        var anyDayChecked = form.querySelector('input[name="AvailableDays"]:checked');
+        flag(daysGroup, !anyDayChecked, daysErr);
+
+        // 8. Handover Times
+        flag(earliestEl, !earliestEl.value, earliestErr);
+
+        var latestInvalid = !latestEl.value || (earliestEl.value && latestEl.value <= earliestEl.value);
+        flag(latestEl, latestInvalid, latestErr);
+
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
+
+        return { isValid: isValid, target: firstInvalid };
+    }
+
+    form.addEventListener('submit', function (e) {
+        var result = validateForm();
+        if (!result.isValid) {
+            e.preventDefault();
+            if (result.target) {
+                result.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof result.target.focus === 'function') {
+                    result.target.focus();
+                }
+            }
+            return false;
+        }
+    });
+
+    refresh();
+    render();
+})();
+</script>
