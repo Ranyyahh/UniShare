@@ -938,11 +938,28 @@
         }
     }
 
+    // Counts up to the new value (same effect as the Reports & Analytics cards).
     function setSummaryCard(key, value) {
         var el = document.querySelector('[data-summary-value="' + key + '"]');
-        if (el) {
-            el.textContent = String(value);
+        if (!el) { return; }
+        var target = Number(value) || 0;
+        if (el._raf && window.cancelAnimationFrame) { window.cancelAnimationFrame(el._raf); }
+        var current = (typeof el._val === 'number') ? el._val : (parseInt(el.textContent, 10) || 0);
+        var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        if (reduce || !window.requestAnimationFrame || current === target) {
+            el._val = target;
+            el.textContent = String(target);
+            return;
         }
+        var from = current, start = null;
+        function step(ts) {
+            if (start === null) { start = ts; }
+            var p = Math.min(1, (ts - start) / 700), e = 1 - Math.pow(1 - p, 3);
+            el._val = p === 1 ? target : from + (target - from) * e;
+            el.textContent = String(Math.round(el._val));
+            if (p < 1) { el._raf = window.requestAnimationFrame(step); }
+        }
+        el._raf = window.requestAnimationFrame(step);
     }
 
     // "Nov 09, 2026" and "Nov 09, 2026 • 4:30 PM", the same formats the controller produces
