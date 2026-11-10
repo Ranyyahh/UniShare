@@ -1,0 +1,249 @@
+use UniShare
+
+db.test.insertOne({ created: true })
+
+show dbs
+
+const ownerId = ObjectId();
+const borrowerId = ObjectId();
+const adminId = ObjectId();
+const studentId = ObjectId();
+
+const itemId = ObjectId();
+const bookingId = ObjectId();
+const paymentId = ObjectId();
+const handoverId = ObjectId();
+const rentalId = ObjectId();
+const returnId = ObjectId();
+const disputeId = ObjectId();
+const noShowId = ObjectId();
+const ratingId = ObjectId();
+const restrictionId = ObjectId();
+const auditLogId = ObjectId();
+const verificationId = ObjectId();
+
+db.users.insertMany([
+  {
+    _id: ownerId,
+    schoolEmail: "owner@unishare.qcu.edu.ph",
+    firstName: "Juan",
+    lastName: "Owner",
+    role: "OWNER",
+    status: "ACTIVE",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: borrowerId,
+    schoolEmail: "borrower@unishare.qcu.edu.ph",
+    firstName: "Maria",
+    lastName: "Borrower",
+    role: "BORROWER",
+    status: "ACTIVE",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: adminId,
+    schoolEmail: "admin@unishare.qcu.edu.ph",
+    firstName: "Admin",
+    lastName: "User",
+    role: "ADMIN",
+    status: "ACTIVE",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    _id: studentId,
+    schoolEmail: "student@unishare.qcu.edu.ph",
+    firstName: "Student",
+    lastName: "User",
+    role: "STUDENT",
+    status: "ACTIVE",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+]);
+
+db.verificationApplications.insertOne({
+  _id: verificationId,
+  userId: studentId,
+  schoolEmail: "student@unishare.qcu.edu.ph",
+  status: "APPROVED",
+  submittedAt: new Date(),
+  reviewedAt: new Date(),
+  reviewedBy: adminId
+});
+
+db.items.insertOne({
+  _id: itemId,
+  ownerId: ownerId,
+  name: "Scientific Calculator",
+  description: "Casio scientific calculator for academic use",
+  category: "ACADEMIC",
+  condition: "GOOD",
+  availability: "AVAILABLE",
+  rentalPrice: 50,
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
+
+db.bookings.insertOne({
+  _id: bookingId,
+  itemId: itemId,
+  borrowerId: borrowerId,
+  ownerId: ownerId,
+  status: "CONFIRMED",
+  startDate: new Date(),
+  endDate: new Date(),
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
+
+db.payments.insertOne({
+  _id: paymentId,
+  bookingId: bookingId,
+  payerId: borrowerId,
+  amount: 50,
+  method: "GCASH",
+  status: "PAID",
+  paidAt: new Date()
+});
+
+db.handovers.insertOne({
+  _id: handoverId,
+  bookingId: bookingId,
+  itemId: itemId,
+  ownerId: ownerId,
+  borrowerId: borrowerId,
+  status: "COMPLETED",
+  handedOverAt: new Date()
+});
+
+db.rentals.insertOne({
+  _id: rentalId,
+  bookingId: bookingId,
+  itemId: itemId,
+  ownerId: ownerId,
+  borrowerId: borrowerId,
+  status: "ACTIVE",
+  startedAt: new Date(),
+  dueDate: new Date()
+});
+
+db.returns.insertOne({
+  _id: returnId,
+  rentalId: rentalId,
+  bookingId: bookingId,
+  itemId: itemId,
+  borrowerId: borrowerId,
+  status: "COMPLETED",
+  conditionOnReturn: "GOOD",
+  returnedAt: new Date()
+});
+
+db.disputes.insertOne({
+  _id: disputeId,
+  bookingId: bookingId,
+  itemId: itemId,
+  raisedBy: borrowerId,
+  againstUserId: ownerId,
+  reason: "Sample dispute",
+  description: "Sample dispute for testing",
+  status: "OPEN",
+  createdAt: new Date()
+});
+
+db.noShowIncidents.insertOne({
+  _id: noShowId,
+  bookingId: bookingId,
+  userId: borrowerId,
+  reason: "Borrower did not appear for scheduled handover",
+  status: "RECORDED",
+  createdAt: new Date()
+});
+
+db.ratings.insertOne({
+  _id: ratingId,
+  bookingId: bookingId,
+  reviewerId: borrowerId,
+  reviewedUserId: ownerId,
+  rating: 5,
+  comment: "Good transaction",
+  createdAt: new Date()
+});
+
+db.accountRestrictions.insertOne({
+  _id: restrictionId,
+  userId: borrowerId,
+  type: "WARNING",
+  reason: "Sample restriction",
+  status: "ACTIVE",
+  createdAt: new Date(),
+  createdBy: adminId
+});
+
+db.auditLogs.insertOne({
+  _id: auditLogId,
+  userId: adminId,
+  action: "SEED_DATABASE",
+  targetCollection: "UniShare",
+  targetId: ownerId,
+  description: "Initial UniShare database seed",
+  createdAt: new Date()
+});
+
+db.users.createIndex(
+  { schoolEmail: 1 },
+  { unique: true }
+);
+
+db.items.createIndex(
+  { ownerId: 1 }
+);
+
+db.bookings.createIndex(
+  { borrowerId: 1 }
+);
+
+db.bookings.createIndex(
+  { itemId: 1 }
+);
+
+db.bookings.createIndex(
+  { ownerId: 1 }
+);
+
+db.payments.createIndex(
+  { bookingId: 1 }
+);
+
+db.handovers.createIndex(
+  { bookingId: 1 }
+);
+
+db.rentals.createIndex(
+  { bookingId: 1 }
+);
+
+db.returns.createIndex(
+  { rentalId: 1 }
+);
+
+db.disputes.createIndex(
+  { bookingId: 1 }
+);
+
+db.ratings.createIndex(
+  { bookingId: 1 }
+);
+
+db.accountRestrictions.createIndex(
+  { userId: 1 }
+);
+
+db.auditLogs.createIndex(
+  { userId: 1 }
+);
+
+print("UniShare database initialized successfully.");
