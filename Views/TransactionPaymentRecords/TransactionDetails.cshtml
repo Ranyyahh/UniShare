@@ -1,0 +1,128 @@
+@{
+    Layout = null;
+    dynamic details = Model;
+
+    string statusBadgeClass = details.Status == "Confirmed" ? "badge-confirmed" : "badge-pending";
+}
+
+<div class="modal-form-wrapper">
+    <!-- Header: TXN title, LIVE RECORD badge, Status badge, Close (X) button -->
+    <div class="modal-header-bar">
+        <div class="modal-title-group">
+            <h3 class="modal-txn-id">@details.TransactionId</h3>
+            <span class="badge badge-live-record"><span class="live-dot"></span> LIVE RECORD</span>
+            <span class="badge @statusBadgeClass" id="modalStatusBadge">@details.Status</span>
+        </div>
+        <button type="button" id="btnTxnCloseModal" class="btn-close-modal" title="Close Modal">&times;</button>
+    </div>
+
+    <div class="modal-body-scroll">
+        <!-- Item Section: Item Name, Booking ID, Serial, and small gray Image Placeholder -->
+        <div class="modal-section">
+            <label class="form-section-title">Item Details</label>
+            <div class="modal-item-row">
+                <div class="img-placeholder">
+                    <i class="glyphicon glyphicon-camera"></i>
+                </div>
+                <div class="modal-item-text">
+                    <div class="modal-item-name">@details.ItemName</div>
+                    <div class="modal-item-sub">
+                        <span>Booking ID: <strong class="txn-code">@details.BookingId</strong></span>
+                        <span class="modal-meta-sep">&bull;</span>
+                        <span>Serial: <strong class="txn-code">@details.Serial</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parties Involved Section: Two columns side-by-side using .party-card -->
+        <div class="modal-section">
+            <label class="form-section-title">Parties Involved</label>
+            <div class="modal-two-col">
+                <!-- Left: Borrower (Name, ID, Course) -->
+                <div class="party-card party-card-borrower">
+                    <div class="party-role-tag role-borrower">Borrower</div>
+                    <div class="party-name">@details.BorrowerName</div>
+                    <div class="party-sub"><span class="party-label">ID:</span> <span class="txn-code">@details.BorrowerId</span></div>
+                    <div class="party-sub"><span class="party-label">Course:</span> @details.BorrowerCourse</div>
+                </div>
+
+                <!-- Right: Owner (Name, ID, Course, Rating) -->
+                <div class="party-card party-card-owner">
+                    <div class="party-role-tag role-owner">Owner</div>
+                    <div class="party-name">@details.OwnerName</div>
+                    <div class="party-sub"><span class="party-label">ID:</span> <span class="txn-code">@details.OwnerId</span></div>
+                    <div class="party-sub"><span class="party-label">Course:</span> @details.OwnerCourse</div>
+                    <div class="party-sub"><span class="party-label">Rating:</span> <span class="owner-rating">@details.OwnerRating</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recorded Settlement Breakdown Section -->
+        <div class="settlement-box">
+            <div class="settlement-title">RECORDED SETTLEMENT BREAKDOWN</div>
+            <div class="settlement-row">
+                <span>Base Rental Fee (4 Hours)</span>
+                <span class="currency">@details.BaseFee</span>
+            </div>
+            <div class="settlement-row penalty-text">
+                <span>Overdue Penalty (1.5 hrs @@ PHP20/hr cap)</span>
+                <span>@details.LateFee</span>
+            </div>
+            <div class="settlement-row total-row">
+                <span>Total Recorded Settlement</span>
+                <span class="currency">@details.TotalAmount</span>
+            </div>
+            <div class="gcash-box">
+                <span>GCash Ref: <strong id="modalGcashRefText">@details.GCashRef</strong></span>
+                <button type="button" class="btn-copy-ref" id="btnCopyGcashRef" title="Copy Reference Number">
+                    <i class="glyphicon glyphicon-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- Audit Handshake Timeline: Simple vertical list with Green and Blue check icons -->
+        <div class="modal-section">
+            <label class="form-section-title">Audit Handshake Timeline</label>
+            <div class="audit-timeline">
+                <div class="timeline-step">
+                    <span class="timeline-icon icon-emerald"><i class="glyphicon glyphicon-ok-sign"></i></span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Payment Authorized via GCash</div>
+                        <div class="timeline-meta">Settlement hash confirmed on university ledger &bull; @details.DateLogged</div>
+                    </div>
+                </div>
+                <div class="timeline-step">
+                    <span class="timeline-icon icon-blue"><i class="glyphicon glyphicon-ok-sign"></i></span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Escrow Handshake &amp; Audit Logged</div>
+                        <div class="timeline-meta">Automated system check passed &bull; Funds escrowed</div>
+                    </div>
+                </div>
+                <div class="timeline-step">
+                    <span class="timeline-icon icon-amber"><i class="glyphicon glyphicon-time"></i></span>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Awaiting Owner Return Confirmation</div>
+                        <div class="timeline-meta">Pending equipment return verification by lender</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Alert / Feedback Banner -->
+        <div id="modalAlertBox" class="modal-alert-box" style="display:none;"></div>
+    </div>
+
+    <!-- Actions: Purple button, White button, Red link -->
+    <div class="modal-actions-bar">
+        <button type="button" class="btn btn-audit-verify" id="btnMarkAudited">
+            Mark as Audited &amp; Verified
+        </button>
+        <button type="button" class="btn btn-send-reminder" id="btnSendReminder">
+            Send Owner Confirmation Reminder
+        </button>
+        <a href="javascript:void(0);" class="link-flag-dispute" id="btnFlagDispute">
+            Flag for Dispute Review
+        </a>
+    </div>
+</div>

@@ -1,0 +1,130 @@
+@{
+    ViewBag.Title = "Transaction and Payment Records";
+}
+
+<div class="dispute-page-wrapper">
+    <!-- Header Block -->
+    <div class="dispute-header-block">
+        <h1 class="page-title">Transaction and Payment Records</h1>
+        <p class="page-subtitle">Track peer-to-peer equipment rentals, audit student payment receipts, and verify settlements.</p>
+    </div>
+
+    <!-- 4 Compact Stat Cards with Small Icons -->
+    <div class="row stats-row">
+        <div class="col-xs-6 col-sm-3 col-md-3">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total</span>
+                    <span class="stat-icon stat-icon-indigo"><i class="glyphicon glyphicon-list-alt"></i></span>
+                </div>
+                <div class="stat-value">@(ViewBag.TotalTransactions ?? 128)</div>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-3 col-md-3">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Confirmed</span>
+                    <span class="stat-icon stat-icon-emerald"><i class="glyphicon glyphicon-ok-sign"></i></span>
+                </div>
+                <div class="stat-value">@(ViewBag.ConfirmedPayments ?? 104)</div>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-3 col-md-3">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Pending</span>
+                    <span class="stat-icon stat-icon-rose"><i class="glyphicon glyphicon-time"></i></span>
+                </div>
+                <div class="stat-value">@(ViewBag.PendingConfirmation ?? 24)</div>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-3 col-md-3">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Fees</span>
+                    <span class="stat-icon stat-icon-purple"><i class="glyphicon glyphicon-credit-card"></i></span>
+                </div>
+                <div class="stat-value">@(ViewBag.TotalRecordedFees ?? "PHP 38,450.00")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar: Search, Dropdowns, Clear Filters Link (Flexbox Aligned) -->
+    <div class="filter-bar filter-bar-flex">
+        <div class="search-input-group">
+            <span class="search-icon"><i class="glyphicon glyphicon-search"></i></span>
+            <input type="text" id="txnSearchInput" class="filter-input filter-search" placeholder="Search by transaction ID, item, student..." />
+        </div>
+        <select id="txnMethodSelect" class="filter-input filter-select">
+            <option value="">All Methods</option>
+            <option value="GCash">GCash</option>
+            <option value="Maya">Maya</option>
+        </select>
+        <select id="txnStatusSelect" class="filter-input filter-select">
+            <option value="">All Statuses</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Awaiting Owner Confirmation">Awaiting Owner Confirmation</option>
+        </select>
+        <select id="txnDateRangeSelect" class="filter-input filter-select">
+            <option value="Last 7 Days">Last 7 Days</option>
+            <option value="Today">Today</option>
+            <option value="Last 30 Days">Last 30 Days</option>
+            <option value="">All Time</option>
+        </select>
+        <a href="javascript:void(0);" id="btnClearTxnFilters" class="clear-filters-link">Clear Filters</a>
+    </div>
+
+    <!-- FULL-WIDTH Table (100% width, no split-screen) -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="dispute-table" id="txnRecordsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 36px;"><input type="checkbox" id="selectAllCheckbox" /></th>
+                        <th>Transaction ID</th>
+                        <th>Booking / Item</th>
+                        <th>Borrower</th>
+                        <th>Owner</th>
+                        <th class="amount-col">Base Fee</th>
+                        <th class="amount-col">Late Fee</th>
+                        <th class="amount-col">Total Amount</th>
+                        <th class="method-col">Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="clickable-row" data-id="@item.TransactionId" data-method="@item.Method" data-status="@item.Status" data-daterange="@item.DateRange" data-search="@item.TransactionId @item.BookingId @item.ItemName @item.BorrowerName @item.OwnerName @item.Method @item.Status">
+                            <td>
+                                <input type="checkbox" class="txn-row-check" value="@item.TransactionId" />
+                            </td>
+                            <td>
+                                <span class="txn-code">@item.TransactionId</span>
+                            </td>
+                            <td>
+                                <div class="txn-item-name">@item.ItemName</div>
+                                <div class="txn-item-booking">@item.BookingId</div>
+                            </td>
+                            <td>@item.BorrowerName</td>
+                            <td>@item.OwnerName</td>
+                            <td class="amount-col currency">@item.BaseFee</td>
+                            <td class="amount-col currency">@(item.LateFee != "PHP 0.00" ? item.LateFee : "-")</td>
+                            <td class="amount-col currency font-weight-bold">@item.TotalAmount</td>
+                            <td class="method-col">
+                                <span class="badge-method badge-method-@item.Method.ToLower()">@item.Method</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Containers -->
+    <div id="txn-modal-overlay" class="modal-overlay" style="display:none;"></div>
+    <div id="txn-modal-content" class="modal-content-container" style="display:none;"></div>
+</div>
+
+@section Scripts {
+    <script src="@Url.Content("~/Scripts/transaction-records.js")"></script>
+}
