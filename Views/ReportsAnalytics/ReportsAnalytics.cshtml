@@ -1,125 +1,100 @@
 @{
     ViewBag.Title = "Reports & Analytics";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="dispute-page-wrapper reports-page-wrapper">
-    <!-- Header Block with Timeframe Toggle Buttons (No Export Button / Non-Bloated) -->
-    <div class="reports-header-flex">
-        <div class="dispute-header-block" style="margin-bottom: 0;">
-            <h1 class="page-title">Reports & Analytics</h1>
-            <p class="page-subtitle">Campus rental volume, peer escrow revenue, and inventory category throughput.</p>
-        </div>
+<link rel="stylesheet" href="~/Content/ReportsAnalytics.css" />
 
-        <!-- Filter Buttons: Days / Weeks / Months -->
-        <div class="timeframe-btn-group" role="group" aria-label="Timeframe Filter">
-            <button type="button" class="btn-timeframe" data-timeframe="days">Days</button>
-            <button type="button" class="btn-timeframe" data-timeframe="weeks">Weeks</button>
-            <button type="button" class="btn-timeframe active" data-timeframe="months">Months</button>
-        </div>
-    </div>
+<div class="reports-page" id="reportsPage" 
+     data-data-url="@Url.Action("Data", "ReportsAnalytics")" 
+     data-export-url="@Url.Action("Export", "ReportsAnalytics")"
+     data-default-from="@DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd")"
+     data-default-to="@DateTime.Today.ToString("yyyy-MM-dd")">
 
-    <!-- Top Overview: 4 Compact Stat Cards -->
-    <div class="row stats-row" style="margin-top: 18px;">
-        <div class="col-xs-6 col-sm-3 col-md-3">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Total Volume</span>
-                    <span class="stat-icon stat-icon-indigo"><i class="glyphicon glyphicon-list-alt"></i></span>
-                </div>
-                <div class="stat-value" id="kpi-total-volume">@(ViewBag.TotalVolume ?? "1,248")</div>
-                <div class="stat-desc text-success"><i class="glyphicon glyphicon-arrow-up"></i> +14.2% campus rentals</div>
-            </div>
+    <!-- A. Page Header -->
+    <header class="reports-header">
+        <div class="reports-header__title-group">
+            <h1 class="reports-header__title">Reports &amp; Analytics</h1>
+            <p class="reports-header__description">A summary of platform revenue, rentals, and user activity.</p>
         </div>
-        <div class="col-xs-6 col-sm-3 col-md-3">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Revenue</span>
-                    <span class="stat-icon stat-icon-emerald"><i class="glyphicon glyphicon-credit-card"></i></span>
-                </div>
-                <div class="stat-value" id="kpi-total-revenue">@(ViewBag.TotalRevenue ?? "PHP 38,450.00")</div>
-                <div class="stat-desc text-muted">GCash & Maya audited</div>
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-3 col-md-3">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Return Rate</span>
-                    <span class="stat-icon stat-icon-purple"><i class="glyphicon glyphicon-ok-circle"></i></span>
-                </div>
-                <div class="stat-value" id="kpi-return-rate">@(ViewBag.ReturnRate ?? "94.6%")</div>
-                <div class="stat-desc text-success"><i class="glyphicon glyphicon-arrow-up"></i> On-time handovers</div>
-            </div>
-        </div>
-        <div class="col-xs-6 col-sm-3 col-md-3">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Active Disputes</span>
-                    <span class="stat-icon stat-icon-rose"><i class="glyphicon glyphicon-alert"></i></span>
-                </div>
-                <div class="stat-value" id="kpi-active-disputes">@(ViewBag.ActiveDisputes ?? "7")</div>
-                <div class="stat-desc stat-alert-text">Under mediation</div>
-            </div>
-        </div>
-    </div>
+    </header>
 
-    <!-- Chart Containers -->
-    <!-- Row 1: Left (Activity Trends) & Right (Revenue Breakdown) -->
-    <div class="row reports-charts-grid">
-        <!-- Left: Rental & Booking Activity Trends (Bar Chart: Checkouts vs Returns) -->
-        <div class="col-xs-12 col-md-6">
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <div class="chart-header-title">
-                        <span class="chart-dot chart-dot-indigo"></span>
-                        <span>Rental & Booking Activity Trends</span>
-                    </div>
-                    <span class="chart-badge">Checkouts vs Returns</span>
-                </div>
-                <div class="chart-canvas-container">
-                    <canvas id="rentalActivityChart"></canvas>
-                </div>
-            </div>
-        </div>
+    <div class="reports-notice" id="reportsNotice" role="status"></div>
 
-        <!-- Right: Revenue & Cash Flow Breakdown (Line Chart: GCash vs Cash) -->
-        <div class="col-xs-12 col-md-6">
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <div class="chart-header-title">
-                        <span class="chart-dot chart-dot-emerald"></span>
-                        <span>Revenue & Cash Flow Breakdown</span>
-                    </div>
-                    <span class="chart-badge">GCash vs Cash</span>
-                </div>
-                <div class="chart-canvas-container">
-                    <canvas id="revenueFlowChart"></canvas>
-                </div>
+    <!-- B. Date Filters -->
+    <form class="reports-filters" id="reportsFilterForm" novalidate>
+        <div class="reports-filters__fields">
+            <div class="reports-field">
+                <label for="filterFrom" class="reports-field__label">From</label>
+                <input type="date" id="filterFrom" class="reports-input" />
+            </div>
+            <div class="reports-field">
+                <label for="filterTo" class="reports-field__label">To</label>
+                <input type="date" id="filterTo" class="reports-input" />
+            </div>
+            <div class="reports-filters__buttons">
+                <button type="submit" id="btnApplyFilter" class="reports-btn reports-btn--primary">Apply</button>
+                <button type="button" id="btnResetFilter" class="reports-btn reports-btn--secondary">Reset</button>
             </div>
         </div>
-    </div>
+        <p class="reports-period" id="reportsPeriod"></p>
+        <p class="reports-filters__error" id="filterError" hidden></p>
+    </form>
 
-    <!-- Row 2: Bottom: Equipment Categories Performance (Horizontal Bar Chart) -->
-    <div class="row reports-charts-grid" style="margin-top: 20px;">
-        <div class="col-xs-12 col-md-12">
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <div class="chart-header-title">
-                        <span class="chart-dot chart-dot-purple"></span>
-                        <span>Equipment Categories Performance</span>
-                    </div>
-                    <span class="chart-badge">Campus Demand Throughput</span>
-                </div>
-                <div class="chart-canvas-container" style="height: 260px;">
-                    <canvas id="categoriesChart"></canvas>
-                </div>
-            </div>
+    <!-- C. Overview Cards -->
+    <section class="reports-summary">
+        <div class="reports-card">
+            <div class="reports-card__content"><span class="reports-card__label">Total Revenue</span><span class="reports-card__value" id="cardRevenue">₱0.00</span></div>
         </div>
-    </div>
+        <div class="reports-card">
+            <div class="reports-card__content"><span class="reports-card__label">Total Rentals</span><span class="reports-card__value" id="cardRentals">0</span></div>
+        </div>
+        <div class="reports-card">
+            <div class="reports-card__content"><span class="reports-card__label">Items Rented</span><span class="reports-card__value" id="cardItems">0</span></div>
+        </div>
+        <div class="reports-card">
+            <div class="reports-card__content"><span class="reports-card__label">Total Borrowings</span><span class="reports-card__value" id="cardBorrowings">0</span></div>
+        </div>
+    </section>
+
+    <!-- D. Charts -->
+    <section class="reports-section">
+        <article class="reports-panel reports-panel--featured">
+            <header class="reports-panel__header">
+                <h3 class="reports-panel__title">Rental Revenue Over Time</h3>
+                <div class="reports-panel__stats" id="statsRevenue"></div>
+            </header>
+            <div class="reports-chart reports-chart--tall" id="chartRevenue"></div>
+        </article>
+
+        <div class="reports-grid-2">
+            <article class="reports-panel">
+                <header class="reports-panel__header"><h3 class="reports-panel__title">Most Rented Items</h3></header>
+                <div class="reports-chart" id="chartTopItems"></div>
+            </article>
+            <article class="reports-panel">
+                <header class="reports-panel__header"><h3 class="reports-panel__title">Rental Status Distribution</h3></header>
+                <div class="reports-chart" id="chartStatus"></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="reports-section">
+        <div class="reports-grid-2">
+            <article class="reports-panel">
+                <header class="reports-panel__header"><h3 class="reports-panel__title">Borrowing Activity</h3></header>
+                <div class="reports-chart" id="chartActivity"></div>
+            </article>
+            <article class="reports-panel">
+                <header class="reports-panel__header"><h3 class="reports-panel__title">Borrowing Expenses</h3></header>
+                <div class="reports-chart" id="chartExpenses"></div>
+            </article>
+        </div>
+    </section>
+
+    <div class="reports-tooltip" id="reportsTooltip" role="tooltip" hidden></div>
 </div>
 
-@section Scripts {
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Reports Analytics Script -->
-    <script src="@Url.Content("~/Scripts/reports-analytics.js")"></script>
+@section scripts {
+    <script src="~/Scripts/ReportsAnalytics.js"></script>
 }

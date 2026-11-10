@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Web.Mvc;
+using UniShare.Models;
 
 namespace UniShare.Controllers
 {
@@ -11,80 +11,48 @@ namespace UniShare.Controllers
         public ActionResult Index()
         {
             ViewBag.Title = "Reports & Analytics";
-            ViewBag.TotalVolume = "1,248";
-            ViewBag.TotalRevenue = "PHP 38,450.00";
-            ViewBag.ReturnRate = "94.6%";
-            ViewBag.ActiveDisputes = "7";
-
             return View("ReportsAnalytics");
         }
 
-        // GET: ReportsAnalytics/GetChartData?timeframe=months|weeks|days
+        public ActionResult ReportAnalytics()
+        {
+            return Index();
+        }
+
+        // GET: ReportsAnalytics/Data?from=yyyy-MM-dd&to=yyyy-MM-dd
+        // Exact JSON endpoint required by Alexis's expected structure
+        [HttpGet]
+        public ActionResult Data(string from, string to)
+        {
+            // Return dummy data matching Alexis's expected structure
+            var data = new
+            {
+                from = string.IsNullOrEmpty(from) ? DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd") : from,
+                to = string.IsNullOrEmpty(to) ? DateTime.Today.ToString("yyyy-MM-dd") : to,
+                granularity = "day",
+                cards = new { totalRevenue = 148250.00, totalRentals = 1248, itemsRented = 3890, totalBorrowings = 642 },
+                rentalRevenue = new { labels = new[] { "2026-11-01", "2026-11-02", "2026-11-03" }, values = new[] { 100, 200, 150 } },
+                mostRentedItems = new[] { new { name = "Casio fx-991EX", quantity = 150 } },
+                rentalStatus = new { active = 10, completed = 50, disputed = 5, notCounted = 0 },
+                borrowingActivity = new { labels = new[] { "2026-11-01", "2026-11-02" }, values = new[] { 1, 2 }, details = new object[] { } },
+                borrowingExpenses = new { labels = new[] { "2026-11-01", "2026-11-02" }, values = new[] { 100, 50 }, details = new object[] { } },
+                borrowingsWithoutPayment = 0,
+                borrowingsNotCounted = 0
+            };
+            return Json(data, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
+        public ActionResult Export(string from, string to)
+        {
+            return Content("Date,Metric,Value\n2026-11-01,Revenue,100\n", "text/csv");
+        }
+
+        // Backward compatibility for old chart calls if needed
         [HttpGet]
         public JsonResult GetChartData(string timeframe)
         {
-            timeframe = (timeframe ?? "months").Trim().ToLowerInvariant();
-
-            string[] timelineLabels;
-            int[] checkouts;
-            int[] returns;
-            decimal[] gcashRevenue;
-            decimal[] cashRevenue;
-
-            if (timeframe == "days")
-            {
-                timelineLabels = new[] { "Mon", "Tue", "Wed", "Thu", "Fri" };
-                checkouts = new[] { 18, 26, 22, 34, 29 };
-                returns = new[] { 16, 25, 20, 31, 28 };
-                gcashRevenue = new[] { 2700m, 3900m, 3300m, 5100m, 4350m };
-                cashRevenue = new[] { 900m, 1300m, 1100m, 1700m, 1450m };
-            }
-            else if (timeframe == "weeks")
-            {
-                timelineLabels = new[] { "Week 1", "Week 2", "Week 3", "Week 4" };
-                checkouts = new[] { 74, 92, 108, 86 };
-                returns = new[] { 70, 88, 101, 82 };
-                gcashRevenue = new[] { 11200m, 13800m, 16400m, 12900m };
-                cashRevenue = new[] { 3600m, 4600m, 5200m, 4300m };
-            }
-            else // default: "months"
-            {
-                timeframe = "months";
-                timelineLabels = new[] { "Jul", "Aug", "Sep", "Oct", "Nov" };
-                checkouts = new[] { 145, 198, 265, 312, 328 };
-                returns = new[] { 138, 186, 251, 298, 311 };
-                gcashRevenue = new[] { 21500m, 29200m, 39500m, 46800m, 49200m };
-                cashRevenue = new[] { 7500m, 10400m, 13500m, 15600m, 16400m };
-            }
-
-            // Equipment Categories Performance
-            string[] categoryLabels = new[] { "Calculators", "Engineering Kits", "Drafting & Art", "Electronics & Tech", "Lab Apparatus" };
-            int[] categoryCounts = new[] { 412, 285, 218, 175, 158 };
-
-            var result = new
-            {
-                success = true,
-                timeframe = timeframe,
-                activity = new
-                {
-                    labels = timelineLabels,
-                    checkouts = checkouts,
-                    returns = returns
-                },
-                revenue = new
-                {
-                    labels = timelineLabels,
-                    gcash = gcashRevenue,
-                    cash = cashRevenue
-                },
-                categories = new
-                {
-                    labels = categoryLabels,
-                    data = categoryCounts
-                }
-            };
-
-            return Json(result, JsonRequestBehavior.AllowGet);
+            return Json(new { success = true }, JsonRequestBehavior.AllowGet);
         }
     }
 }

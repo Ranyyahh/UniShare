@@ -1,6 +1,7 @@
+﻿@model UniShare.Models.TransactionViewModel
 @{
     Layout = null;
-    dynamic details = Model;
+    var details = Model;
 
     string statusBadgeClass = details.Status == "Confirmed" ? "badge-confirmed" : "badge-pending";
 }

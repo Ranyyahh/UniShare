@@ -1,6 +1,7 @@
+﻿@model UniShare.Models.DisputeViewModel
 @{
     Layout = null;
-    dynamic details = Model;
+    var details = Model;
 
     string pClass = details.Priority == "Urgent" ? "badge-urgent" : (details.Priority == "High" ? "badge-high" : "badge-medium");
     string sClass = details.Status == "Open" ? "badge-open" : (details.Status == "Under Review" ? "badge-review" : "badge-resolved");
