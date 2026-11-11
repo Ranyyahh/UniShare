@@ -149,9 +149,11 @@ namespace UniShare.Controllers
             {
                 Id = item.Id.ToString(), UserId = item.UserId.ToString(),
                 StudentName = user == null ? "Unknown student" : user.FirstName + " " + user.LastName,
-                SchoolEmail = item.SchoolEmail, StudentIdNumber = item.StudentIdNumber,
+                SchoolEmail = item.SchoolEmail ?? (user != null ? user.SchoolEmail : ""),
+                StudentIdNumber = item.StudentIdNumber ?? (user != null ? user.StudentIdNumber : ""),
                 Program = item.Program, YearLevel = item.YearLevel, Status = item.Status,
-                ReviewNotes = item.ReviewNotes, SubmittedAt = item.SubmittedAt,
+                ReviewNotes = item.ReviewNotes ?? item.Remarks,
+                SubmittedAt = item.SubmittedAt != default(DateTime) ? item.SubmittedAt : (item.CreatedAt ?? DateTime.UtcNow),
                 SchoolIdUrl = item.Id.ToString() + "/id", OneByOneUrl = item.Id.ToString() + "/photo",
                 RegistrationFormUrl = item.Id.ToString() + "/form"
             };

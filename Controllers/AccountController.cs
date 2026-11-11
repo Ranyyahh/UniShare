@@ -73,6 +73,12 @@ namespace UniShare.Controllers
                     ModelState.AddModelError("SchoolEmail", "An account with this school email already exists.");
                     return View(model);
                 }
+                var studentNo = model.StudentIdNumber.Trim();
+                if (MongoDatabase.Users.Find(x => x.StudentIdNumber == studentNo).Any())
+                {
+                    ModelState.AddModelError("StudentIdNumber", "An account with this Student ID Number already exists.");
+                    return View(model);
+                }
                 userId = ObjectId.GenerateNewId();
                 var now = DateTime.UtcNow;
                 schoolIdPath = SaveDocument(model.SchoolIdPhoto, userId, "school-id");
