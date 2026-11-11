@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f0f3ff" />
+    <title>@ViewBag.Title &middot; UniShare</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/auth.css")" />
+</head>
+<body class="auth-page @(ViewBag.Title == "Register" ? "register-page" : "login-page")">
+    <div class="auth-shell">
+        <a class="top-brand" href="@Url.Action("Index", "Home")" aria-label="UniShare home">
+            <span class="top-brand-line"><span class="brand-mark small" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.2a4.1 4.1 0 0 0-4.1 4.1v1.1H6.8a2 2 0 0 0-2 2v7.1a2 2 0 0 0 2 2h10.4a2 2 0 0 0 2-2v-7.1a2 2 0 0 0-2-2h-1.1V7.3A4.1 4.1 0 0 0 12 3.2Zm-2.1 5.2V7.3a2.1 2.1 0 1 1 4.2 0v1.1Zm2.1 3a2 2 0 0 1 1 3.7v1.2h-2v-1.2a2 2 0 0 1 1-3.7Z"/></svg></span><span>UniShare</span></span>
+            <span class="top-brand-caption"><span class="tiny-lock" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 6V4.5a3 3 0 0 1 6 0V6h1.2A1.8 1.8 0 0 1 14 7.8v5.4a1.8 1.8 0 0 1-1.8 1.8H3.8A1.8 1.8 0 0 1 2 13.2V7.8A1.8 1.8 0 0 1 3.8 6H5Zm2 0h2V4.5a1 1 0 0 0-2 0V6Z"/></svg></span> Verified University Network</span>
+        </a>
+        @RenderBody()
+    </div>
+    @RenderSection("pageScripts", required: false)
+</body>
+</html>
