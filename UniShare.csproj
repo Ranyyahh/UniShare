@@ -122,14 +122,14 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\Dispute Management\DisputeManagement.cs" />
     <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Controllers\Reports And Analytics\ReportsAnalyticsController.cs" />
+    <Compile Include="Controllers\ReportsAnalyticsController.cs" />
     <Compile Include="Controllers\Transaction &amp; Payment Records\TransactionPaymentRecords.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\DisputeViewModel.cs" />
     <Compile Include="Models\TransactionViewModel.cs" />
-    <Compile Include="Models\ReportsViewModel.cs" />
+    <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -177,11 +177,9 @@
     <Content Include="Views\DisputeManagement\DisputeDetails.cshtml" />
     <Content Include="Views\TransactionPaymentRecords\TransactionPaymentRecords.cshtml" />
     <Content Include="Views\TransactionPaymentRecords\TransactionDetails.cshtml" />
-    <Content Include="Views\ReportsAnalytics\ReportsAnalytics.cshtml" />
-    <Content Include="Scripts\reports-analytics.js" />
     <Content Include="Scripts\ReportsAnalytics.js" />
     <Content Include="Content\ReportsAnalytics.css" />
-    <Content Include="Views\ReportsAnalytics\ReportAnalytics.cshtml" />
+    <Content Include="Views\ReportsAnalytics\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
