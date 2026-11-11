@@ -1,0 +1,33 @@
+@model System.Collections.Generic.List<UniShare.Controllers.RentalRecordDto>
+@{ ViewBag.Title = "Rental Requests"; }
+<main class="container py-4">
+    <h1>Rental Requests</h1>
+    <p>Review incoming requests for your listings.</p>
+    @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+    @if (Model == null || Model.Count == 0) { <p>No rental requests yet.</p> }
+    else
+    {
+        <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Request</th><th>Item</th><th>Renter</th><th>Schedule</th><th>Fee</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        @foreach (var request in Model)
+        {
+            <tr><td>@request.RequestId<br /><small>@request.RequestDateFormatted</small></td><td>@request.ItemName</td><td>@request.BorrowerName<br /><small>@request.BorrowerProgram</small></td><td>@request.HandoverScheduleFormatted<br />@request.Duration</td><td>@request.RentalFeeFormatted</td><td>@request.Status</td><td>
+                @if (request.Status == "Pending" || request.Status == "Requested")
+                {
+                    using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "d-inline" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="true" /><button class="btn btn-sm btn-success" type="submit">Accept</button> }
+                    using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "d-inline" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="false" /><select name="reason" required class="form-select form-select-sm d-inline-block" style="width:auto"><option value="">Reason</option><option>Schedule conflict</option><option>Item unavailable</option><option>Other</option></select><input type="text" name="notes" maxlength="300" placeholder="Optional note" class="form-control form-control-sm d-inline-block" style="width:130px" /><button class="btn btn-sm btn-outline-danger" type="submit">Decline</button> }
+                }
+                @if (request.Status == "Accepted" && request.HandoverDate <= DateTime.Now)
+                {
+                    using (Html.BeginForm("Report", "NoShowReports", FormMethod.Post, new { @class = "mt-2" }))
+                    {
+                        @Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@request.BookingObjectId" /><input type="hidden" name="returnUrl" value="@Request.Url.PathAndQuery" />
+                        <input type="text" name="reason" maxlength="500" required placeholder="Why is this a no-show?" class="form-control form-control-sm d-inline-block" style="width:180px" />
+                        <button class="btn btn-sm btn-outline-warning" type="submit">Report borrower no-show</button>
+                    }
+                }
+            </td></tr>
+        }
+        </tbody></table></div>
+    }
+</main>

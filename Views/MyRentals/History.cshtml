@@ -1,0 +1,8 @@
+@model System.Collections.Generic.List<UniShare.Controllers.RentalRecordDto>
+@{ ViewBag.Title = "Rental History"; }
+<main class="container py-4"><h1>Rental History</h1>
+    @if (Model == null || Model.Count == 0) { <p>No historical rental requests.</p> }
+    else { <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Request</th><th>Item</th><th>Schedule</th><th>Fee</th><th>Final status</th><th></th></tr></thead><tbody>
+    @foreach (var rental in Model) { <tr><td>@rental.RequestId<br /><small>@rental.RequestDateFormatted</small></td><td>@rental.ItemName</td><td>@rental.HandoverScheduleFormatted</td><td>@rental.RentalFeeFormatted</td><td>@rental.Status</td><td>@Html.ActionLink("Details", "Details", new { id = rental.BookingObjectId })</td></tr> }
+    </tbody></table></div> }
+</main>

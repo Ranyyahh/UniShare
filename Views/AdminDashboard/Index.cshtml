@@ -1,242 +1,32 @@
-﻿@{
+@model UniShare.Models.AdminDashboardViewModel
+@{
     ViewBag.Title = "Admin Dashboard";
     ViewBag.ShowAdminSidebar = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+@section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
 
-@section Styles {
-    <link rel="stylesheet" href="@Url.Content("~/Content/admin-dashboard.css")" />
-}
-
-@section scripts {
-    <script src="@Url.Content("~/Scripts/admin-dashboard.js")"></script>
-}
-
-<div class="dashboard">
-        <header class="welcome-card">
-            <h1>Welcome back, Admin Mark!</h1>
-            <p>Monitor essential campus tech, engineering tools, and course textbooks across verified fellow QCU students. Review verifications and disputes promptly.</p>
-        </header>
-
-        <section class="dashboard-section">
-            <div class="section-heading">
-                <h2>Student &amp; listing overview</h2>
-            </div>
-
-            <div class="summary-grid">
-                <article class="summary-card purple-card">
-                    <div class="summary-top">
-                        <h3>Total Registered Students</h3>
-                        <span class="summary-icon">♙</span>
-                    </div>
-                    <strong id="registeredStudents">1,248</strong>
-                    <small class="green-text">● Active enrolled QCUians</small>
-                    <a class="card-link" href="@Url.Action("StudentVerification", "Admin")">View Directory <span>→</span></a>
-                </article>
-
-                <article class="summary-card yellow-card">
-                    <div class="summary-top">
-                        <h3>Pending Account Approvals</h3>
-                        <span class="summary-icon">☷</span>
-                    </div>
-                    <strong id="pendingAccounts">18</strong>
-                    <small class="orange-text">● 18 students · Action Required</small>
-                    <a class="card-link orange-link" href="@Url.Action("StudentVerification", "Admin")">Review Queue <span>→</span></a>
-                </article>
-
-                <article class="summary-card blue-card">
-                    <div class="summary-top">
-                        <h3>Total Item Listings</h3>
-                        <span class="summary-icon">▦</span>
-                    </div>
-                    <strong id="totalListings">418</strong>
-                    <small class="green-text">● 354 available · 64 on loan</small>
-                    <a class="card-link" href="@Url.Action("Index", "BrowseItems")">Browse Items <span>→</span></a>
-                </article>
-
-                <article class="summary-card indigo-card">
-                    <div class="summary-top">
-                        <h3>Pending Listing Approvals</h3>
-                        <span class="summary-icon">▣</span>
-                    </div>
-                    <strong id="pendingListings">14</strong>
-                    <small class="blue-text">● For listing review</small>
-                    <a class="card-link" href="@Url.Action("Index", "AdminItemBooking")">View Listings <span>→</span></a>
-                </article>
-
-                <article class="summary-card red-card">
-                    <div class="summary-top">
-                        <h3>Open Disputes</h3>
-                        <span class="summary-icon">⚒</span>
-                    </div>
-                    <strong>3</strong>
-                    <small class="red-text">● Priority Triage · 2 Damaged, 1 Overdue</small>
-                    <a class="card-link red-link" href="@Url.Action("Index", "DisputeManagement")">Arbitrate Cases <span>→</span></a>
-                </article>
-            </div>
-        </section>
-
-        <section class="dashboard-section">
-            <div class="module-heading">
-                <h2>Pending Student Verifications</h2>
-                <a class="text-link" href="@Url.Action("StudentVerification", "Admin")">View All 18 Queue →</a>
-            </div>
-
-            <div class="verification-grid">
-                <article class="verification-card">
-                    <div class="verification-header">
-                        <span class="status-tag">Needs CoR Check</span>
-                        <span>Submitted: Oct 24, 2024 (12m ago)</span>
-                    </div>
-
-                    <div class="student-info">
-                        <span class="avatar avatar-purple">AT</span>
-                        <div>
-                            <h3>Angela Mae Torres</h3>
-                            <p>2023-BSIT-4 · BSIT-3D</p>
-                            <strong>BS Information Technology</strong>
-                        </div>
-                    </div>
-
-                    <div class="document-box">
-                        <span>▧ QCU Student ID Front &amp; Back</span>
-                        <strong>Attached</strong>
-                    </div>
-
-                    <a class="review-button" href="@Url.Action("StudentVerification", "Admin")">Review Submission</a>
-                </article>
-
-                <article class="verification-card">
-                    <div class="verification-header">
-                        <span class="status-tag">Needs CoR Check</span>
-                        <span>Submitted: Oct 24, 2024 (34m ago)</span>
-                    </div>
-
-                    <div class="student-info">
-                        <span class="avatar avatar-blue">JS</span>
-                        <div>
-                            <h3>Joshua Miguel Santos</h3>
-                            <p>2023-01944 · BSCS 2A</p>
-                            <strong>BS Computer Science</strong>
-                        </div>
-                    </div>
-
-                    <div class="document-box">
-                        <span>▧ Term 1 Enrollment Assessment</span>
-                        <strong>Attached</strong>
-                    </div>
-
-                    <a class="review-button" href="@Url.Action("StudentVerification", "Admin")">Review Submission</a>
-                </article>
-
-                <article class="verification-card">
-                    <div class="verification-header">
-                        <span class="status-tag">Needs CoR Check</span>
-                        <span>Submitted: Oct 24, 2024 (58m ago)</span>
-                    </div>
-
-                    <div class="student-info">
-                        <span class="avatar avatar-slate">PP</span>
-                        <div>
-                            <h3>Princess Joy Perez</h3>
-                            <p>2025-B019-5B · BSIE 1B</p>
-                            <strong>BS Industrial Engineering</strong>
-                        </div>
-                    </div>
-
-                    <div class="document-box">
-                        <span>▧ QCU Freshmen Identification</span>
-                        <strong>Attached</strong>
-                    </div>
-
-                    <a class="review-button" href="@Url.Action("StudentVerification", "Admin")">Review Submission</a>
-                </article>
-            </div>
-        </section>
-
-        <section class="dashboard-section">
-            <div class="module-heading">
-                <h2>Recent Item Rental Activity</h2>
-                <a class="text-link" href="@Url.Action("Index", "MyRentals")">View All Rentals →</a>
-            </div>
-
-            <div class="booking-grid">
-                <article class="booking-card">
-                    <div class="booking-meta"><span>BK-2024-1049</span><strong>₱25 / 4 hrs</strong></div>
-                    <div class="booking-image purple-image">▣</div>
-                    <h3>Casio fx-991EX ClassWiz</h3>
-                    <p>◉ CEA Guardpost · San Bartolome</p>
-                    <div class="booking-info"><span>Owner:<strong>Maria Santos</strong></span><span>Borrower:<strong>Juan Dela Cruz</strong></span></div>
-                    <div class="booking-footer"><span>● Active Loan</span><span>Due: 5:00 PM</span></div>
-                </article>
-
-                <article class="booking-card">
-                    <div class="booking-meta"><span>BK-2024-1048</span><strong>₱120 / day</strong></div>
-                    <div class="booking-image blue-image">▤</div>
-                    <h3>Huion Inspiroy H640P Tablet</h3>
-                    <p>◉ Tech Lab 3 Circulation Desk</p>
-                    <div class="booking-info"><span>Owner:<strong>Mark Kevin</strong></span><span>Borrower:<strong>Kaye Flores</strong></span></div>
-                    <div class="booking-footer"><span>● Active Loan</span><span>Due: 6:30 PM</span></div>
-                </article>
-
-                <article class="booking-card">
-                    <div class="booking-meta"><span>BK-2024-1045</span><strong>₱40 / day</strong></div>
-                    <div class="booking-image orange-image">◢</div>
-                    <h3>Staedtler 36-Inch T-Square</h3>
-                    <p>◉ CEA Ground Flr Locker Desk</p>
-                    <div class="booking-info"><span>Owner:<strong>Carlio Ramos</strong></span><span>Borrower:<strong>Jerome Bautista</strong></span></div>
-                    <div class="booking-footer returned"><span>● Returned</span><span>Completed</span></div>
-                </article>
-
-                <article class="booking-card">
-                    <div class="booking-meta"><span>BK-2024-1044</span><strong>₱60 / day</strong></div>
-                    <div class="booking-image gray-image">◖</div>
-                    <h3>Sony WH-CH520 Headset</h3>
-                    <p>◉ Main Library Desk · Batasan</p>
-                    <div class="booking-info"><span>Owner:<strong>Aileen Lim</strong></span><span>Borrower:<strong>Bea Garcia</strong></span></div>
-                    <div class="booking-footer"><span>● Active Loan</span><span>Due: 7:00 PM</span></div>
-                </article>
-            </div>
-        </section>
-
-        <section class="dashboard-section">
-            <div class="section-heading">
-                <h2>Rental &amp; payment summary</h2>
-            </div>
-
-            <div class="summary-grid">
-                <article class="summary-card purple-card"><div class="summary-top"><h3>Total Rental Transactions</h3><span class="summary-icon">⇄</span></div><strong id="rentalTransactions">0</strong><small>All rental activity</small></article>
-                <article class="summary-card green-card"><div class="summary-top"><h3>Total Rental Revenue</h3><span class="summary-icon">₱</span></div><strong id="rentalRevenue">₱0.00</strong><small class="green-text">● Recorded payments</small></article>
-                <article class="summary-card green-card"><div class="summary-top"><h3>Completed Transactions</h3><span class="summary-icon">✓</span></div><strong id="completedTransactions">0</strong><small class="green-text">● Completed rentals</small></article>
-                <article class="summary-card yellow-card"><div class="summary-top"><h3>Pending Transactions</h3><span class="summary-icon">◷</span></div><strong id="pendingTransactions">0</strong><small class="orange-text">● Awaiting completion</small></article>
-                <article class="summary-card red-card"><div class="summary-top"><h3>Cancelled Transactions</h3><span class="summary-icon">×</span></div><strong id="cancelledTransactions">0</strong><small class="red-text">● Cancelled rentals</small></article>
-            </div>
-        </section>
-
-        <section class="dashboard-section">
-            <div class="module-heading">
-                <h2>Recent Disputes Requiring Triage</h2>
-                <a class="text-link danger-link" href="@Url.Action("Index", "DisputeManagement")">Dispute Command Center →</a>
-            </div>
-
-            <div class="dispute-grid">
-                <article class="dispute-card urgent-card">
-                    <div class="verification-header"><span class="urgent-tag">URGENT · 12H REMAINING</span><span>Oct 25, 2026</span></div>
-                    <h3>Casio fx-991EX ClassWiz — Visible Polarizer Scratch</h3>
-                    <p>Renter reports damage before returning the calculator at QCU East Campus.</p>
-                    <div class="document-box"><span>Renter:<strong>Maria Santos</strong></span><span>Owner:<strong>Mark Santos</strong></span></div>
-                    <a class="dispute-button" href="@Url.Action("Index", "DisputeManagement")">Open Arbitration</a>
-                </article>
-
-                <article class="dispute-card warning-card">
-                    <div class="verification-header"><span class="warning-tag">RESPONSE OVERDUE · 1D</span><span>Oct 25, 2026</span></div>
-                    <h3>Sony Alpha a6000 Media Kit — Overdue Past Curfew</h3>
-                    <p>Equipment was returned late. Admin review is required before the case closes.</p>
-                    <div class="document-box"><span>Renter:<strong>Jorge Cruz</strong></span><span>Owner:<strong>Alexa Ramos</strong></span></div>
-                    <a class="dispute-button" href="@Url.Action("Index", "DisputeManagement")">Open Arbitration</a>
-                </article>
-            </div>
-        </section>
-
-        <div id="dashboardToast" class="dashboard-toast" aria-live="polite"></div>
-</div>
+<main class="aa-page">
+    <header class="aa-page-head">
+        <div><p class="aa-eyebrow">ADMIN WORKSPACE</p><h1>Platform activity</h1><p>Review rentals, incoming reports, account actions, and recent administrator activity.</p></div>
+    </header>
+    @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">Dashboard data is unavailable. Check the database connection.</div> }
+    <section class="aa-stats" aria-label="Platform summary">
+        <article class="aa-stat"><span>Registered users</span><strong>@Model.RegisteredUsers</strong><a href="@Url.Action("Index", "UserManagement")">Open directory →</a></article>
+        <article class="aa-stat"><span>Active bookings</span><strong>@Model.ActiveBookings</strong><a href="@Url.Action("Index", "AdminItemBooking")">Monitor bookings →</a></article>
+        <article class="aa-stat aa-stat--warn"><span>Open disputes</span><strong>@Model.OpenDisputes</strong><a href="@Url.Action("Index", "DisputeManagement")">Review disputes →</a></article>
+        <article class="aa-stat aa-stat--warn"><span>Pending no-show reports</span><strong>@Model.PendingNoShowReports</strong><a href="@Url.Action("Index", "NoShowReports")">Review reports →</a></article>
+        <article class="aa-stat"><span>Reported reviews</span><strong>@Model.ReportedReviews</strong><a href="@Url.Action("Index", "RatingsReviews", new { filter = "reported" })">Moderate reviews →</a></article>
+        <article class="aa-stat aa-stat--danger"><span>Active restrictions</span><strong>@Model.ActiveRestrictions</strong><a href="@Url.Action("Index", "AccountRestriction")">Manage restrictions →</a></article>
+    </section>
+    <section class="aa-panel">
+        <div class="aa-panel__head"><div><h2>Recent activity</h2><p>Recorded reports, reviews, and administrator decisions.</p></div><a class="aa-button aa-button--quiet" href="@Url.Action("Index", "AuditLogs")">Open audit log</a></div>
+        @if (Model.RecentActivity == null || Model.RecentActivity.Count == 0) { <p class="aa-empty">No activity has been recorded yet.</p> }
+        else
+        {
+            <div class="aa-table-wrap"><table class="aa-table"><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Record</th><th>Details</th></tr></thead><tbody>
+            @foreach (var row in Model.RecentActivity) { <tr><td>@row.CreatedAt.ToString("MMM d, yyyy h:mm tt")</td><td>@row.ActorName</td><td>@row.Action.Replace('_', ' ')</td><td>@row.EntityType @row.EntityId</td><td class="aa-wrap">@row.Summary</td></tr> }
+            </tbody></table></div>
+        }
+    </section>
+</main>

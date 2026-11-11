@@ -19,7 +19,7 @@ namespace UniShare.Controllers
                 ? new System.Collections.Generic.List<UserDocument>()
                 : MongoDatabase.Users.Find(Builders<UserDocument>.Filter.In(x => x.Id, ownerIds)).ToList();
             var ownerMap = owners.ToDictionary(x => x.Id);
-            var ratingDocs = MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+            var ratingDocs = MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Ne("isHidden", true)).ToList();
             var ratingMap = ratingDocs.Where(x => x.GetValue("reviewedUserId", BsonNull.Value).IsObjectId && x.GetValue("rating", BsonNull.Value).IsNumeric)
                 .GroupBy(x => x["reviewedUserId"].AsObjectId).ToDictionary(g => g.Key, g => new { Average = g.Average(x => x["rating"].ToDouble()), Count = g.Count() });
             var bookingDocs = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Empty).ToList();
@@ -95,6 +95,12 @@ namespace UniShare.Controllers
             var fullName = (owner.FirstName + " " + owner.LastName).Trim();
             var ownerItems = MongoDatabase.Items.Find(x => x.OwnerId == ownerId && x.ApprovalStatus == "APPROVED" && x.AvailabilityStatus == "AVAILABLE")
                 .SortByDescending(x => x.CreatedAt).ToList().Select(MarketplaceService.ToListing).ToList();
+            var reviewFilter = (Builders<BsonDocument>.Filter.Eq("reviewedUserId", ownerId) | Builders<BsonDocument>.Filter.Eq("reviewedUserId", ownerId.ToString())) &
+                Builders<BsonDocument>.Filter.Ne("isHidden", true);
+            var reviewDocs = MongoDatabase.Ratings.Find(reviewFilter).SortByDescending(x => x["createdAt"]).Limit(50).ToList();
+            var reviewers = reviewDocs.Select(x => x.GetValue("reviewerId", BsonNull.Value)).Where(x => x.IsObjectId).Select(x => x.AsObjectId).Distinct().ToList();
+            var reviewerMap = reviewers.Count == 0 ? new System.Collections.Generic.List<UserDocument>() : MongoDatabase.Users.Find(Builders<UserDocument>.Filter.In(x => x.Id, reviewers)).ToList();
+            var reviewerNames = reviewerMap.ToDictionary(x => x.Id, x => ((x.FirstName ?? "") + " " + (x.LastName ?? "")).Trim());
             return View("~/Views/BrowseItems/OwnerProfile.cshtml", new OwnerProfileViewModel
             {
                 OwnerId = ownerId.ToString(),
@@ -109,7 +115,22 @@ namespace UniShare.Controllers
                 Rating = MarketplaceService.GetOwnerRatingSummary(ownerId).Item1,
                 ReviewCount = MarketplaceService.GetOwnerRatingSummary(ownerId).Item2,
                 CompletedRentals = MarketplaceService.GetCompletedRentalCount(ownerId),
-                Listings = ownerItems
+                Listings = ownerItems,
+                Reviews = reviewDocs.Select(x =>
+                {
+                    var reviewerIdValue = x.GetValue("reviewerId", BsonNull.Value);
+                    var reviewerId = reviewerIdValue.IsObjectId ? (ObjectId?)reviewerIdValue.AsObjectId : null;
+                    var itemValue = x.GetValue("itemRating", BsonNull.Value);
+                    var ownerValue = x.GetValue("ownerRating", x.GetValue("rating", BsonNull.Value));
+                    var createdValue = x.GetValue("createdAt", BsonDateTime.Create(DateTime.UtcNow));
+                    return new PublicReviewViewModel
+                    {
+                        Id = x.GetValue("_id", ObjectId.Empty).ToString(), ReviewerId = reviewerId.HasValue ? reviewerId.Value.ToString() : "",
+                        ReviewerName = reviewerId.HasValue && reviewerNames.ContainsKey(reviewerId.Value) ? reviewerNames[reviewerId.Value] : "Student",
+                        ItemRating = itemValue.IsNumeric ? (int?)itemValue.ToInt32() : null, OwnerRating = ownerValue.IsNumeric ? (int?)ownerValue.ToInt32() : null,
+                        Review = x.GetValue("review", "").ToString(), CreatedAt = createdValue.IsValidDateTime ? createdValue.ToUniversalTime().ToLocalTime() : DateTime.MinValue
+                    };
+                }).ToList()
             });
         }
 
@@ -126,17 +147,41 @@ namespace UniShare.Controllers
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
         public ActionResult RequestToRent(string id, DateTime handoverDate, string handoverTime, int duration, string notes)
         {
-            var item = MarketplaceService.GetItem(id);
+            ObjectId renterId;
+            if (!ObjectId.TryParse(User.Identity.Name, out renterId)) return new HttpStatusCodeResult(401);
+            try
+            {
+                var booking = BookingService.Submit(renterId, id, handoverDate, handoverTime, duration, notes);
+                return RedirectToAction("RequestSubmitted", new { id = booking["_id"].AsObjectId.ToString() });
+            }
+            catch (BookingException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                var item = MarketplaceService.GetItem(id);
+                if (item == null) return HttpNotFound();
+                return View(MarketplaceService.ToDetails(item, MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault()));
+            }
+        }
+
+        [HttpGet, Authorize]
+        public ActionResult RequestSubmitted(string id)
+        {
+            ObjectId renterId;
+            if (!ObjectId.TryParse(User.Identity.Name, out renterId)) return new HttpStatusCodeResult(401);
+            var booking = BookingService.GetForParticipant(id, renterId);
+            if (booking == null || !booking.GetValue("borrowerId", BsonNull.Value).IsObjectId || booking["borrowerId"].AsObjectId != renterId) return HttpNotFound();
+            ObjectId itemId;
+            if (!ObjectId.TryParse(booking.GetValue("itemId", "").ToString(), out itemId)) return HttpNotFound();
+            var item = MarketplaceService.GetItem(itemId.ToString());
             if (item == null) return HttpNotFound();
-            var details = MarketplaceService.ToDetails(item, MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault());
-            if (!details.IsAvailable) return RedirectToAction("ItemDetails", new { id = id });
-            if (duration < 1 || duration > 24) duration = 2;
-            ViewBag.HandoverDate = handoverDate;
-            ViewBag.HandoverTime = string.IsNullOrWhiteSpace(handoverTime) ? "09:00 AM" : handoverTime;
-            ViewBag.Duration = duration;
-            ViewBag.Notes = notes;
-            ViewBag.Total = details.HourlyRate * duration;
-            return View("RequestSubmitted", details);
+            ViewBag.BookingId = booking.GetValue("requestId", booking["_id"].ToString()).ToString();
+            ViewBag.HandoverDate = booking.GetValue("handoverDate", booking.GetValue("startDate", BsonDateTime.Create(DateTime.UtcNow))).ToUniversalTime().ToLocalTime();
+            ViewBag.HandoverTime = booking.GetValue("handoverTime", "").ToString();
+            ViewBag.Duration = booking.GetValue("durationHours", 1).ToInt32();
+            var feeValue = booking.GetValue("estimatedFee", booking.GetValue("rentalFee", booking.GetValue("totalFee", BsonInt32.Create(0))));
+            ViewBag.Total = feeValue.IsNumeric ? feeValue.ToDecimal() : 0m;
+            ViewBag.Status = booking.GetValue("status", "PENDING").ToString();
+            return View(MarketplaceService.ToDetails(item, MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault()));
         }
 
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
@@ -146,8 +191,7 @@ namespace UniShare.Controllers
             if (item == null) return HttpNotFound();
             if (!string.Equals(item.AvailabilityStatus, "AVAILABLE", StringComparison.OrdinalIgnoreCase))
                 return RedirectToAction("ItemDetails", new { id = id });
-            TempData["Success"] = "Rental request sent to the item owner for " + item.Name + ".";
-            return RedirectToAction("ItemDetails", new { id = id });
+            return RedirectToAction("RequestToRent", new { id = id });
         }
 
         private static string ToConditionLabel(string value)

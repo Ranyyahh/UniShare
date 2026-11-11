@@ -16,6 +16,9 @@ namespace UniShare.Controllers
     {
         [HttpGet] public ActionResult Login(string returnUrl) { ViewBag.ReturnUrl = returnUrl; return View(); }
 
+        [AllowAnonymous, HttpGet]
+        public ActionResult Restricted() { return View(); }
+
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Login(LoginViewModel model, string returnUrl)
         {
@@ -24,6 +27,11 @@ namespace UniShare.Controllers
             {
                 var email = model.SchoolEmail.Trim().ToLowerInvariant();
                 var user = MongoDatabase.Users.Find(x => x.SchoolEmail == email).FirstOrDefault();
+                if (user != null)
+                {
+                    AdminAccountabilityService.IsUserRestricted(user.Id);
+                    user = MongoDatabase.Users.Find(x => x.Id == user.Id).FirstOrDefault();
+                }
                 if (user == null || (user.Status != "ACTIVE" && user.Status != "PENDING") || String.IsNullOrEmpty(user.PasswordHash) || !PasswordHasher.Verify(model.Password, user.PasswordHash))
                 {
                     ModelState.AddModelError("", "The email or password is incorrect.");

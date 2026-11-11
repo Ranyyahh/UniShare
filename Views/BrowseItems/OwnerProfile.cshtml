@@ -5,6 +5,8 @@
 
 <main class="container py-5" style="max-width: 1100px">
     <a class="text-decoration-none" href="@Url.Action("Index", "BrowseItems")">&larr; Browse items</a>
+    @if (TempData["Success"] != null) { <div class="alert alert-success mt-3">@TempData["Success"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger mt-3">@TempData["Error"]</div> }
     <section class="card border-0 shadow-sm mt-4 p-4 p-md-5">
         <div class="d-flex align-items-center gap-3">
             @if (!string.IsNullOrWhiteSpace(Model.ProfilePhoto))
@@ -35,6 +37,27 @@
         @if (!string.IsNullOrWhiteSpace(Model.Bio))
         {
             <p class="mt-4 mb-0">@Model.Bio</p>
+        }
+    </section>
+
+    <section class="mt-5">
+        <h2 class="h4">Ratings &amp; reviews <span class="text-secondary">(@Model.Reviews.Count)</span></h2>
+        @if (Model.Reviews.Count == 0) { <p class="text-secondary mt-3">No written reviews yet.</p> }
+        @foreach (var review in Model.Reviews)
+        {
+            <article class="card border-0 shadow-sm mt-3 p-3 p-md-4">
+                <div class="d-flex flex-wrap justify-content-between gap-2"><div><strong>@review.ReviewerName</strong><span class="text-secondary small"> · @review.CreatedAt.ToString("MMM d, yyyy")</span></div><span class="small text-secondary">Item @(review.ItemRating.HasValue ? review.ItemRating.Value + "/5" : "—") · Owner @(review.OwnerRating.HasValue ? review.OwnerRating.Value + "/5" : "—")</span></div>
+                @if (!String.IsNullOrWhiteSpace(review.Review)) { <p class="mb-0 mt-3">@review.Review</p> }
+                @if (Request.IsAuthenticated && User.Identity.Name != review.ReviewerId)
+                {
+                    using (Html.BeginForm("Report", "ReviewReports", FormMethod.Post, new { @class = "d-flex flex-wrap gap-2 mt-3" }))
+                    {
+                        @Html.AntiForgeryToken()<input type="hidden" name="id" value="@review.Id" /><input type="hidden" name="returnUrl" value="@Request.Url.PathAndQuery" />
+                        <input class="form-control form-control-sm" type="text" name="reason" maxlength="500" required placeholder="Why should this review be checked?" style="max-width:320px" />
+                        <button class="btn btn-sm btn-outline-secondary" type="submit">Report review</button>
+                    }
+                }
+            </article>
         }
     </section>
 

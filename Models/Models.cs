@@ -30,12 +30,25 @@ namespace UniShare.Models
     public class BorrowedItem
     {
         public int Id { get; set; }
+        public string RecordId { get; set; }
+        public string OwnerId { get; set; }
+        public string ItemId { get; set; }
+        public string ImageUrl { get; set; }
+        public double? OwnerRating { get; set; }
+        public double? ItemRating { get; set; }
+        public bool ReturnRequested { get; set; }
+        public string ReturnRequestedOn { get; set; }
+        public string ReturnedOn { get; set; }
+        public double? LateMilliseconds { get; set; }
+        public double? PausedMilliseconds { get; set; }
+        public DateTime? DisputedAt { get; set; }
         public string ItemName { get; set; }
         public string Category { get; set; }
         public string Lender { get; set; }
         public string LenderInitials { get; set; }
         public string LenderProgram { get; set; }
         public decimal PricePerHour { get; set; }
+        public decimal? PaidAmount { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public string PickupPoint { get; set; }
@@ -44,6 +57,7 @@ namespace UniShare.Models
         public string About { get; set; }
         public string Status { get; set; }          // Pending (approved, awaiting handover) / Ongoing / Completed / Disputed
         public bool HandoverConfirmed { get; set; }
+        public bool CanReportNoShow { get; set; }
         public int? Rating { get; set; }
         public string Review { get; set; }
         public string DisputeReason { get; set; }
@@ -55,7 +69,7 @@ namespace UniShare.Models
         public DateTime? HandoverAt { get; set; }    // exact moment the handover was confirmed (starts the rental timer)
 
         public int Hours { get { return (int)Math.Round((End - Start).TotalHours); } }
-        public decimal TotalPaid { get { return PricePerHour * Hours; } }
+        public decimal TotalPaid { get { return PaidAmount ?? PricePerHour * Hours; } }
         public string PeriodLabel
         {
             get

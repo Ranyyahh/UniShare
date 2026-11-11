@@ -119,6 +119,7 @@
         disputeImagePreviews: document.getElementById('disputeImagePreviews'),
         disputeImageCount: document.getElementById('disputeImageCount'),
         disputeImageError: document.getElementById('disputeImageError'),
+        disputeSubmitError: document.getElementById('disputeSubmitError'),
         btnDisputeUpload: document.getElementById('btnDisputeUpload'),
         disputeUploadTitle: document.getElementById('disputeUploadTitle'),
         disputeUploadSub: document.getElementById('disputeUploadSub'),
@@ -138,6 +139,7 @@
         completedModal: document.getElementById('modalCompleted'),
         btnCloseCompletedModal: document.getElementById('btnCloseCompletedModal'),
         btnCompletedClose: document.getElementById('btnCompletedClose'),
+        btnCompletedReportDispute: document.getElementById('btnCompletedReportDispute'),
         statusConfirmModal: document.getElementById('modalStatusConfirm'),
         btnStatusConfirmCancel: document.getElementById('btnStatusConfirmCancel'),
         btnStatusConfirmOk: document.getElementById('btnStatusConfirmOk')
@@ -1696,6 +1698,8 @@
         elements.disputeCategoryError.style.display = 'none';
         elements.disputeDescError.style.display = 'none';
         showDisputeImageError('');
+        elements.disputeSubmitError.textContent = '';
+        elements.disputeSubmitError.style.display = 'none';
         releaseDisputeImages();
         elements.disputeImageInput.value = '';
         renderDisputeImages();
@@ -1703,7 +1707,7 @@
 
     function openDisputeModal(returnToModal, returnFocusEl) {
         var rental = flow.rental;
-        if (!rental || (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue' && rental.Status !== 'Returned')) {
+        if (!rental || (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue' && rental.Status !== 'Returned' && rental.Status !== 'Completed')) {
             return;
         }
 
@@ -1826,11 +1830,9 @@
         elements.disputeUploadSub.textContent = full ? 'Remove an image to upload another' : count + ' of ' + MAX_DISPUTE_IMAGES + ' added';
     }
 
-    // Frontend only: validates the form, then moves the record to Disputed in the page.
-    // Nothing is saved, and nobody is actually notified.
     function submitDispute() {
         var rental = flow.rental;
-        if (!rental || (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue' && rental.Status !== 'Returned')) {
+        if (!rental || (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue' && rental.Status !== 'Returned' && rental.Status !== 'Completed')) {
             return;
         }
 
@@ -1863,20 +1865,54 @@
             return;
         }
 
-        var requestId = rental.RequestId;
-        rental.DisputeCategory = chosen.value;
-        rental.DisputeDescription = description;
-        rental.DisputeEvidenceNames = disputeImages.map(function (x) { return x.file.name; });
-        // The Disputed modal keeps showing the evidence, so its image URLs are handed over to the record
-        // (not revoked) and the form's list is emptied.
-        rental.DisputeEvidenceUrls = disputeImages.map(function (x) { return x.url; });
-        disputeImages = [];
-        rental.DisputeSubmittedAtFormatted = formatDateTime(new Date());
-        rental.Status = 'Disputed';
-        updateSummaryCards();
-        endFlow(false);
-        applyAllFiltersAndPaginate();
-        focusViewButton(requestId);
+        var page = document.querySelector('.my-rentals-page');
+        var token = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (!page || !page.getAttribute('data-dispute-url') || !token) {
+            elements.disputeSubmitError.textContent = 'The dispute form could not be submitted. Refresh the page and try again.';
+            elements.disputeSubmitError.style.display = 'block';
+            return;
+        }
+
+        var form = new FormData();
+        form.append('__RequestVerificationToken', token.value);
+        form.append('id', rental.BookingObjectId || '');
+        form.append('reason', chosen.value);
+        form.append('details', description);
+        disputeImages.forEach(function (image) { form.append('evidenceFiles', image.file); });
+        elements.btnDisputeSubmit.disabled = true;
+        elements.btnDisputeSubmit.textContent = 'Submitting…';
+        elements.disputeSubmitError.textContent = '';
+        elements.disputeSubmitError.style.display = 'none';
+
+        fetch(page.getAttribute('data-dispute-url'), { method: 'POST', credentials: 'same-origin', body: form })
+            .then(function (response) {
+                return response.json().then(function (result) {
+                    if (!response.ok || !result.ok) throw new Error(result.message || 'The dispute could not be submitted.');
+                    return result;
+                });
+            })
+            .then(function (result) {
+                var requestId = rental.RequestId;
+                rental.DisputeCategory = chosen.value;
+                rental.DisputeDescription = description;
+                rental.DisputeEvidenceNames = disputeImages.map(function (x) { return x.file.name; });
+                releaseDisputeImages();
+                rental.DisputeEvidenceUrls = result.evidenceUrls || [];
+                rental.DisputeSubmittedAtFormatted = formatDateTime(new Date());
+                rental.Status = 'Disputed';
+                updateSummaryCards();
+                endFlow(false);
+                applyAllFiltersAndPaginate();
+                focusViewButton(requestId);
+            })
+            .catch(function (error) {
+                elements.disputeSubmitError.textContent = error.message || 'The dispute could not be submitted. Refresh and try again.';
+                elements.disputeSubmitError.style.display = 'block';
+            })
+            .then(function () {
+                elements.btnDisputeSubmit.disabled = false;
+                elements.btnDisputeSubmit.textContent = 'Submit Dispute';
+            });
     }
 
     function bindFlowModalEvents() {
@@ -2017,6 +2053,10 @@
         elements.btnCompletedClose.addEventListener('click', function (e) {
             e.preventDefault();
             endFlow(true);
+        });
+        elements.btnCompletedReportDispute.addEventListener('click', function (e) {
+            e.preventDefault();
+            openDisputeModal(elements.completedModal, elements.btnCompletedReportDispute);
         });
 
         // Shared confirmation step

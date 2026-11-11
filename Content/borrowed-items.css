@@ -112,6 +112,7 @@
 .bi-status--ongoing i { background: #4f46e5; }
 .bi-status--completed i { background: #059669; }
 .bi-status--disputed i { background: #dc2626; }
+.bi-status--return-requested i { background: #0891b2; }
 .bi-status--solid { position: static; margin-bottom: 12px; }
 .bi-duration { position: absolute; right: 12px; bottom: 12px; padding: 5px 8px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,.7); border-radius: 7px; color: #334155; background: rgba(255,255,255,.94); font-size: 11px; font-weight: 600; }
 .bi-duration svg { width: 14px; height: 14px; }

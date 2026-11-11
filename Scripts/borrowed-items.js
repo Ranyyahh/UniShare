@@ -26,7 +26,8 @@
 
     items.forEach(function (it) {
         it.endsAt = (it.remaining !== null && it.remaining !== undefined) ? now + it.remaining * 1000 : null;
-        it.pausedMs = null;
+        it.pausedMs = (it.pausedMs !== null && it.pausedMs !== undefined) ? Number(it.pausedMs) : null;
+        it.lateMs = (it.lateMs !== null && it.lateMs !== undefined) ? Number(it.lateMs) : null;
 
     });
 
@@ -56,7 +57,7 @@
     function today() { return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
     function byId(id) { for (var i = 0; i < items.length; i++) { if (items[i].id === id) { return items[i]; } } return null; }
     function isAwaiting(it) { return it.status === 'Pending' || (it.status === 'Ongoing' && !it.handover); }
-    function isInUse(it) { return it.status === 'Ongoing' && it.handover; }
+    function isInUse(it) { return (it.status === 'Ongoing' || it.status === 'Return Requested') && it.handover; }
     function lower(s) { return String(s).toLowerCase(); }
     function money(n) { return PESO + n.toFixed(2); }
     function human(ms) {
@@ -83,8 +84,7 @@
     }
     function stageOf(it) { var l = lateInfo(it); return l.over ? 'late' : (l.ms > 0 ? 'grace' : 'none'); }
 
-    function getFakeRating(id) { return (id % 3 === 0) ? '4.8' : (id % 2 === 0 ? '4.5' : '4.9'); }
-    function getFakeOwnerRating(id) { return (id % 3 === 0) ? '4.9' : (id % 2 === 0 ? '4.7' : '5.0'); }
+    function ratingText(value) { return value === null || value === undefined || isNaN(Number(value)) ? 'New' : Number(value).toFixed(1); }
 
     var SVG_CHECK = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 12l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     var SVG_CLOCK = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -134,20 +134,15 @@
         return h + '</span>';
     }
 
-    var photos = {};
-    [].slice.call(document.querySelectorAll('#bi-images img[data-item]')).forEach(function (img) {
-        photos[img.getAttribute('data-item')] = { src: img.getAttribute('src'), alt: img.getAttribute('alt') };
-    });
     function media(it) {
-        var p = photos[it.id];
-        if (!p) { return '<span class="bi-nophoto">No photo</span>'; }
-        return '<img class="bi-photo" src="' + esc(p.src) + '" alt="' + esc(p.alt || it.name) + '" loading="lazy" style="object-fit: cover;" />';
+        if (!it.image) { return '<span class="bi-nophoto">No photo</span>'; }
+        return '<img class="bi-photo" src="' + esc(it.image) + '" alt="' + esc(it.name) + '" loading="lazy" style="object-fit: cover;" />';
     }
     function tile(it, large) {
         return '<div class="bi-tile bi-tile--' + esc(it.theme) + (large ? ' bi-tile--lg' : '') + '">' + media(it) + '</div>';
     }
     function statusPill(it, solid) {
-        var st = lower(it.status);
+        var st = lower(it.status).replace(/\s+/g, '-');
         return '<span class="bi-status bi-status--' + st + (solid ? ' bi-status--solid' : '') + '"><i></i>' + esc(it.status) + '</span>';
     }
 
@@ -158,7 +153,8 @@
     }
 
     function factsFull(it) {
-        var late = lateInfo(it), fee = it.price * it.hours, id = it.id;
+        var late = lateInfo(it), fee = Number(it.total), id = it.id;
+        if (isNaN(fee)) { fee = it.price * it.hours; }
         function row(k, v, cls, attr) { return '<div><dt>' + k + '</dt><dd' + (cls ? ' class="' + cls + '"' : '') + (attr || '') + '>' + v + '</dd></div>'; }
         var overdue, overCls = '';
         if (late.over) {
@@ -182,12 +178,15 @@
     }
 
     function cardHTML(it) {
-        var st = lower(it.status);
+        var st = lower(it.status).replace(/\s+/g, '-');
         var tag = '<span class="bi-duration">' + SVG_CLOCK + it.hours + ' hrs</span>';
         var foot = '';
 
         if (isAwaiting(it)) {
-            foot = '<button type="button" class="us-btn us-btn--primary us-btn--block" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button>';
+            foot = '<button type="button" class="us-btn us-btn--primary us-btn--block" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button>' +
+                (it.canReportNoShow && !it.noShowReported ? '<button type="button" class="us-btn us-btn--outline us-btn--block" data-act="no-show" data-id="' + it.id + '">Report no-show</button>' : '');
+        } else if (it.returnRequested) {
+            foot = '<div class="bi-notice">' + SVG_RETURN + ' Return request sent to the lender</div>';
         } else if (isInUse(it)) {
             var t = timerInfo(it);
             foot = '<div class="bi-card__timer bi-card__timer--' + t.cls + '" data-tbox-mini="' + it.id + '">' + SVG_CLOCK +
@@ -208,10 +207,10 @@
             '<div class="bi-body"><span class="bi-cat">' + esc(it.category) + '</span>' +
             '<h3 class="bi-name" style="display:flex; justify-content:space-between; align-items:flex-start;">' +
             '<span>' + esc(it.name) + '</span>' +
-            '<span class="card-rating"><span class="star-icon">&#9733;</span> ' + getFakeRating(it.id) + '</span>' +
+            '<span class="card-rating">' + (it.itemRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.itemRating) : '') + '</span>' +
             '</h3>' +
             '<div class="bi-meta" style="margin-bottom: 4px;"><span class="bi-price">' + PESO + it.price + '<small>/hr</small></span>' +
-            '<span class="bi-lender" style="display:flex; align-items:center; gap:4px;">Lender: <strong>' + esc(it.lender) + '</strong> <span class="owner-rating"><span class="star-icon">&#9733;</span> ' + getFakeOwnerRating(it.id) + '</span></span></div>' +
+            '<span class="bi-lender" style="display:flex; align-items:center; gap:4px;">Lender: <strong>' + esc(it.lender) + '</strong> <span class="owner-rating">' + (it.ownerRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.ownerRating) : '') + '</span></span></div>' +
             '<div class="bi-foot">' + foot + '</div></div></article>';
     }
 
@@ -221,7 +220,7 @@
         if (isInUse(it) && !handoverDate) { handoverDate = today(); }
         var seq = [{ l: 'Requested', d: it.steps.requested }, { l: 'Approved', d: it.steps.approved }, { l: 'Handover', d: handoverDate }];
         if (late.ms > 0) { seq.push({ l: 'Overdue', late: true }); }
-        seq.push({ l: 'Completed', d: it.steps.completed });
+        seq.push(it.returnRequested ? { l: 'Return Requested', d: it.returnRequestedOn || 'Awaiting lender confirmation' } : { l: 'Completed', d: it.steps.completed });
         var last = seq.length - 1, firstPending = -1;
         for (var k = 0; k < seq.length; k++) { if (!seq[k].late && !seq[k].d) { firstPending = k; break; } }
         var h = '<ol class="bi-steps">';
@@ -263,6 +262,9 @@
         if (isAwaiting(it)) {
             actions = '<div class="bi-modal-actions"><button type="button" class="us-btn us-btn--danger" data-act="report" data-id="' + it.id + '">Report a problem</button>' +
                 '<button type="button" class="us-btn us-btn--primary" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button></div>';
+            if (it.canReportNoShow && !it.noShowReported) actions += '<button type="button" class="us-btn us-btn--outline us-btn--block" data-act="no-show" data-id="' + it.id + '">Report owner no-show</button>';
+        } else if (it.returnRequested) {
+            actions = '<div class="bi-notice bi-notice--block">' + SVG_RETURN + ' Return request sent to the lender' + (it.returnRequestedOn ? ' on ' + esc(it.returnRequestedOn) : '') + '. Completion is recorded after lender confirmation.</div>';
         } else if (isInUse(it)) {
             actions = '<div class="bi-modal-actions"><button type="button" class="us-btn us-btn--danger" data-act="report" data-id="' + it.id + '">Report a problem</button>' +
                 '<button type="button" class="us-btn us-btn--primary" data-act="return" data-id="' + it.id + '">' + SVG_RETURN + ' Return Item</button></div>';
@@ -283,14 +285,14 @@
             '<div class="bi-lender-card"><div class="bi-lender-card__top"><span class="us-avatar">' + esc(it.initials) + '</span>' +
             '<div style="flex:1; display:flex; justify-content:space-between; align-items:flex-start;">' +
             '<div><strong>' + esc(it.lender) + '</strong><small>Lender &bull; ' + esc(it.program) + '</small></div>' +
-            '<span style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;"><span style="color:#f59e0b; font-size:14px;">&#9733;</span> ' + getFakeOwnerRating(it.id) + '</span>' +
+            '<span style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;">' + (it.ownerRating ? '<span style="color:#f59e0b; font-size:14px;">&#9733;</span> ' + ratingText(it.ownerRating) : 'New') + '</span>' +
             '</div></div>' +
-            '<button type="button" class="us-btn us-btn--outline us-btn--block" data-msg-lender="' + esc(it.lender) + '" data-msg-item="' + esc(it.name) + '">' + SVG_MSG + ' Message Lender</button></div>' +
+            '<button type="button" class="us-btn us-btn--outline us-btn--block" data-msg-lender="' + esc(it.lender) + '" data-msg-item="' + esc(it.name) + '" data-owner-id="' + esc(it.ownerId) + '" data-item-id="' + esc(it.itemId) + '">' + SVG_MSG + ' Message Lender</button></div>' +
             '<div class="bi-about"><h4>About this item</h4><p>' + esc(it.about) + '</p></div></aside>' +
             '<section class="bi-dialog__main">' + statusPill(it, true) + '<span class="bi-cat">' + esc(it.category) + '</span>' +
             '<h3 class="bi-dialog__name" style="display:flex; justify-content:space-between; align-items:flex-start;">' +
             '<span>' + esc(it.name) + '</span>' +
-            '<span style="font-size:16px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;"><span style="color:#f59e0b;">&#9733;</span> ' + getFakeRating(it.id) + '</span>' +
+            '<span style="font-size:16px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;">' + (it.itemRating ? '<span style="color:#f59e0b;">&#9733;</span> ' + ratingText(it.itemRating) : '') + '</span>' +
             '</h3>' +
             '<div class="bi-dialog__price">' + PESO + it.price + '<small>/hr</small></div>' +
             '<div class="bi-factbox">' + factsFull(it) + '</div>' + timerPanel(it) +
@@ -298,7 +300,7 @@
     }
 
     function matches(it) {
-        if (state.status && it.status !== state.status) { return false; }
+        if (state.status && it.status !== state.status && !(state.status === 'Ongoing' && it.status === 'Return Requested')) { return false; }
         if (state.category && it.category !== state.category) { return false; }
         if (state.q) {
             var hay = lower(it.name + ' ' + it.lender + ' ' + it.txn + ' ' + it.category);
@@ -318,7 +320,7 @@
     function renderTabs() {
         tabs.forEach(function (t) {
             var s = t.getAttribute('data-status');
-            var n = s ? items.filter(function (i) { return i.status === s; }).length : items.length;
+            var n = s ? items.filter(function (i) { return i.status === s || (s === 'Ongoing' && i.status === 'Return Requested'); }).length : items.length;
             t.querySelector('span').textContent = n;
             t.setAttribute('aria-selected', s === state.status ? 'true' : 'false');
         });
@@ -405,7 +407,7 @@
                 [].slice.call(root.querySelectorAll('[data-lfee-step="' + id + '"]')).forEach(function (el) { el.textContent = money(late.fee) + ' late fee'; });
                 [].slice.call(root.querySelectorAll('[data-lstep="' + id + '"]')).forEach(function (el) { el.textContent = human(late.ms) + ' late'; });
                 [].slice.call(root.querySelectorAll('[data-lover="' + id + '"]')).forEach(function (el) { el.textContent = human(late.ms) + ' late'; });
-                [].slice.call(root.querySelectorAll('[data-ltotal="' + id + '"]')).forEach(function (el) { el.textContent = money(it.price * it.hours + late.fee); });
+                [].slice.call(root.querySelectorAll('[data-ltotal="' + id + '"]')).forEach(function (el) { el.textContent = money(Number(it.total) + late.fee); });
                 [].slice.call(root.querySelectorAll('[data-lcalc="' + id + '"]')).forEach(function (el) { el.textContent = '(' + late.minutes + ' min x ' + money(perMinute(it)) + ')'; });
             }
         });
@@ -426,6 +428,28 @@
     function openDialog(d) { if (d && typeof d.showModal === 'function' && !d.open) { d.showModal(); } }
     function closeDialog(d) { if (d && d.open) { d.close(); } }
 
+    function postAction(url, values, callback, files) {
+        var token = root.querySelector('input[name="__RequestVerificationToken"]');
+        var body, options = { method: 'POST', credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
+        if (files && files.length) {
+            body = new FormData();
+            body.append('__RequestVerificationToken', token ? token.value : '');
+            Object.keys(values).forEach(function (key) { body.append(key, values[key] === null || values[key] === undefined ? '' : values[key]); });
+            Array.prototype.forEach.call(files, function (file) { body.append('evidenceFiles', file); });
+            options.body = body;
+        } else {
+            body = new URLSearchParams();
+            body.append('__RequestVerificationToken', token ? token.value : '');
+            Object.keys(values).forEach(function (key) { body.append(key, values[key] === null || values[key] === undefined ? '' : values[key]); });
+            options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+            options.body = body.toString();
+        }
+        fetch(url, options)
+            .then(function (response) { return response.json().then(function (result) { if (!response.ok) { throw new Error(result.message || 'The request could not be completed.'); } return result; }); })
+            .then(function (result) { if (!result.ok) { throw new Error(result.message || 'The request could not be completed.'); } callback(result); })
+            .catch(function (error) { toast(error.message || 'The request could not be completed. Refresh and try again.'); });
+    }
+
     function openAsk(dialogId, formId, id, fields) {
         var it = byId(id);
         if (!it) { return; }
@@ -438,57 +462,52 @@
     function doHandover(id) {
         var it = byId(id);
         if (!it || !isAwaiting(it)) { return; }
-
-        it.status = 'Ongoing';
-        it.handover = true;
-        it.endsAt = Date.now() + it.hours * 3600000;
-        it.steps.handover = today();
-        render();
-        toast('Handover confirmed. Your rental timer has started.');
+        postAction(root.getAttribute('data-handover-url'), { id: id, received: true }, function (result) {
+            it.status = 'Ongoing'; it.handover = true; it.endsAt = Date.now() + it.hours * 3600000;
+            it.steps.handover = today(); render(); toast(result.message);
+        });
     }
 
     function doReturn(id) {
         var it = byId(id);
         if (!it || !isInUse(it)) { return; }
-        var lateNow = lateInfo(it);
-        if (lateNow.ms > 0) { it.lateMs = lateNow.ms; }
-        it.status = 'Completed';
-        it.endsAt = null;
-        it.steps.completed = today();
-        it.returnedOn = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-        render();
-        var lt = lateInfo(it);
-        toast(lt.over ? 'Item returned ' + human(lt.ms) + ' late. A late fee of ' + money(lt.fee) + ' applies.'
-            : (lt.ms > 0 ? 'Item returned within the grace period. No late fee.' : 'Item returned. This rental is now completed and ready to rate.'));
+        postAction(root.getAttribute('data-return-url'), { id: id, returned: true }, function (result) {
+            it.status = 'Return Requested'; it.returnRequested = true;
+            it.returnRequestedOn = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            render(); toast(result.message);
+        });
     }
 
-    function doDispute(id, reason, details) {
+    function doDispute(id, reason, details, files) {
         var it = byId(id);
-        if (!it || it.status === 'Disputed' || it.status === 'Completed') { return; }
-        if (it.endsAt !== null) {
-            var left = it.endsAt - Date.now();
-            if (left >= 0) { it.pausedMs = left; } else { it.pausedMs = 0; it.lateMs = -left; }
-            it.endsAt = null;
-        }
-        it.status = 'Disputed';
-        it.dispute = details ? reason + ': ' + details : reason;
-        render();
-        toast('Dispute sent to the admin. The rental timer is paused.');
+        if (!it || it.status === 'Disputed' || it.status === 'Completed' || it.returnRequested) { return; }
+        postAction(root.getAttribute('data-dispute-url'), { id: id, reason: reason, details: details }, function (result) {
+            if (it.endsAt !== null) { var left = it.endsAt - Date.now(); it.pausedMs = left >= 0 ? left : 0; if (left < 0) it.lateMs = -left; it.endsAt = null; }
+            it.status = 'Disputed'; it.dispute = details ? reason + ': ' + details : reason; render(); toast(result.message);
+        }, files);
+    }
+
+    function doNoShow(id, reason) {
+        var it = byId(id);
+        if (!it || !it.canReportNoShow || it.noShowReported) return;
+        postAction(root.getAttribute('data-no-show-url'), { bookingId: id, reason: reason, returnUrl: window.location.pathname }, function (result) {
+            it.noShowReported = true; render(); toast(result.message);
+        });
     }
 
     function doRate(id, itemRating, ownerRating, review) {
         var it = byId(id);
         if (!it || it.status !== 'Completed' || it.rating) { return; }
-        it.rating = itemRating;
-        it.review = review || '';
-        render();
-        toast('Thanks for reviewing ' + it.name + ' and the owner!');
+        postAction(root.getAttribute('data-rate-url'), { id: id, itemRating: itemRating, ownerRating: ownerRating, review: review || '' }, function (result) {
+            it.rating = itemRating; it.itemRating = itemRating; it.review = review || ''; render(); toast(result.message);
+        });
     }
 
     function act(name, id) {
         if (name === 'handover') { openAsk('bi-confirm', 'bi-confirm-form', id, [['bi-confirm-item', function (i) { return i.name; }], ['bi-confirm-lender', function (i) { return i.lender; }]]); }
         else if (name === 'return') { openAsk('bi-return', 'bi-return-form', id, [['bi-return-item', function (i) { return i.name; }], ['bi-return-lender', function (i) { return i.lender; }]]); }
         else if (name === 'report') { openAsk('bi-report', 'bi-report-form', id, [['bi-report-item', function (i) { return i.name; }]]); }
+        else if (name === 'no-show') { openAsk('bi-no-show', 'bi-no-show-form', id, [['bi-no-show-item', function (i) { return i.name; }]]); }
         else if (name === 'rate') {
             var it = byId(id);
             if (!it) return;
@@ -511,27 +530,23 @@
     }
 
     root.addEventListener('click', function (e) {
+        var messageButton = e.target.closest('[data-msg-lender]');
+        if (messageButton) {
+            e.stopPropagation();
+            var params = new URLSearchParams({ userId: messageButton.getAttribute('data-owner-id') || '', itemId: messageButton.getAttribute('data-item-id') || '' });
+            window.location.href = root.getAttribute('data-messages-url') + '?' + params.toString();
+            return;
+        }
         var btn = e.target.closest('[data-act]');
-        if (btn) { e.stopPropagation(); act(btn.getAttribute('data-act'), parseInt(btn.getAttribute('data-id'), 10)); return; }
+        if (btn) { e.stopPropagation(); act(btn.getAttribute('data-act'), btn.getAttribute('data-id')); return; }
         if (e.target.closest('[data-stop]') || e.target.closest('.bi-rate-form')) { return; }
         var card = e.target.closest('.bi-card');
-        if (card && grid.contains(card)) { openDetail(parseInt(card.getAttribute('data-id'), 10)); }
+        if (card && grid.contains(card)) { openDetail(card.getAttribute('data-id')); }
     });
     grid.addEventListener('keydown', function (e) {
         if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('bi-card')) {
             e.preventDefault();
-            openDetail(parseInt(e.target.getAttribute('data-id'), 10));
-        }
-    });
-
-    root.addEventListener('submit', function (e) {
-        var form = e.target;
-        if (form.hasAttribute('data-rate-form')) {
-            e.preventDefault();
-            var picked = form.querySelector('input[name="rating"]:checked');
-            if (!picked) { return; }
-            var ta = form.querySelector('textarea');
-            doRate(parseInt(form.getAttribute('data-id'), 10), parseInt(picked.value, 10), parseInt(picked.value, 10), ta ? ta.value.trim() : '');
+            openDetail(e.target.getAttribute('data-id'));
         }
     });
 
@@ -541,7 +556,15 @@
         e.preventDefault();
         var f = e.target;
         closeDialog($('bi-report'));
-        doDispute(state.pendingId, f.elements.reason.value, f.elements.details.value.trim());
+        doDispute(state.pendingId, f.elements.reason.value, f.elements.details.value.trim(), f.elements.evidenceFiles.files);
+    });
+
+    $('bi-no-show-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var f = e.target, reason = f.elements.reason.value.trim();
+        if (!reason) { f.elements.reason.focus(); return; }
+        closeDialog($('bi-no-show'));
+        doNoShow(state.pendingId, reason);
     });
 
     $('bi-rate-form').addEventListener('submit', function (e) {

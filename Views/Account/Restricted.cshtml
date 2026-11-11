@@ -1,0 +1,8 @@
+@{ ViewBag.Title = "Account restricted"; }
+<main class="container py-5" style="max-width:720px">
+    <div class="alert alert-warning" role="alert">
+        <h1 class="h3">Account access is restricted</h1>
+        <p class="mb-0">Your account currently has an active restriction. Contact the UniShare administrators if you believe this is a mistake.</p>
+    </div>
+    <a class="btn btn-primary" href="@Url.Action("Login", "Account")">Return to sign in</a>
+</main>

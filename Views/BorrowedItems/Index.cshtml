@@ -8,20 +8,26 @@
 
     var payload = new
     {
-        categories = UniShare.Models.SampleData.BorrowedCategories,
-        lateRate = UniShare.Models.SampleData.LateFeeMultiplier,
-        graceMinutes = UniShare.Models.SampleData.LateGraceMinutes,
+        categories = Model.Select(b => b.Category).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c).ToList(),
+        lateRate = 1,
+        graceMinutes = 30,
         items = Model.Select(b => new
         {
-            id = b.Id,
+            id = b.RecordId,
+            canReportNoShow = b.CanReportNoShow,
+            ownerId = b.OwnerId,
+            itemId = b.ItemId,
             name = b.ItemName,
+            image = b.ImageUrl,
             category = b.Category,
             lender = b.Lender,
             initials = b.LenderInitials,
             program = b.LenderProgram,
+            ownerRating = b.OwnerRating,
+            itemRating = b.ItemRating,
             price = b.PricePerHour,
             hours = b.Hours,
-            total = b.TotalPaid.ToString("N2", inv),
+            total = b.TotalPaid.ToString("0.00", inv),
             period = b.PeriodLabel,
             pickup = b.PickupPoint,
             payment = b.PaymentMethod,
@@ -33,9 +39,14 @@
             review = b.Review,
             dispute = b.DisputeReason,
             theme = b.Theme,
+            returnRequested = b.ReturnRequested,
+            returnRequestedOn = b.ReturnRequestedOn,
+            returnedOn = b.ReturnedOn,
+            lateMs = b.LateMilliseconds,
+            pausedMs = b.PausedMilliseconds,
             steps = new { requested = fmt(b.RequestedOn), approved = fmt(b.ApprovedOn), handover = fmt(b.HandoverOn), completed = fmt(b.CompletedOn) },
-            remaining = (b.Status == "Ongoing" && b.HandoverConfirmed && b.HandoverAt.HasValue)
-                ? (long?)Math.Round((b.HandoverAt.Value.AddHours(b.Hours) - DateTime.Now).TotalSeconds)
+            remaining = (b.HandoverConfirmed && b.HandoverAt.HasValue && (b.Status == "Ongoing" || b.ReturnRequested || b.Status == "Disputed"))
+                ? (long?)Math.Round((b.HandoverAt.Value.AddHours(b.Hours) - DateTime.UtcNow).TotalSeconds)
                 : null
         }).ToList()
     };
@@ -48,7 +59,14 @@
     <link href="@Url.Content("~/Content/borrowed-items.css")" rel="stylesheet" />
 }
 
-<div class="bi-page" data-initial="@initial" data-messages-url="@Url.Action("Index", "Messages")">
+<div class="bi-page" data-initial="@initial"
+     data-messages-url="@Url.Action("Index", "Messages")"
+     data-handover-url="@Url.Action("ConfirmHandover", "BorrowedItems")"
+     data-return-url="@Url.Action("ReturnItem", "BorrowedItems")"
+     data-dispute-url="@Url.Action("Dispute", "BorrowedItems")"
+     data-no-show-url="@Url.Action("Report", "NoShowReports")"
+     data-rate-url="@Url.Action("Rate", "BorrowedItems")">
+    @Html.AntiForgeryToken()
 
     <div class="us-page-head" style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
@@ -93,15 +111,6 @@
                 <ul class="bi-select__menu" id="bi-cat-menu" role="listbox" hidden></ul>
             </div>
         </div>
-    </div>
-
-    <div id="bi-images" hidden>
-        <img data-item="1" src="@Url.Content("~/Content/images/casio-fx991ex.jpg")" alt="Casio fx-991EX ClassWiz Calculator" />
-        <img data-item="2" src="@Url.Content("~/Content/images/engineering-mechanics-statics.jpg")" alt="Engineering Mechanics (Statics)" />
-        <img data-item="3" src="@Url.Content("~/Content/images/rotring-isograph-pen-set.jpg")" alt="Rotring Isograph Junior Pen Set" />
-        <img data-item="4" src="@Url.Content("~/Content/images/molten-gg7x-basketball.jpg")" alt="Molten GG7X Official Basketball" />
-        <img data-item="5" src="@Url.Content("~/Content/img/placeholder.png")" alt="Casio Calculator Hard Slide-on Case" />
-        <img data-item="6" src="@Url.Content("~/Content/img/placeholder.png")" alt="Arduino Uno R3 Starter Kit" />
     </div>
 
     <p class="bi-result" id="bi-result" aria-live="polite"></p>
@@ -156,7 +165,7 @@
             </header>
             <div class="bi-dialog__pad">
                 <p>Confirm that you received <strong id="bi-confirm-item"></strong> from <strong id="bi-confirm-lender"></strong>. The rental timer starts after confirmation.</p>
-                <label class="bi-check"><input type="checkbox" required /> I received the item and it matches the listing.</label>
+                <label class="bi-check"><input type="checkbox" name="received" value="true" required /> I received the item and it matches the listing.</label>
                 <div class="bi-modal-actions">
                     <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
                     <button type="submit" class="us-btn us-btn--primary">Confirm Handover</button>
@@ -173,8 +182,8 @@
                 <button type="button" class="bi-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
             </header>
             <div class="bi-dialog__pad">
-                <p>Confirm that you gave <strong id="bi-return-item"></strong> back to <strong id="bi-return-lender"></strong>. The rental will be marked <strong>Completed</strong> and you can rate it.</p>
-                <label class="bi-check"><input type="checkbox" required /> I returned the item in the agreed condition.</label>
+                <p>Confirm that you gave <strong id="bi-return-item"></strong> back to <strong id="bi-return-lender"></strong>. This sends a return request to the lender. The rental is completed after the lender confirms receipt.</p>
+                <label class="bi-check"><input type="checkbox" name="returned" value="true" required /> I returned the item in the agreed condition.</label>
                 <div class="bi-modal-actions">
                     <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
                     <button type="submit" class="us-btn us-btn--primary">Return Item</button>
@@ -207,10 +216,25 @@
                     Details
                     <textarea name="details" rows="3" maxlength="400" placeholder="Describe the problem (optional)"></textarea>
                 </label>
+                <label class="bi-field">
+                    Supporting images <span class="text-muted">(up to 2 images, 5 MB each)</span>
+                    <input type="file" name="evidenceFiles" accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
+                </label>
                 <div class="bi-modal-actions">
                     <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
                     <button type="submit" class="us-btn us-btn--danger">Submit Dispute</button>
                 </div>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="bi-dialog bi-dialog--sm" id="bi-no-show" aria-labelledby="bi-no-show-title">
+        <form id="bi-no-show-form">
+            <header class="bi-dialog__head"><h2 id="bi-no-show-title">Report a no-show</h2><button type="button" class="bi-x" data-close aria-label="Close">&times;</button></header>
+            <div class="bi-dialog__pad">
+                <p>Report the owner if they did not arrive for the scheduled handover of <strong id="bi-no-show-item"></strong>. An administrator will review the report.</p>
+                <label class="bi-field">What happened?<textarea name="reason" rows="3" maxlength="500" required placeholder="Include the scheduled time and any steps taken to contact the owner."></textarea></label>
+                <div class="bi-modal-actions"><button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button><button type="submit" class="us-btn us-btn--danger">Submit report</button></div>
             </div>
         </form>
     </dialog>
