@@ -40,23 +40,30 @@
         summary.className = 'account-profile-summary';
         var avatar = textElement('span', 'account-avatar account-avatar--large', '?');
         avatar.setAttribute('aria-hidden', 'true');
+        var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('');
+        avatar.textContent = initials || '?';
         summary.appendChild(avatar);
         var copy = document.createElement('div');
         copy.appendChild(textElement('h3', '', name));
-        copy.appendChild(textElement('p', '', 'Authenticated account'));
+        var subtitle = (data && data.role === 'ADMIN' ? 'UniShare Administrator' : 'QCU Student &bull; Peer Rental Member');
+        var subP = document.createElement('p');
+        subP.innerHTML = subtitle;
+        copy.appendChild(subP);
         summary.appendChild(copy);
         profile.appendChild(summary);
 
         var grid = document.createElement('dl');
         grid.className = 'account-profile-grid';
-        grid.appendChild(field('Student ID', null));
-        grid.appendChild(field('Email address', null));
-        grid.appendChild(field('Course / program', null));
-        grid.appendChild(field('Year level', null));
-        grid.appendChild(field('Verification status', null));
-        grid.appendChild(field('Registered', null));
+        grid.appendChild(field('Student ID', data ? data.studentId : null));
+        grid.appendChild(field('Email address', data ? data.email : null));
+        grid.appendChild(field('Course / program', data ? data.program : null));
+        grid.appendChild(field('Year level', data ? data.yearLevel : null));
+        grid.appendChild(field('Section', data ? data.section : null));
+        grid.appendChild(field('Contact', data ? data.phone : null));
+        grid.appendChild(field('Verification status', data ? data.verificationStatus : null));
+        grid.appendChild(field('Role', data ? data.role : null));
+        grid.appendChild(field('Member since', data ? data.registered : null));
         profile.appendChild(grid);
-        profile.appendChild(textElement('p', 'account-profile-notice', 'Student profile details are not connected to a database in this project yet. No sample profile information is being shown.'));
     }
 
     function loadProfile() {
@@ -149,14 +156,20 @@
 
     var headerName = document.querySelector('[data-account-name]');
     var headerAvatar = document.querySelector('[data-account-avatar]');
+    var headerSubtitle = document.querySelector('[data-account-subtitle]');
     var profileUrl = modal.getAttribute('data-profile-url');
     fetch(profileUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
         .then(function (response) { return response.ok ? response.json() : null; })
         .then(function (data) {
             if (!data || !data.displayName) return;
-            headerName.textContent = data.displayName;
+            if (headerName) headerName.textContent = data.displayName;
             var initials = data.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('');
-            headerAvatar.textContent = initials || '?';
+            if (headerAvatar) headerAvatar.textContent = initials || '?';
+            if (headerSubtitle) {
+                if (data.role === 'ADMIN') headerSubtitle.textContent = 'Administrator';
+                else if (data.verificationStatus === 'APPROVED') headerSubtitle.textContent = 'Verified Student';
+                else headerSubtitle.textContent = 'Pending Verification';
+            }
         })
         .catch(function () { /* Keep the neutral account label when no profile is available. */ });
 }());

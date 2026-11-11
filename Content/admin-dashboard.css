@@ -1,0 +1,1547 @@
+/* =========================================
+   LOCAL FONTS - OFFLINE SUPPORT
+   ========================================= */
+
+@font-face {
+    font-family: "Inter";
+    src: url("fonts/InterVariable.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Plus Jakarta Sans";
+    src: url("fonts/PlusJakartaSans-Variable.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+}
+
+:root {
+    --bg: #F8FAFC;
+    --white: #FFFFFF;
+    --ink: #0F172A;
+    --text: #475569;
+    --muted: #94A3B8;
+    --line: #E2E8F0;
+    --primary: #4F46E5;
+    --primary-50: #EEF2FF;
+    --primary-100: #E0E7FF;
+    --primary-500: #6366F1;
+    --primary-600: #4F46E5;
+    --primary-700: #4338CA;
+    --primary-900: #312E81;
+    --accent-teal: #0EA5E9;
+    --accent-violet: #8B5CF6;
+    --surface-canvas: #F8FAFC;
+    --surface-card: #FFFFFF;
+    --surface-elevated: #FFFFFF;
+    --surface-subtle: #F1F5F9;
+    --border-default: #E2E8F0;
+    --border-strong: #CBD5E1;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --success: #10B981;
+    --success-subtle: #ECFDF5;
+    --warning: #F59E0B;
+    --warning-subtle: #FFFBEB;
+    --error: #EF4444;
+    --error-subtle: #FEF2F2;
+    --info: #3B82F6;
+    --info-subtle: #EFF6FF;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
+    --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+    --shadow-glow: 0 0 20px -2px rgba(99, 102, 241, 0.25);
+    --motion-fast: 180ms;
+    --motion-standard: 300ms;
+    --motion-slow: 400ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    min-width: 320px;
+    background: #f5f7fc;
+    color: var(--ink);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+button {
+    font-family: inherit;
+}
+
+.dashboard {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+    padding: 24px 24px 48px;
+}
+
+/* WELCOME CARD */
+.welcome-card {
+    min-height: 175px;
+    padding: 26px 28px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--white);
+}
+
+    .welcome-card h1 {
+        margin: 0 0 12px;
+        font: 800 38px/1.25 "Plus Jakarta Sans", Inter, sans-serif;
+        letter-spacing: -.8px;
+    }
+
+    .welcome-card p {
+        max-width: 760px;
+        margin: 0;
+        color: var(--text);
+        font-size: 16px;
+        line-height: 1.7;
+    }
+
+/* DASHBOARD SECTIONS */
+.dashboard-section {
+    margin-top: 26px;
+}
+
+.section-heading {
+    margin-bottom: 14px;
+}
+
+    .section-heading h2,
+    .module-heading h2 {
+        margin: 0;
+        font: 800 21px/1.25 "Plus Jakarta Sans", Inter, sans-serif;
+        letter-spacing: -.3px;
+    }
+
+.module-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.text-link {
+    border: 0;
+    background: transparent;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.danger-link {
+    color: #ba1a1a;
+}
+
+/* SUMMARY CARDS */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.summary-card {
+    --accent: #5546d8;
+    --soft: #efedff;
+    min-height: 154px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--white);
+}
+
+.summary-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+    .summary-top h3 {
+        margin: 0;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+.summary-icon {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+    place-items: center;
+    border-radius: 5px;
+    background: var(--soft);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.summary-card > strong {
+    display: block;
+    margin-top: 17px;
+    font: 800 30px/1.1 "Plus Jakarta Sans", Inter, sans-serif;
+    letter-spacing: -.5px;
+}
+
+.summary-card small {
+    display: block;
+    min-height: 22px;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.card-link {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 8px 0 0;
+    border: 0;
+    border-top: 1px solid #edf0f6;
+    background: transparent;
+    color: #5546d8;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+}
+
+    .card-link span {
+        font-size: 15px;
+        line-height: 1;
+    }
+
+.orange-link {
+    color: #b87514;
+}
+
+.red-link {
+    color: #ba1a1a;
+}
+
+/* SUMMARY CARD COLORS */
+.purple-card {
+    --accent: #5546d8;
+    --soft: #efedff;
+}
+
+.yellow-card {
+    --accent: #bd7b18;
+    --soft: #fff3d7;
+    border-color: #f4df9c;
+}
+
+.blue-card {
+    --accent: #2878ae;
+    --soft: #e4f3fb;
+}
+
+.indigo-card {
+    --accent: #5456bd;
+    --soft: #edeeff;
+}
+
+.red-card {
+    --accent: #ba4d58;
+    --soft: #fff0f1;
+    border-color: #ffd3d7;
+}
+
+.green-card {
+    --accent: #248b68;
+    --soft: #e8f7f0;
+}
+
+.green-text {
+    color: #188564 !important;
+}
+
+.orange-text {
+    color: #b87514 !important;
+}
+
+.blue-text {
+    color: #2878ae !important;
+}
+
+.red-text {
+    color: #ba1a1a !important;
+}
+
+/* VERIFICATION CARDS */
+.verification-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.verification-card {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--white);
+    padding: 13px 13px 0;
+}
+
+.verification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #9091a0;
+    font-size: 12px;
+}
+
+.status-tag,
+.urgent-tag,
+.warning-tag {
+    display: inline-flex;
+    padding: 4px 7px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-tag {
+    background: #fff5dd;
+    color: #a96d10;
+}
+
+.urgent-tag {
+    background: #ffe8ea;
+    color: #ba1a1a;
+}
+
+.warning-tag {
+    background: #fff0c9;
+    color: #9a6500;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 13px 0;
+}
+
+.avatar {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.avatar-purple {
+    background: #eae8ff;
+    color: #5546d8;
+}
+
+.avatar-blue {
+    background: #dff2fd;
+    color: #2878ae;
+}
+
+.avatar-slate {
+    background: #e9eef6;
+    color: #43516a;
+}
+
+.student-info h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.student-info p {
+    margin: 2px 0;
+    color: #687084;
+    font-size: 12px;
+}
+
+.student-info strong {
+    color: #2878ae;
+    font-size: 12px;
+}
+
+.document-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px;
+    border-radius: 6px;
+    background: #eff4ff;
+    color: #687084;
+    font-size: 12px;
+}
+
+    .document-box strong {
+        color: #188564;
+        font-size: 12px;
+    }
+
+.review-button {
+    width: calc(100% + 26px);
+    margin: 12px -13px 0;
+    padding: 9px;
+    border: 0;
+    background: #3926d2;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* BOOKING CARDS */
+.booking-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.booking-card {
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--white);
+}
+
+.booking-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #647086;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+    .booking-meta strong {
+        color: #3525cd;
+        font-size: 13px;
+    }
+
+.booking-image {
+    display: grid;
+    height: 96px;
+    place-items: center;
+    border-radius: 6px;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.purple-image {
+    background: #edf0ff;
+    color: #7568e8;
+}
+
+.blue-image {
+    background: #e7f3fc;
+    color: #3e91bc;
+}
+
+.orange-image {
+    background: #fff3eb;
+    color: #b5815c;
+}
+
+.gray-image {
+    background: #eef2f8;
+    color: #797b8d;
+}
+
+.booking-card h3 {
+    margin: 10px 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.booking-card p {
+    margin: 0;
+    color: #697183;
+    font-size: 12px;
+}
+
+.booking-info {
+    display: grid;
+    gap: 4px;
+    margin-top: 10px;
+    padding: 8px;
+    background: #f6f8fc;
+    color: #83899a;
+    font-size: 12px;
+}
+
+    .booking-info span {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .booking-info strong {
+        color: #536075;
+        font-size: 12px;
+    }
+
+.booking-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    color: #1684b0;
+    font-size: 12px;
+}
+
+    .booking-footer.returned {
+        color: #188564;
+    }
+
+/* DISPUTE CARDS */
+.dispute-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.dispute-card {
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+}
+
+.urgent-card {
+    background: #fff8f8;
+    border-color: #ffc9ce;
+}
+
+.warning-card {
+    background: #fffdf5;
+    border-color: #f3d78b;
+}
+
+.dispute-card h3 {
+    margin: 11px 0 5px;
+    font-size: 16px;
+}
+
+.dispute-card p {
+    margin: 0;
+    color: #687084;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.dispute-card .document-box {
+    margin-top: 10px;
+}
+
+.dispute-button {
+    float: right;
+    margin-top: 10px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 4px;
+    background: #ba1a1a;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.dispute-card:after {
+    display: block;
+    clear: both;
+    content: "";
+}
+
+/* DASHBOARD TOAST */
+.dashboard-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 10;
+    padding: 10px 13px;
+    border-radius: 8px;
+    background: #0b1c30;
+    color: #fff;
+    font-size: 15px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: .2s;
+}
+
+    .dashboard-toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+/* RESPONSIVE */
+@media (max-width: 1050px) {
+    .summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard {
+        padding: 20px;
+    }
+
+    .verification-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 540px) {
+    .dashboard {
+        padding: 16px;
+    }
+
+    .welcome-card {
+        min-height: 0;
+    }
+
+        .welcome-card h1 {
+            font-size: 32px;
+        }
+
+    .summary-grid,
+    .booking-grid,
+    .dispute-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .module-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+
+/* =========================================================
+   MODERN DESIGN SYSTEM OVERRIDES
+   Applied to the existing UniShare Admin Dashboard.
+   Existing class names, IDs, and data-placeholder hooks remain.
+   ========================================================= */
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--surface-canvas);
+    color: var(--text-primary);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+button {
+    font-family: inherit;
+    transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+}
+
+.dashboard {
+    width: min(100%, 1280px);
+    padding: 32px 24px 64px;
+}
+
+.welcome-card {
+    min-height: 0;
+    padding: 32px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-sm);
+}
+
+    .welcome-card h1 {
+        margin-bottom: 12px;
+        color: var(--text-primary);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: clamp(30px, 3vw, 40px);
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.035em;
+    }
+
+    .welcome-card p {
+        max-width: 760px;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 1.65;
+    }
+
+.dashboard-section {
+    margin-top: 32px;
+}
+
+.section-heading {
+    margin-bottom: 16px;
+}
+
+    .section-heading h2,
+    .module-heading h2 {
+        color: var(--text-primary);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: -0.02em;
+    }
+
+.module-heading {
+    margin-bottom: 16px;
+}
+
+.text-link {
+    color: var(--primary-600);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+    .text-link:hover {
+        color: var(--primary-700);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+.danger-link {
+    color: var(--error);
+}
+
+.summary-grid {
+    gap: 16px;
+}
+
+.summary-card {
+    min-height: 160px;
+    padding: 20px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+}
+
+    .summary-card:hover,
+    .verification-card:hover,
+    .booking-card:hover,
+    .dispute-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .summary-card:hover {
+        border-color: var(--border-strong);
+    }
+
+.summary-top h3 {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.summary-icon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+}
+
+.summary-card > strong {
+    margin-top: 20px;
+    color: var(--text-primary);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+.summary-card small {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.purple-card,
+.yellow-card,
+.blue-card,
+.indigo-card,
+.red-card,
+.green-card {
+    border-color: var(--border-default);
+}
+
+.purple-card {
+    --accent: #4F46E5;
+    --soft: #EEF2FF;
+}
+
+.yellow-card {
+    --accent: #B7791F;
+    --soft: #FFFBEB;
+}
+
+.blue-card {
+    --accent: #0284C7;
+    --soft: #EFF6FF;
+}
+
+.indigo-card {
+    --accent: #4F46E5;
+    --soft: #EEF2FF;
+}
+
+.red-card {
+    --accent: #DC2626;
+    --soft: #FEF2F2;
+}
+
+.green-card {
+    --accent: #059669;
+    --soft: #ECFDF5;
+}
+
+.green-text {
+    color: #059669 !important;
+}
+
+.orange-text {
+    color: #B7791F !important;
+}
+
+.blue-text {
+    color: #2563EB !important;
+}
+
+.red-text {
+    color: #DC2626 !important;
+}
+
+.card-link {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top-color: var(--border-default);
+    color: var(--primary-600);
+    font-size: 12px;
+}
+
+    .card-link:hover {
+        color: var(--primary-700);
+    }
+
+.orange-link {
+    color: #B7791F;
+}
+
+.red-link {
+    color: #DC2626;
+}
+
+.verification-grid {
+    gap: 16px;
+}
+
+.verification-card {
+    padding: 16px 16px 0;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.verification-header {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.status-tag,
+.urgent-tag,
+.warning-tag {
+    padding: 5px 9px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.status-tag {
+    border-color: #FDE68A;
+    background: var(--warning-subtle);
+    color: #92400E;
+}
+
+.urgent-tag {
+    border-color: #FECACA;
+    background: var(--error-subtle);
+    color: #B91C1C;
+}
+
+.warning-tag {
+    border-color: #FDE68A;
+    background: var(--warning-subtle);
+    color: #92400E;
+}
+
+.student-info {
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+}
+
+.avatar-purple {
+    background: var(--primary-50);
+    color: var(--primary-700);
+}
+
+.avatar-blue {
+    background: #E0F2FE;
+    color: #0369A1;
+}
+
+.avatar-slate {
+    background: var(--surface-subtle);
+    color: var(--text-secondary);
+}
+
+.student-info h3 {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.student-info p {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.student-info strong {
+    color: #0369A1;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.document-box {
+    padding: 11px 12px;
+    border: 1px solid #DBEAFE;
+    border-radius: var(--radius-md);
+    background: #F8FAFF;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+    .document-box strong {
+        color: #059669;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+.review-button {
+    width: calc(100% + 32px);
+    margin: 14px -16px 0;
+    padding: 12px 16px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: var(--primary-600);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+    .review-button:hover {
+        background: var(--primary-700);
+        box-shadow: var(--shadow-glow);
+    }
+
+    .review-button:active,
+    .dispute-button:active {
+        transform: scale(0.98);
+    }
+
+.booking-grid {
+    gap: 16px;
+}
+
+.booking-card {
+    padding: 14px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.booking-meta {
+    margin-bottom: 10px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+    .booking-meta strong {
+        color: var(--primary-600);
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+.booking-image {
+    height: 112px;
+    border-radius: var(--radius-md);
+    font-size: 34px;
+}
+
+.purple-image {
+    background: #EEF2FF;
+    color: #6366F1;
+}
+
+.blue-image {
+    background: #E0F2FE;
+    color: #0284C7;
+}
+
+.orange-image {
+    background: #FFF7ED;
+    color: #C0841A;
+}
+
+.gray-image {
+    background: #F1F5F9;
+    color: #64748B;
+}
+
+.booking-card h3 {
+    margin: 12px 0 5px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.booking-card p {
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.booking-info {
+    gap: 6px;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    background: var(--surface-subtle);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+    .booking-info strong {
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+.booking-footer {
+    margin-top: 12px;
+    color: #0284C7;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+    .booking-footer.returned {
+        color: #059669;
+    }
+
+.dispute-grid {
+    gap: 16px;
+}
+
+.dispute-card {
+    padding: 16px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-xs);
+    transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.urgent-card {
+    border-color: #FECACA;
+    background: #FFFAFA;
+}
+
+.warning-card {
+    border-color: #FDE68A;
+    background: #FFFEF8;
+}
+
+.dispute-card h3 {
+    margin: 14px 0 6px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.dispute-card p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.dispute-card .document-box {
+    margin-top: 12px;
+}
+
+.dispute-button {
+    margin-top: 12px;
+    padding: 9px 13px;
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-md);
+    background: var(--error);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+    .dispute-button:hover {
+        background: #DC2626;
+        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.18);
+    }
+
+.dashboard-toast {
+    right: 24px;
+    bottom: 24px;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    background: #0F172A;
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+}
+
+button:focus-visible {
+    outline: 3px solid rgba(99, 102, 241, 0.28);
+    outline-offset: 2px;
+}
+
+@media (max-width: 1050px) {
+    .summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard {
+        padding: 24px 20px 48px;
+    }
+
+    .welcome-card {
+        padding: 26px;
+    }
+
+    .verification-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 540px) {
+    .dashboard {
+        padding: 16px 14px 40px;
+    }
+
+    .welcome-card {
+        padding: 22px;
+        border-radius: var(--radius-lg);
+    }
+
+        .welcome-card h1 {
+            font-size: 29px;
+        }
+
+    .section-heading h2,
+    .module-heading h2 {
+        font-size: 19px;
+    }
+
+    .summary-grid,
+    .booking-grid,
+    .dispute-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-card {
+        min-height: 145px;
+    }
+
+    .module-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .verification-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* ==========================================================================
+   DESIGN.MD TYPOGRAPHY ALIGNMENT
+   All dashboard text now follows the shared typography scale.
+   Layout, colors, spacing, and existing interaction hooks are preserved.
+   ========================================================================== */
+
+:root {
+    --font-family-base: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display-2xl: 72px;
+    --font-display-xl: 56px;
+    --font-heading-lg: 32px;
+    --font-heading-md: 24px;
+    --font-heading-sm: 18px;
+    --font-body-base: 15px;
+    --font-body-sm: 13px;
+    --font-caption: 11px;
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea {
+    font-family: var(--font-family-base);
+}
+
+body {
+    font-size: var(--font-body-base);
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+/* Main page title */
+.welcome-card h1 {
+    font-size: var(--font-heading-lg);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+/* Main dashboard section headings */
+.section-heading h2,
+.module-heading h2 {
+    font-size: var(--font-heading-md);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+/* Card and module titles */
+.summary-top h3,
+.booking-card h3,
+.dispute-card h3 {
+    font-size: var(--font-heading-sm);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+}
+
+/* Primary body copy */
+.welcome-card p {
+    font-size: var(--font-body-base);
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+/* Supporting text and descriptions */
+.text-link,
+.card-link,
+.student-info p,
+.student-info strong,
+.document-box,
+.document-box strong,
+.booking-meta,
+.booking-meta strong,
+.booking-card p,
+.booking-info,
+.booking-info strong,
+.booking-footer,
+.dispute-card p,
+.dispute-button,
+.review-button,
+.text-link,
+.verification-card,
+.student-info h3 {
+    font-size: var(--font-body-sm);
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+}
+
+/* Student names remain emphasized without changing the body scale */
+.student-info h3 {
+    font-weight: 600;
+}
+
+/* KPI labels, statuses, and compact metadata */
+.summary-card small,
+.verification-header,
+.status-tag,
+.urgent-tag,
+.warning-tag,
+.dashboard-toast {
+    font-size: var(--font-caption);
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+}
+
+/* KPI values */
+.summary-card > strong {
+    font-size: var(--font-heading-lg);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+/* Icons and decorative glyphs are not text hierarchy */
+.summary-icon,
+.avatar,
+.booking-image,
+.card-link span {
+    font-family: inherit;
+}
+
+/* Keep mobile typography on the same design-system tokens */
+@media (max-width: 540px) {
+    .welcome-card h1 {
+        font-size: var(--font-heading-lg);
+        line-height: 1.2;
+    }
+
+    .section-heading h2,
+    .module-heading h2 {
+        font-size: var(--font-heading-md);
+        line-height: 1.3;
+    }
+}
+
+/* ==========================================================================
+   FINAL DESIGN.MD TYPOGRAPHY OVERRIDE
+   Uses the exact selectors present in the Admin Dashboard .cshtml.
+   Typography only: preserves existing layout, colors, spacing and behavior.
+   ========================================================================== */
+
+:root {
+    --font-family-base: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display-2xl: 72px;
+    --font-display-xl: 56px;
+    --font-heading-lg: 32px;
+    --font-heading-md: 24px;
+    --font-heading-sm: 18px;
+    --font-body-base: 15px;
+    --font-body-sm: 13px;
+    --font-caption: 11px;
+}
+
+html,
+body,
+.dashboard,
+.dashboard button,
+.dashboard input,
+.dashboard select,
+.dashboard textarea {
+    font-family: var(--font-family-base);
+}
+
+body,
+.dashboard {
+    font-size: var(--font-body-base);
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+/* Heading LG: page title */
+.welcome-card h1 {
+    font-size: var(--font-heading-lg);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+/* Heading MD: section titles */
+.section-heading h2,
+.module-heading h2 {
+    font-size: var(--font-heading-md);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+/* Heading SM: card titles */
+.summary-top h3,
+.booking-card h3,
+.dispute-card h3 {
+    font-size: var(--font-heading-sm);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+}
+
+/* Body Base */
+.welcome-card p {
+    font-size: var(--font-body-base);
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+/* Body Base emphasis: student names */
+.student-info h3 {
+    font-size: var(--font-body-base);
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+/* Body SM: supporting descriptions, actions and metadata */
+.text-link,
+.card-link,
+.student-info p,
+.student-info strong,
+.document-box,
+.document-box strong,
+.review-button,
+.booking-meta,
+.booking-meta strong,
+.booking-card p,
+.booking-info,
+.booking-info strong,
+.booking-footer,
+.dispute-card p,
+.dispute-button {
+    font-size: var(--font-body-sm);
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+}
+
+.text-link,
+.card-link,
+.review-button,
+.dispute-button {
+    font-weight: 600;
+}
+
+/* Caption: compact labels, statuses and timestamps */
+.summary-card small,
+.verification-header,
+.status-tag,
+.urgent-tag,
+.warning-tag {
+    font-size: var(--font-caption);
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+}
+
+/* Numeric KPI values */
+.summary-card > strong {
+    font-size: var(--font-heading-lg);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+/* Decorative glyphs retain their visual sizing */
+.summary-icon,
+.avatar,
+.booking-image,
+.card-link span {
+    font-family: inherit;
+}
+
+/* Toast is supporting UI text, not a caption */
+.dashboard-toast {
+    font-size: var(--font-body-sm);
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+}
+
+/* Keep the same design-system sizes on mobile */
+@media (max-width: 540px) {
+    .welcome-card h1 {
+        font-size: var(--font-heading-lg);
+        line-height: 1.2;
+    }
+
+    .section-heading h2,
+    .module-heading h2 {
+        font-size: var(--font-heading-md);
+        line-height: 1.3;
+    }
+}

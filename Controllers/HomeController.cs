@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using UniShare.Models;
 
 namespace UniShare.Controllers
 {
@@ -10,12 +11,12 @@ namespace UniShare.Controllers
     {
         public ActionResult Index()
         {
-            return View();
+            return View(new LoginViewModel());
         }
 
         public ActionResult Register()
         {
-            return View();
+            return RedirectToAction("Register", "Account");
         }
 
         public ActionResult About()

@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using System.Web.Mvc;
-using UniShare.Models;
+using UniShare.Services;
 
 namespace UniShare.Controllers
 {
-    // The Borrowed Items page currently runs fully in the browser (Scripts/borrowed-items.js).
-    // These actions hold the same rules on the server so the page can be wired to a database later.
+    [Authorize]
+    [VerifiedStudent]
     public class BorrowedItemsController : Controller
     {
         // /BorrowedItems  (optional ?status=Ongoing|Completed|Disputed pre-selects a tab)

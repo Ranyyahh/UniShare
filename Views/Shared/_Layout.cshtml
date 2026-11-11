@@ -21,35 +21,62 @@
                     @Html.ActionLink("Dashboard", "Index", "Dashboard", null, new { @class = "site-navigation__link" })
                     @Html.ActionLink("Browse Items", "Index", "BrowseItems", null, new { @class = "site-navigation__link" })
                     @Html.ActionLink("My Listings", "Index", "MyListings", null, new { @class = "site-navigation__link" })
+
                     @Html.ActionLink("My Rentals", "Index", "MyRentals", null, new { @class = "site-navigation__link" })
+
                     @Html.ActionLink("Borrowed Items", "Index", "BorrowedItems", null, new { @class = "site-navigation__link" })
+
                     @Html.ActionLink("Reports & Analytics", "Index", "ReportsAnalytics", null, new { @class = "site-navigation__link" })
+
+@if (User != null && User.IsInRole("ADMIN"))
+{
+    <a class="site-navigation__link" href="@Url.Action("StudentVerification", "Admin")">Admin Verification</a>
+}
                 </div>
                 <div class="site-navigation__actions">
                     <a class="icon-button message-button" href="@Url.Action("Index", "Messages")" aria-label="Messages"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.8-.95L4 20l1.2-3.9A7.5 7.5 0 1 1 20 11.5Z" /><path d="M8 11.5h8M8 14.5h5" /></svg></a>
                     <button class="icon-button notification-button" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg><span class="notification-dot"></span></button>
-                    <div class="account-menu" data-account-menu>
-                        <button class="account-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="account-dropdown" data-account-toggle>
-                            <span class="account-avatar" aria-hidden="true" data-account-avatar>?</span>
-                            <span class="account-copy"><span class="account-copy__top" data-account-name>Account</span><span class="account-copy__bottom" data-account-subtitle>Profile</span></span>
-                            <svg class="account-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
-                        </button>
-                        <div class="account-dropdown" id="account-dropdown" role="menu" hidden>
-                            <button class="account-dropdown__item" type="button" role="menuitem" data-account-open>
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-3.3 3.1-5 7-5s6.5 1.7 7 5"/></svg>My Account
+                    @if (Request.IsAuthenticated)
+                    {
+                        <div class="account-menu" data-account-menu>
+                            <button class="account-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="account-dropdown" data-account-toggle>
+                                <span class="account-avatar" aria-hidden="true" data-account-avatar>?</span>
+                                <span class="account-copy"><span class="account-copy__top" data-account-name>Account</span><span class="account-copy__bottom" data-account-subtitle>Student</span></span>
+                                <svg class="account-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
                             </button>
-                            <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Settings", "Account")">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg>Account Settings
-                            </a>
-                            @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "account-logout-form" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                <button class="account-dropdown__item account-dropdown__item--danger" type="submit" role="menuitem">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>Logout
+                            <div class="account-dropdown" id="account-dropdown" role="menu" hidden>
+                                <button class="account-dropdown__item" type="button" role="menuitem" data-account-open>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-3.3 3.1-5 7-5s6.5 1.7 7 5"/></svg>My Account
                                 </button>
-                            }
+                                <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Status", "Verification")">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 3 6.5v2L12 13l9-4.5v-2L12 2Zm-7 9v5l7 3.5 7-3.5v-5l-7 3.5L5 11Z"/></svg>Verification Status
+                                </a>
+                                @if (User != null && User.IsInRole("ADMIN"))
+                                {
+                                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("StudentVerification", "Admin")">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Admin Verification
+                                    </a>
+                                }
+                                <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Settings", "Account")">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg>Account Settings
+                                </a>
+                                @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "account-logout-form" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button class="account-dropdown__item account-dropdown__item--danger" type="submit" role="menuitem">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>Logout
+                                    </button>
+                                }
+                            </div>
                         </div>
-                    </div>
+                    }
+                    else
+                    {
+                        <div style="display:flex; align-items:center; gap: 8px;">
+                            <a class="site-navigation__link" href="@Url.Action("Login", "Account")" style="font-weight:600;">Sign in</a>
+                            <a class="primary-button" href="@Url.Action("Register", "Account")" style="padding: 6px 14px; font-size: 0.875rem; text-decoration:none;">Register</a>
+                        </div>
+                    }
                 </div>
             </nav>
         </div>
