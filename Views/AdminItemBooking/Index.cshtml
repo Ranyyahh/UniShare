@@ -1,0 +1,224 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Item & Booking Monitoring";
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/admin-item-booking.css")" />
+
+<!-- ADDED data-endpoint for the JS -->
+<div class="aib-page" data-endpoint="@Url.Action("GetListings", "AdminItemBooking")">
+    <header class="aib-header">
+        <h1 class="aib-header__title">Item &amp; Booking Monitoring</h1>
+        <p class="aib-header__subtitle">Review, approve, and monitor student item listings for campus rentals.</p>
+    </header>
+
+    <!-- KPI CARDS -->
+    <section class="aib-kpi-grid">
+        <article class="aib-kpi-card">
+            <div class="aib-kpi-card__top">
+                <span class="aib-kpi-card__label">PENDING ITEMS</span>
+                <div class="aib-kpi-card__icon aib-kpi-card__icon--warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                </div>
+            </div>
+            <div class="aib-kpi-card__bottom"><div class="aib-kpi-card__value" data-kpi-pending>0</div></div>
+        </article>
+        <article class="aib-kpi-card">
+            <div class="aib-kpi-card__top">
+                <span class="aib-kpi-card__label">ACTIVE ITEMS</span>
+                <div class="aib-kpi-card__icon aib-kpi-card__icon--success">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                </div>
+            </div>
+            <div class="aib-kpi-card__bottom"><div class="aib-kpi-card__value" data-kpi-active>0</div></div>
+        </article>
+        <article class="aib-kpi-card">
+            <div class="aib-kpi-card__top">
+                <span class="aib-kpi-card__label">INACTIVE ITEMS</span>
+                <div class="aib-kpi-card__icon aib-kpi-card__icon--indigo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                </div>
+            </div>
+            <div class="aib-kpi-card__bottom"><div class="aib-kpi-card__value" data-kpi-inactive>0</div></div>
+        </article>
+        <article class="aib-kpi-card">
+            <div class="aib-kpi-card__top">
+                <span class="aib-kpi-card__label">TOTAL LISTED ITEMS</span>
+                <div class="aib-kpi-card__icon aib-kpi-card__icon--error">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                </div>
+            </div>
+            <div class="aib-kpi-card__bottom"><div class="aib-kpi-card__value" data-kpi-total>0</div></div>
+        </article>
+    </section>
+
+    <!-- TOOLBAR -->
+    <section class="aib-toolbar" aria-label="Queue Controls">
+        <div class="aib-toolbar__top">
+            <div class="aib-search">
+                <span class="aib-search__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                </span>
+                <input type="text" id="aibSearchInput" class="aib-search__input" placeholder="Search item name, ID, or owner..." />
+            </div>
+            <div class="aib-toolbar__actions">
+                <div class="aib-select-wrapper">
+                    <span class="aib-select-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg></span>
+                    <select id="aibCategorySelect" class="aib-select">
+                        <option value="all">All Categories</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Textbooks & Reviewers">Textbooks &amp; Reviewers</option>
+                        <option value="School Supplies">School Supplies</option>
+                        <option value="Sports Equipment">Sports Equipment</option>
+                        <option value="Other Items">Other Items</option>
+                    </select>
+                </div>
+                <div class="aib-select-wrapper">
+                    <span class="aib-select-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg></span>
+                    <select id="aibStatusSelect" class="aib-select">
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="aib-select-wrapper">
+                    <span class="aib-select-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg></span>
+                    <select id="aibAvailabilitySelect" class="aib-select">
+                        <option value="all">All Availability</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <button type="button" id="btnResetFilters" class="aib-btn-clear">Clear Filters</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- TABLE -->
+    <article class="aib-queue-card">
+        <header class="aib-queue-card__header">
+            <div>
+                <h2 class="aib-queue-card__title">Listing Queue</h2>
+                <p class="aib-queue-card__subtitle">Click any row to inspect item details.</p>
+            </div>
+            <div class="aib-queue-card__selected-count" data-aib-selected-count>Loading...</div>
+        </header>
+
+        <div class="aib-table-wrapper">
+            <table class="aib-table" id="aibQueueTable">
+                <thead>
+                    <tr>
+                        <th>ITEM ID</th>
+                        <th>ASSET DETAILS</th>
+                        <th>CATEGORY</th>
+                        <th>OWNER</th>
+                        <th>PRICE</th>
+                        <th>STATUS</th>
+                        <th>ACTIVE/INACTIVE</th>
+                        <th class="aib-th--right">ACTION</th>
+                    </tr>
+                </thead>
+                <!-- EMPTY BODY: Populated by JS -->
+                <tbody id="aibTableBody"></tbody>
+            </table>
+        </div>
+
+        <footer class="aib-queue-card__footer">
+            <span class="aib-pagination-info" data-aib-pagination-info>Showing 0 of 0 submissions</span>
+            <nav class="aib-pagination">
+                <button type="button" class="aib-pagination__btn aib-pagination__btn--ghost" disabled>Previous</button>
+                <button type="button" class="aib-pagination__btn is-active">1</button>
+                <button type="button" class="aib-pagination__btn aib-pagination__btn--ghost">Next</button>
+            </nav>
+        </footer>
+    </article>
+
+    <!-- MODAL (Same as before) -->
+    <div id="aibModalOverlay" class="aib-modal-overlay" style="display:none;"></div>
+    <div id="aibModalContainer" class="aib-modal-container" style="display:none;" role="dialog" aria-modal="true">
+        <article class="aib-dossier">
+            <header class="aib-dossier__header">
+                <div class="aib-dossier__title-group">
+                    <div class="aib-dossier__header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="2" /><path d="M15 8h2M15 12h2M7 16h10" /></svg></div>
+                    <div>
+                        <span class="aib-dossier__label">ITEM DETAILS</span>
+                        <div class="aib-dossier__kyc-id" data-dossier-id>#ITM-2026-0891</div>
+                    </div>
+                </div>
+                <div class="aib-dossier__header-right">
+                    <span class="aib-pill aib-pill--pending" data-dossier-status-pill>Pending</span>
+                    <button type="button" id="btnAibCloseModal" class="aib-modal-close">&times;</button>
+                </div>
+            </header>
+            <div class="aib-modal-body-scroll">
+                <div class="aib-doc-panel" style="padding-bottom:0;">
+                    <div class="aib-image-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                        <span>Item photo placeholder</span>
+                    </div>
+                </div>
+                <div class="aib-dossier__identity">
+                    <div class="aib-dossier__identity-row">
+                        <div class="aib-dossier__identity-main">
+                            <h3 class="aib-dossier__name" data-dossier-name></h3>
+                            <p class="aib-dossier__subtitle" data-dossier-category></p>
+                            <div class="aib-dossier__badge-row">
+                                <span class="aib-chip aib-chip--subtle" data-dossier-id-chip></span>
+                                <span class="aib-dossier__owner" data-dossier-owner></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="aib-dossier__meta-grid">
+                        <div class="aib-meta-item"><span class="aib-meta-item__label">PRICE (PER HOUR)</span><div class="aib-meta-item__value" data-dossier-price></div></div>
+                        <div class="aib-meta-item"><span class="aib-meta-item__label">ACTIVE/INACTIVE</span><div class="aib-meta-item__value"><span class="aib-pill" data-dossier-active-pill></span></div></div>
+                        <div class="aib-meta-item"><span class="aib-meta-item__label">UPLOADED DATE</span><div class="aib-meta-item__value" data-dossier-meta></div></div>
+                        <div class="aib-meta-item"><span class="aib-meta-item__label">COURSE ELIGIBILITY</span><div class="aib-meta-item__value" data-dossier-course></div></div>
+                    </div>
+                </div>
+                <div class="aib-doc-panel" style="padding-bottom:0;">
+                    <div class="aib-form-section">
+                        <label class="aib-form-label">ITEM DESCRIPTION</label>
+                        <p class="aib-readonly-text" data-dossier-desc></p>
+                    </div>
+                </div>
+                <div class="aib-doc-panel" style="padding-top:0;">
+                    <div class="aib-form-section">
+                        <label class="aib-form-label">WEEK HANDOVER AVAILABILITY</label>
+                        <div class="aib-checkbox-group aib-checkbox-group--readonly" data-dossier-days></div>
+                    </div>
+                </div>
+                <div class="aib-doc-panel" style="padding-top:0;">
+                    <div class="aib-form-grid">
+                        <div class="aib-form-section">
+                            <label class="aib-form-label">CONDITION ASSESSMENT</label>
+                            <p class="aib-readonly-text" data-dossier-condition></p>
+                        </div>
+                        <div class="aib-form-section">
+                            <label class="aib-form-label">LATEST HANDOVER TIME</label>
+                            <p class="aib-readonly-text" data-dossier-handover></p>
+                        </div>
+                        <div class="aib-form-section">
+                            <label class="aib-form-label">LATEST RETURN TIME</label>
+                            <p class="aib-readonly-text" data-dossier-return></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="aib-action-row">
+                <button type="button" class="aib-btn aib-btn--primary" data-aib-action="approve">
+                    <span class="aib-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12" /></svg></span>
+                    <span>Approve Listing</span>
+                </button>
+                <button type="button" class="aib-btn aib-btn--danger" data-aib-action="reject">
+                    <span class="aib-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></span>
+                    <span>Reject Listing</span>
+                </button>
+            </footer>
+        </article>
+    </div>
+</div>
+
+@section scripts {
+    <script src="@Url.Content("~/Scripts/admin-item-booking.js")"></script>
+}
