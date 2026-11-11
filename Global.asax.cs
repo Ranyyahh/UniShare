@@ -7,11 +7,14 @@ using System.Web.Optimization;
 using System.Web.Routing;
 using System.Web.Security;
 using System.Security.Principal;
+using System.Threading;
+using UniShare.Services;
 
 namespace UniShare
 {
     public class MvcApplication : System.Web.HttpApplication
     {
+        private static Timer _bookingExpiryTimer;
         protected void Application_AuthenticateRequest()
         {
             var cookie = Request.Cookies[FormsAuthentication.FormsCookieName];
@@ -47,6 +50,15 @@ namespace UniShare
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            // Expire stale requests even when no rental page is being viewed. IIS must be configured
+            // for AlwaysRunning with preload enabled for this in-process job to remain active.
+            _bookingExpiryTimer = new Timer(_ =>
+            {
+                try { BookingService.ExpirePending(); }
+                catch { /* Database outages are retried on the next interval. */ }
+            }, null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
         }
+
+        protected void Application_End() { if (_bookingExpiryTimer != null) _bookingExpiryTimer.Dispose(); }
     }
 }
