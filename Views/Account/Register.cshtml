@@ -1,0 +1,42 @@
+@model UniShare.Models.RegisterViewModel
+@{ ViewBag.Title = "Register"; Layout = "~/Views/Shared/_AuthLayout.cshtml"; }
+<main class="auth-card register-card" aria-labelledby="page-title">
+    <div class="register-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 3 6.5v2L12 13l9-4.5v-2L12 2Zm-7 9v5l7 3.5 7-3.5v-5l-7 3.5L5 11Zm-2 0v5h2v-5H3Z" /></svg></div>
+    <h1 id="page-title">Register</h1>
+    <p class="register-subtitle">Join your campus peer rental community</p>
+
+    @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { enctype = "multipart/form-data", @class = "auth-form register-form" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "Please correct the following:", new { @class = "text-danger" })
+        <div class="field-row">
+            <div class="field-group"><label for="FirstName">First Name</label><div class="input-wrap">@Html.TextBoxFor(x => x.FirstName, new { autocomplete = "given-name", placeholder = "Enter first name", required = "required" })</div>@Html.ValidationMessageFor(x => x.FirstName, "", new { @class = "field-error is-visible" })</div>
+            <div class="field-group"><label for="LastName">Last Name</label><div class="input-wrap">@Html.TextBoxFor(x => x.LastName, new { autocomplete = "family-name", placeholder = "Enter last name", required = "required" })</div>@Html.ValidationMessageFor(x => x.LastName, "", new { @class = "field-error is-visible" })</div>
+        </div>
+        <div class="field-group"><label for="Username">Username</label><div class="input-wrap">@Html.TextBoxFor(x => x.Username, new { autocomplete = "username", placeholder = "Choose a username", minlength = "3", required = "required" })</div>@Html.ValidationMessageFor(x => x.Username, "", new { @class = "field-error is-visible" })</div>
+        <div class="field-group"><label for="SchoolEmail">School Email Address</label><div class="input-wrap">@Html.TextBoxFor(x => x.SchoolEmail, new { type = "email", autocomplete = "email", placeholder = "student@unishare.qcu.edu.ph", required = "required" })</div>@Html.ValidationMessageFor(x => x.SchoolEmail, "", new { @class = "field-error is-visible" })</div>
+        <div class="field-row">
+            <div class="field-group"><label for="Password">Password</label><div class="input-wrap">@Html.PasswordFor(x => x.Password, new { autocomplete = "new-password", placeholder = "Create strong password", minlength = "8", required = "required" })<button class="visibility-toggle" type="button" aria-label="Show password" data-password-toggle="Password"><svg viewBox="0 0 24 24"><path d="M12 5c-5 0-9.2 3.3-11 7 1.8 3.7 6 7 11 7s9.2-3.3 11-7c-1.8-3.7-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" /></svg></button></div>@Html.ValidationMessageFor(x => x.Password, "", new { @class = "field-error is-visible" })</div>
+            <div class="field-group"><label for="ConfirmPassword">Confirm Password</label><div class="input-wrap">@Html.PasswordFor(x => x.ConfirmPassword, new { autocomplete = "new-password", placeholder = "Re-enter password", required = "required" })</div>@Html.ValidationMessageFor(x => x.ConfirmPassword, "", new { @class = "field-error is-visible" })</div>
+        </div>
+        <div class="field-row">
+            <div class="field-group"><label for="Birthdate">Birthdate</label><div class="input-wrap">@Html.TextBoxFor(x => x.Birthdate, new { inputmode = "numeric", placeholder = "dd/mm/yyyy", required = "required", data_date_input = "true" })</div>@Html.ValidationMessageFor(x => x.Birthdate, "", new { @class = "field-error is-visible" })</div>
+            <div class="field-group"><label for="Phone">Contact Number</label><div class="input-wrap">@Html.TextBoxFor(x => x.Phone, new { type = "tel", autocomplete = "tel", placeholder = "+63 900 000 0000", required = "required" })</div>@Html.ValidationMessageFor(x => x.Phone, "", new { @class = "field-error is-visible" })</div>
+        </div>
+        <div class="field-row">
+            <div class="field-group"><label for="Section">Section</label><div class="input-wrap">@Html.TextBoxFor(x => x.Section, new { placeholder = "e.g. BSIT-3C", required = "required" })</div>@Html.ValidationMessageFor(x => x.Section, "", new { @class = "field-error is-visible" })</div>
+            <div class="field-group"><label for="StudentIdNumber">Student ID No.</label><div class="input-wrap">@Html.TextBoxFor(x => x.StudentIdNumber, new { placeholder = "21-00000", required = "required" })</div>@Html.ValidationMessageFor(x => x.StudentIdNumber, "", new { @class = "field-error is-visible" })</div>
+        </div>
+        <div class="field-row">
+            <div class="field-group"><label for="Program">Program</label><div class="input-wrap">@Html.TextBoxFor(x => x.Program, new { placeholder = "e.g. BSIT", required = "required" })</div>@Html.ValidationMessageFor(x => x.Program, "", new { @class = "field-error is-visible" })</div>
+            <div class="field-group"><label for="YearLevel">Year Level</label><div class="input-wrap">@Html.DropDownListFor(x => x.YearLevel, new[] { new SelectListItem { Text = "Choose year", Value = "" }, new SelectListItem { Text = "1st Year", Value = "1st Year" }, new SelectListItem { Text = "2nd Year", Value = "2nd Year" }, new SelectListItem { Text = "3rd Year", Value = "3rd Year" }, new SelectListItem { Text = "4th Year", Value = "4th Year" }, new SelectListItem { Text = "5th Year", Value = "5th Year" } }, new { required = "required" })</div>@Html.ValidationMessageFor(x => x.YearLevel, "", new { @class = "field-error is-visible" })</div>
+        </div>
+        <div class="verification-field"><label class="verification-label" for="SchoolIdPhoto">School ID Photo (JPG, PNG, or PDF; max 8 MB)</label>@Html.TextBoxFor(x => x.SchoolIdPhoto, new { type = "file", accept = ".jpg,.jpeg,.png,.pdf", required = "required" })</div>
+        <div class="verification-field"><label class="verification-label" for="OneByOnePhoto">1×1 Photo (JPG or PNG; max 8 MB)</label>@Html.TextBoxFor(x => x.OneByOnePhoto, new { type = "file", accept = ".jpg,.jpeg,.png", required = "required" })</div>
+        <div class="verification-field"><label class="verification-label" for="RegistrationForm">Current Registration Form / COR (JPG, PNG, or PDF; max 8 MB)</label>@Html.TextBoxFor(x => x.RegistrationForm, new { type = "file", accept = ".jpg,.jpeg,.png,.pdf", required = "required" })</div>
+        <button class="primary-button" type="submit">Register <span class="button-arrow" aria-hidden="true"></span></button>
+        <div class="form-footer register-footer"><span>Registered? <a class="text-link" href="@Url.Action("Login", "Account")">Login</a></span></div>
+    }
+</main>
+<section class="toast-message" role="status" aria-live="polite"></section>
+@section pageScripts { <script src="@Url.Content("~/Scripts/auth-forms.js")"></script> }

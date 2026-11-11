@@ -1,0 +1,20 @@
+@model List<UniShare.Models.NotificationItem>
+@{ ViewBag.Title = "Notifications"; }
+
+<div class="us-page-head">
+    <div><h1>Notifications</h1><p>Latest updates about your rentals and messages.</p></div>
+    @using (Html.BeginForm("MarkAllRead", "Notifications", FormMethod.Post, new { @class = "us-inline" }))
+    {
+        @Html.AntiForgeryToken()
+        <button type="submit" class="us-btn us-btn--outline">Mark all as read</button>
+    }
+</div>
+
+<section class="us-card">
+    <ul class="us-list">
+        @foreach (var n in Model)
+        {
+            <li class="@(n.Unread ? "is-unread" : "")"><div><strong>@n.Title</strong><p>@n.Body</p></div><small>@n.Time</small></li>
+        }
+    </ul>
+</section>

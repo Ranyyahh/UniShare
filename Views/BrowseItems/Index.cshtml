@@ -1,0 +1,730 @@
+﻿@model UniShare.Models.BrowseItemsViewModel
+@{
+    ViewBag.Title = "Browse Items";
+}
+
+@section Styles {
+    <!-- If your _Layout already loads Bootstrap 5 + Bootstrap Icons, remove those two links. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="@Url.Content("~/Content/items.css")" rel="stylesheet">
+}
+
+<main class="browse-container container-xxl">
+
+    <!-- Page heading -->
+    <header class="mb-4">
+        <h1 class="page-title">Browse Items</h1>
+        <p id="page-subtitle" class="page-subtitle">
+            Borrow verified gear, academic tools, and project equipment from fellow QCU students across campuses.
+        </p>
+    </header>
+
+    <!-- Search -->
+    <div class="search-bar mb-3">
+        <i class="bi bi-search s-icon"></i>
+        <input type="text" id="search-input" autocomplete="off" placeholder="Search calculators, uniforms, drafting boards...">
+        <button type="button" id="search-clear" class="search-clear d-none" aria-label="Clear search"><i class="bi bi-x-lg"></i></button>
+        <button type="button" id="search-button" class="btn btn-brand search-go"><i class="bi bi-search me-2"></i>Search</button>
+    </div>
+
+    <!-- Search results banner -->
+    <div id="search-banner" class="search-banner d-none d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-search"></i>
+            <div>
+                <span id="banner-title" class="fw-bold" style="font-family:'Plus Jakarta Sans',sans-serif;"></span>
+                <span id="banner-count" class="ms-2 small text-secondary"></span>
+            </div>
+        </div>
+        <a href="@Url.Action("Index", "BrowseItems")" id="back-to-all"><i class="bi bi-arrow-left me-1"></i>Back to all items</a>
+    </div>
+
+    <!-- Category tabs -->
+    <div id="category-tabs" class="category-tabs mb-3 d-none"></div>
+
+    <!-- Active filter chips -->
+    <div id="active-filters" class="active-filters mb-3 d-none"></div>
+
+    <!-- Control bar -->
+    <div class="control-bar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <button type="button" id="toggle-filters" class="btn btn-outline-soft d-inline-flex align-items-center gap-2">
+                <i class="bi bi-sliders text-primary"></i>
+                <span id="filter-label">Show Filters</span>
+                <span id="filter-state" class="state-badge">Collapsed</span>
+            </button>
+            <span class="small text-secondary">Filters: <strong id="filters-status" class="text-body">Not applied yet</strong></span>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span class="small text-secondary">
+                <span id="showing-text">Showing <strong>8</strong> items</span>
+                <span id="avail-badge" class="results-badge ms-1">All Available</span>
+            </span>
+
+            <label class="sort-box mb-0">
+                <i class="bi bi-arrow-down-up"></i>
+                <span>Sort by:</span>
+                <select id="sort-select"></select>
+            </label>
+
+            <div class="btn-group view-toggle" role="group" aria-label="View mode">
+                <button type="button" class="btn active" data-view="grid" title="Grid view"><i class="bi bi-grid-fill"></i></button>
+                <button type="button" class="btn" data-view="list" title="List view"><i class="bi bi-list-ul"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+
+        <!-- Filter sidebar -->
+        <aside id="filter-sidebar" class="col-12 col-lg-3 d-none">
+            <div class="filters-card">
+                <div class="d-flex justify-content-between align-items-center pb-3 border-bottom">
+                    <h2><i class="bi bi-funnel me-2 text-primary"></i>Filters</h2>
+                    <button type="button" id="clear-all" class="clear-all">Clear All</button>
+                </div>
+
+                <!-- Availability -->
+                <div class="filter-group">
+                    <h3>Availability</h3>
+                    <div class="filter-row">
+                        <input class="form-check-input" type="radio" name="availability" id="av-available" value="available" checked>
+                        <label for="av-available"><span class="dot dot-green"></span>Available Now</label>
+                    </div>
+                    <div class="filter-row">
+                        <input class="form-check-input" type="radio" name="availability" id="av-all" value="all">
+                        <label for="av-all"><span class="dot dot-grey"></span>Include Currently Rented</label>
+                    </div>
+                </div>
+
+                <!-- Campus -->
+                <div class="filter-group">
+                    <h3>Campus Handover</h3>
+                    <div id="campus-list"></div>
+                </div>
+
+                <!-- Category -->
+                <div class="filter-group">
+                    <h3>Category</h3>
+                    <div id="category-list"></div>
+                </div>
+
+                <!-- Condition -->
+                <div class="filter-group">
+                    <h3>Item Condition</h3>
+                    <div id="condition-list"></div>
+                </div>
+
+                <!-- Rental rate -->
+                <div class="filter-group">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h3 class="mb-0">Rental Rate (PHP)</h3>
+                        <span id="price-label" class="price-range-label">₱0 – ₱100 / day</span>
+                    </div>
+
+                    <div class="dual-range">
+                        <div class="track"></div>
+                        <div class="fill" id="range-fill"></div>
+                        <input type="range" id="range-min" min="0" max="100" step="5" value="0">
+                        <input type="range" id="range-max" min="0" max="100" step="5" value="100">
+                    </div>
+
+                    <div class="row g-2 price-inputs">
+                        <div class="col-6">
+                            <label for="min-price">Min</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₱</span>
+                                <input type="number" id="min-price" class="form-control" min="0" max="100" value="0">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label for="max-price">Max</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">₱</span>
+                                <input type="number" id="max-price" class="form-control" min="0" max="100" value="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 pt-2">
+                    <button type="button" id="apply-filters" class="btn btn-brand py-2">
+                        <i class="bi bi-funnel-fill me-1"></i>Apply Filters
+                    </button>
+                    <button type="button" id="clear-filters" class="btn btn-outline-soft py-2">
+                        <i class="bi bi-arrow-repeat me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Results -->
+        <section id="results-col" class="col-12">
+            <div id="items-grid" class="items-grid row g-4"></div>
+
+            <div id="empty-state" class="empty-state text-center py-5 d-none">
+                <i class="bi bi-search"></i>
+                <h3 class="h5 fw-bold mt-3">No items found</h3>
+                <p class="small text-secondary mb-3">Try changing your search or filters.</p>
+                <button type="button" id="empty-reset" class="btn btn-brand px-4">Clear search &amp; filters</button>
+            </div>
+
+            <div class="pager-bar mt-4 pt-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <p id="pagination-text" class="small text-secondary mb-0"></p>
+                <div id="pager" class="pager d-flex gap-2"></div>
+            </div>
+        </section>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        (function () {
+            "use strict";
+
+            /* ===================== DATA ===================== */
+            // Static sample data. Replace with Model data / an API call when the backend is ready.
+            var DETAILS_URL = "@Url.Action("ItemDetails", "BrowseItems")?id=__ID__";
+            var PAGE_SIZE = 8;
+            var PRICE_MIN = 0, PRICE_MAX = 100;
+
+            var CATEGORIES = [
+                { key: "Electronics", label: "Electronics" },
+                { key: "Books", label: "Textbooks & Reviewers" },
+                { key: "School Supplies", label: "School Supplies" },
+                { key: "Sports Equipment", label: "Sports Equipment" },
+                { key: "Other Items", label: "Other Items" }
+            ];
+
+            var CAMPUSES = [
+                { key: "San Bartolome", label: "San Bartolome (Main)" },
+                { key: "Quirino", label: "Quirino Campus" },
+                { key: "San Francisco", label: "San Francisco" },
+                { key: "Batasan", label: "Batasan" }
+            ];
+
+            var CONDITIONS = ["Like New", "Excellent", "Good", "Fair"];
+
+            var ITEMS = [
+                {
+                    id: 1, name: "Casio fx-991EX ClassWiz Calculator", category: "Electronics", campus: "San Bartolome",
+                    condition: "Like New", hour4: 25, day: 50, rating: 4.9, reviews: 18, available: true, popular: 1, newest: 8,
+                    keywords: "casio scientific calculator fx-991ex classwiz math engineering exam",
+                    desc: "Non-programmable scientific calculator approved for most QCU exams. Fresh batteries and hard case included.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuD43NDeaCI8F4hBx3FLTNk0uwj5y5SboznXM6ER4GsM08TZZDMYIrzZaRAGaSg9FeuvvyaDtKs_TRTmbeoITdxLzKYsJrrGA2RWPzHjD2XQAo965xacYbseOWJFHVDdOrviIMi_331wbAh0tQZCnImV3TbrDl7HiZ4iygl9A8kRdoFJ3jYFMSBY35a-hI4eEmymArheje_VRBYvB-GH0P1HRypI9Q79sU7vurcfl8U"
+                },
+                {
+                    id: 2, name: "Logitech M590 Silent Mouse", category: "Electronics", campus: "Quirino",
+                    condition: "Excellent", hour4: 15, day: 35, rating: 4.8, reviews: 14, available: true, popular: 2, newest: 7,
+                    keywords: "logitech mouse wireless silent bluetooth computer peripheral",
+                    desc: "Quiet-click wireless mouse with Bluetooth and USB receiver. Great for long laptop sessions in the library.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAeqNCyhCudAPDf6GioorIUM7OJRABvY4OPE7o-AtOSGLSKVTz4eCnYFwLQx447-bdZWiSeoOjyM2qrHU2AAjiH9FGz3J55IlDjOH_D4LNkG35uf6pA6qHlNHtDj1XdJsO2__ZsCtMeafbDSmBklGqyCDvbZDjbyKdLDtwoWM7Hf6eaXsGMSQLpmxhvndzMj0tgm5bXu-4BFpK95tlnl_d8gwGP4o3Q9pNuEtF8LVo"
+                },
+                {
+                    id: 3, name: "Anker 7-in-1 USB-C Hub", category: "Electronics", campus: "San Bartolome",
+                    condition: "Like New", hour4: 20, day: 45, rating: 4.9, reviews: 21, available: true, popular: 3, newest: 6,
+                    keywords: "anker usb hub usb-c adapter hdmi card reader laptop dongle",
+                    desc: "HDMI, USB-A, SD/microSD and USB-C power passthrough. Handy for presentations and project demos.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA14k44VRTZh1TLEpfoOTL9DDpZqp3lScIsxbMbpQHBR7btU6kSZsMmwzq0n6gHS-pSCHydbiDC8BlRgErvoxGtWvpQWiHlU2ehmU8e2ec6Qp5hAq6mXl3hvmKSw5PWUb8ft1XMj_rXgGBMC9onN-zzBYeAZVIZDQ0N95KU4f_XPIqS5xFkQCQfTNz3pqHoeWjhr4xsfMh2wTnFNxkezqckLoEjGANJx1rP47hW__w"
+                },
+                {
+                    id: 4, name: "SanDisk Extreme 128GB SD Card", category: "Electronics", campus: "Quirino",
+                    condition: "Excellent", hour4: 15, day: 30, rating: 5.0, reviews: 11, available: true, popular: 4, newest: 5,
+                    keywords: "sandisk sd card memory storage dslr camera photography 128gb",
+                    desc: "Fast UHS-I card for DSLR and mirrorless cameras. Formatted and ready to shoot.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB8kRvGBOF0Ly9h7ENtF1PtW1f9TD-pk0kmcCnP5TU2dvphy8FjuvQSf8JftokhIKIByLa6GCmjmz0Lw37EUyzYvjCp6jo_X-XkpVeG0OFHS97sRELoSkSlJLtT93Gd8XfO-Jtykx_fGDbslIpnJ_bQFRM_e_MuNaf8XbnMK7QGXtOcrcFXWpCEG2AFHtB5QQcoFGseq9Uv0M5kbgSUS03SGc_rpggMWQWo4Z9adXA"
+                },
+                {
+                    id: 5, name: "Sony WH-CH520 Wireless Headset", category: "Electronics", campus: "San Bartolome",
+                    condition: "Excellent", hour4: 30, day: 60, rating: 4.8, reviews: 16, available: true, popular: 5, newest: 4,
+                    keywords: "sony headset headphones wireless bluetooth audio online class",
+                    desc: "Lightweight Bluetooth headset with built-in mic. Good for online classes and group calls.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBJu54DB8y0iKBOHnb08fQjPnxuvssuqm-yU_h686n07NJgbhp7Z1QyK1Th2Y_-mLUX95z2lgw3JG4p4aJVSQksakOYM-tGaKqOhK4kwwEsrh7_mKtvv0lfFKSk7gpsQvyZRIhCPcxzV36qnr1B0iJxCpa34UWRyHcE-l5L2q6KtSQaJO0pVNxEhHtnqTupgAc4lPrl_-jmKemoAG_FZ5WBtW53ZCRb-TBZsqbv4Q0"
+                },
+                {
+                    id: 6, name: "Rotring 300 Drafting Pencil", category: "School Supplies", campus: "San Bartolome",
+                    condition: "Like New", hour4: 10, day: 20, rating: 4.9, reviews: 9, available: true, popular: 6, newest: 3,
+                    keywords: "rotring drafting pencil engineering architecture t-square mechanical pencil",
+                    desc: "0.5 mm mechanical drafting pencil with a knurled grip. Perfect for plates and technical drawing.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBASRK8_HeIEBdBkPhK9e9usdsEYGcL3Ff6ZAJ_i-Ks9Yd7l3zd0fim7TV7PEze0EbivXH8EwdnIEBuJmdcJnjY6qNeA8KsuUZbSaK4TkIwTqsX_bII7VHPPkw_qYoPqCrfT1UQ568tFL_ultk_feehMD9tw-xFsYFYtOUs6fsXPs6Li3mEdyBPoS5UD0DTb9mpauycIyDIMbfVWe_qfSurFS4fUpgY9RIG-lv4AVY"
+                },
+                {
+                    id: 7, name: "White Lab Coat (Size M)", category: "Other Items", campus: "Quirino",
+                    condition: "Good", hour4: 20, day: 40, rating: 4.7, reviews: 24, available: true, popular: 7, newest: 2,
+                    keywords: "lab coat laboratory uniform white medtech nursing chemistry",
+                    desc: "Clean, pressed white lab coat, size Medium. Required for most laboratory classes.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA9WdwOWagw7kH2v-OmWqDqxnUfADFR5p8GfOpPI1FFZ2LTiu3mfxHMb9TlTvcq7xppAN9ixvnWbJ_r9dJLdw65I2XS0UA6z2oyHZxg5Ns5rmGBywtSyXabaUE2x6LeiqGYE49FiybG6D289iNcEPXvAp7O7E8zDvYJs7BowDg5sFRYr17pQ6wYBkYQxtD6hXdqQLLmzyLTVFl4ONN9IDOObCLGtNko-y1aja16pcI"
+                },
+                {
+                    id: 8, name: "Casio fx-991ES PLUS 2nd Ed.", category: "Electronics", campus: "San Bartolome",
+                    condition: "Good", hour4: 20, day: 40, rating: 4.6, reviews: 13, available: true, popular: 8, newest: 1,
+                    keywords: "casio scientific calculator fx-991es plus second edition math exam",
+                    desc: "Reliable scientific calculator with natural textbook display. Light wear on the case, works perfectly.",
+                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJ6LsA9K4An3KGvF56ga1WHFDdSQQlnx94Q8Snfl1yd_PZWnS1HuZibAq01seL1mu_DlDvAy9t2CschJF7iNagN4zLBpmi3-zDnsXp96NRuxdX5J91XiF3SzUb3CadOS4eH_6mIIjLjTBr-WHOvSpHSgekmSeqYJmVmrJCqzGbKs34VDLy-zabxENKjEoIeMrn1clujsUJ0VfPPUxI7aatkvBc7ObEcpMDr7w2g8Y"
+                }
+            ];
+
+            /* ===================== STATE ===================== */
+            var initialCategory = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Request.QueryString["category"] ?? ""));
+            var initialApplied = defaultApplied();
+            if (CATEGORIES.some(function (category) { return category.key === initialCategory; })) initialApplied.categories = [initialCategory];
+
+            var state = {
+                search: "",
+                sort: "popular",
+                view: "grid",
+                page: 1,
+                filtersOpen: false,
+                applied: initialApplied
+            };
+
+            function defaultApplied() {
+                return { availability: "available", categories: [], campuses: [], conditions: [], min: PRICE_MIN, max: PRICE_MAX };
+            }
+
+            /* ===================== HELPERS ===================== */
+            function $(id) { return document.getElementById(id); }
+
+            function esc(s) {
+                return String(s).replace(/[&<>"']/g, function (c) {
+                    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+                });
+            }
+
+            function categoryLabel(key) {
+                var c = CATEGORIES.filter(function (x) { return x.key === key; })[0];
+                return c ? c.label : key;
+            }
+
+            function campusLabel(key) {
+                var c = CAMPUSES.filter(function (x) { return x.key === key; })[0];
+                return c ? c.label : key;
+            }
+
+            function priceText(i) {
+                return "₱" + i.hour4 + " / 4 hrs • ₱" + i.day + " / day";
+            }
+
+
+            /* ===================== FILTER LOGIC ===================== */
+            function tokens() {
+                return state.search.toLowerCase().split(/\s+/).filter(Boolean);
+            }
+
+            function haystack(i) {
+                return (i.name + " " + i.category + " " + categoryLabel(i.category) + " " + i.campus + " " + i.keywords).toLowerCase();
+            }
+
+            function matchesSearch(i) {
+                var h = haystack(i);
+                return tokens().every(function (t) { return h.indexOf(t) !== -1; });
+            }
+
+            function relevance(i) {
+                var n = i.name.toLowerCase();
+                return tokens().reduce(function (sum, t) { return sum + (n.indexOf(t) !== -1 ? 3 : 1); }, 0);
+            }
+
+            // skip = "category" lets us count items per category tab
+            function matches(i, skip) {
+                var a = state.applied;
+                if (!matchesSearch(i)) return false;
+                if (a.availability === "available" && !i.available) return false;
+                if (skip !== "category" && a.categories.length && a.categories.indexOf(i.category) === -1) return false;
+                if (a.campuses.length && a.campuses.indexOf(i.campus) === -1) return false;
+                if (a.conditions.length && a.conditions.indexOf(i.condition) === -1) return false;
+                if (i.day < a.min || i.day > a.max) return false;
+                return true;
+            }
+
+            function sortItems(list) {
+                var s = state.sort;
+                return list.slice().sort(function (a, b) {
+                    if (s === "price") return a.day - b.day;
+                    if (s === "rating") return (b.rating - a.rating) || (b.reviews - a.reviews);
+                    if (s === "newest") return b.newest - a.newest;
+                    if (s === "relevance") return (relevance(b) - relevance(a)) || (a.popular - b.popular);
+                    return a.popular - b.popular;
+                });
+            }
+
+            function getChips() {
+                var a = state.applied, chips = [];
+                a.categories.forEach(function (c) { chips.push({ label: "Category: " + categoryLabel(c), type: "categories", value: c }); });
+                a.campuses.forEach(function (c) { chips.push({ label: "Campus: " + campusLabel(c), type: "campuses", value: c }); });
+                a.conditions.forEach(function (c) { chips.push({ label: "Condition: " + c, type: "conditions", value: c }); });
+                if (a.min > PRICE_MIN || a.max < PRICE_MAX) chips.push({ label: "Rate: ₱" + a.min + " – ₱" + a.max, type: "price" });
+                if (a.availability === "all") chips.push({ label: "Including rented", type: "availability" });
+                return chips;
+            }
+
+            /* ===================== SIDEBAR ===================== */
+            function buildSidebar() {
+                $("campus-list").innerHTML = CAMPUSES.map(function (c, idx) {
+                    return filterRow("campus-" + idx, "campus-filter", c.key, c.label, "cnt-campus-" + idx);
+                }).join("");
+
+                $("category-list").innerHTML = CATEGORIES.map(function (c, idx) {
+                    return filterRow("cat-" + idx, "category-filter", c.key, c.label, "cnt-cat-" + idx);
+                }).join("");
+
+                $("condition-list").innerHTML = CONDITIONS.map(function (c, idx) {
+                    return filterRow("cond-" + idx, "condition-filter", c, c, "cnt-cond-" + idx);
+                }).join("");
+            }
+
+            function filterRow(id, cls, value, label, countId) {
+                return '<div class="filter-row" id="row-' + id + '">' +
+                    '<input type="checkbox" class="form-check-input ' + cls + '" id="' + id + '" value="' + esc(value) + '">' +
+                    '<label for="' + id + '">' + esc(label) + '</label>' +
+                    '<span class="count-pill" id="' + countId + '">0</span></div>';
+            }
+
+            function setCount(countId, rowId, n) {
+                $(countId).textContent = n;
+                $(rowId).classList.toggle("is-zero", n === 0);
+            }
+
+            function updateSidebarCounts() {
+                var pool = ITEMS.filter(matchesSearch);
+                CAMPUSES.forEach(function (c, idx) {
+                    setCount("cnt-campus-" + idx, "row-campus-" + idx, pool.filter(function (i) { return i.campus === c.key; }).length);
+                });
+                CATEGORIES.forEach(function (c, idx) {
+                    setCount("cnt-cat-" + idx, "row-cat-" + idx, pool.filter(function (i) { return i.category === c.key; }).length);
+                });
+                CONDITIONS.forEach(function (c, idx) {
+                    setCount("cnt-cond-" + idx, "row-cond-" + idx, pool.filter(function (i) { return i.condition === c; }).length);
+                });
+            }
+
+            function checkedValues(cls) {
+                return Array.prototype.slice.call(document.querySelectorAll("." + cls + ":checked")).map(function (x) { return x.value; });
+            }
+
+            function readSidebar() {
+                var lo = parseInt($("min-price").value, 10), hi = parseInt($("max-price").value, 10);
+                if (isNaN(lo)) lo = PRICE_MIN;
+                if (isNaN(hi)) hi = PRICE_MAX;
+                lo = Math.max(PRICE_MIN, Math.min(lo, PRICE_MAX));
+                hi = Math.max(PRICE_MIN, Math.min(hi, PRICE_MAX));
+                if (lo > hi) { var t = lo; lo = hi; hi = t; }
+                return {
+                    availability: document.querySelector('input[name="availability"]:checked').value,
+                    categories: checkedValues("category-filter"),
+                    campuses: checkedValues("campus-filter"),
+                    conditions: checkedValues("condition-filter"),
+                    min: lo,
+                    max: hi
+                };
+            }
+
+            function writeSidebar() {
+                var a = state.applied;
+                document.querySelector('input[name="availability"][value="' + a.availability + '"]').checked = true;
+                ["category-filter", "campus-filter", "condition-filter"].forEach(function (cls) {
+                    var list = cls === "category-filter" ? a.categories : cls === "campus-filter" ? a.campuses : a.conditions;
+                    Array.prototype.forEach.call(document.querySelectorAll("." + cls), function (el) {
+                        el.checked = list.indexOf(el.value) !== -1;
+                    });
+                });
+                setPrice(a.min, a.max);
+            }
+
+            function setPrice(lo, hi) {
+                $("min-price").value = lo;
+                $("max-price").value = hi;
+                $("range-min").value = lo;
+                $("range-max").value = hi;
+                $("price-label").textContent = "₱" + lo + " – ₱" + hi + " / day";
+                var span = PRICE_MAX - PRICE_MIN;
+                $("range-fill").style.left = ((lo - PRICE_MIN) / span * 100) + "%";
+                $("range-fill").style.width = ((hi - lo) / span * 100) + "%";
+            }
+
+            /* ===================== RENDER ===================== */
+            function render() {
+                var searching = state.search.length > 0;
+                var a = state.applied;
+                var chips = getChips();
+                var applied = chips.length > 0;
+
+                // Subtitle
+                $("page-subtitle").textContent = "Borrow verified gear, academic tools, and project equipment from fellow QCU students across " +
+                    (a.campuses.length ? a.campuses.join(" & ") + " " : "") + "campuses.";
+
+                // Search box / banner
+                $("search-clear").classList.toggle("d-none", !$("search-input").value);
+                var results = sortItems(ITEMS.filter(function (i) { return matches(i); }));
+
+                $("search-banner").classList.toggle("d-none", !searching);
+                if (searching) {
+                    $("banner-title").textContent = "Search results for \u201C" + state.search + "\u201D";
+                    $("banner-count").textContent = results.length + (results.length === 1 ? " item" : " items") + " found matching your query across QCU campuses";
+                }
+
+                renderTabs(searching || applied);
+                renderChips(chips);
+
+                // Control bar
+                $("filters-status").textContent = applied ? chips.length + (chips.length === 1 ? " applied" : " applied") : "Not applied yet";
+                $("filter-label").textContent = state.filtersOpen ? "Hide Filters" : "Show Filters";
+                $("filter-state").textContent = state.filtersOpen ? "Expanded" : "Collapsed";
+                $("showing-text").innerHTML = "Showing <strong>" + results.length + "</strong> " + (searching ? "matching " : "") + (results.length === 1 ? "item" : "items");
+                $("avail-badge").textContent = a.availability === "available" ? "All Available" : "Incl. Rented";
+
+                renderSortOptions(searching);
+                updateSidebarCounts();
+
+                // Layout
+                $("filter-sidebar").classList.toggle("d-none", !state.filtersOpen);
+                $("results-col").className = state.filtersOpen ? "col-12 col-lg-9" : "col-12";
+
+                // Grid
+                var totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+                if (state.page > totalPages) state.page = totalPages;
+                var start = (state.page - 1) * PAGE_SIZE;
+                var pageItems = results.slice(start, start + PAGE_SIZE);
+
+                var colClass = state.view === "list" ? "col-12"
+                    : (state.filtersOpen ? "col-12 col-sm-6 col-xl-4" : "col-12 col-sm-6 col-md-4 col-xl-3");
+
+                var grid = $("items-grid");
+                grid.classList.toggle("list-view", state.view === "list");
+                grid.innerHTML = pageItems.map(function (i) { return cardHtml(i, colClass); }).join("");
+                grid.classList.toggle("d-none", results.length === 0);
+                $("empty-state").classList.toggle("d-none", results.length !== 0);
+
+                // View toggle
+                Array.prototype.forEach.call(document.querySelectorAll(".view-toggle .btn"), function (b) {
+                    b.classList.toggle("active", b.getAttribute("data-view") === state.view);
+                });
+
+                renderPagination(results.length, start, pageItems.length, totalPages);
+            }
+
+            function cardHtml(i, colClass) {
+                return '<div class="' + colClass + '">' +
+                    '<article class="item-card">' +
+                    '<div class="item-media">' +
+                    '<img src="' + esc(i.img) + '" alt="' + esc(i.name) + '" loading="lazy">' +
+                    '<span class="cond-pill">Condition: ' + esc(i.condition) + '</span>' +
+                    (i.available ? '' : '<span class="rented-pill">Rented</span>') +
+                    '</div>' +
+                    '<div class="item-body">' +
+                    '<h3 class="item-title">' + esc(i.name) + '</h3>' +
+                    '<div class="item-price">' + priceText(i) + '</div>' +
+                    '<div class="item-rating"><i class="bi bi-star-fill"></i> <strong>' + i.rating.toFixed(1) + '</strong> (' + i.reviews + ' reviews)</div>' +
+                    '<a class="btn btn-soft view-details" href="' + DETAILS_URL.replace("__ID__", i.id) + '">View Details <i class="bi bi-arrow-right"></i></a>' +
+                    '</div></article></div>';
+            }
+
+            function renderTabs(show) {
+                var wrap = $("category-tabs");
+                wrap.classList.toggle("d-none", !show);
+                if (!show) return;
+
+                var pool = ITEMS.filter(function (i) { return matches(i, "category"); });
+                var sel = state.applied.categories;
+                var html = '<button type="button" class="cat-tab' + (sel.length === 0 ? " active" : "") + '" data-cat="">All Items <span class="tab-count">' + pool.length + '</span></button>';
+
+                CATEGORIES.forEach(function (c) {
+                    var n = pool.filter(function (i) { return i.category === c.key; }).length;
+                    var active = sel.length === 1 && sel[0] === c.key;
+                    html += '<button type="button" class="cat-tab' + (active ? " active" : "") + '" data-cat="' + esc(c.key) + '">' +
+                        (active ? '<i class="bi bi-check2"></i>' : '') + esc(c.label) + ' <span class="tab-count">' + n + '</span></button>';
+                });
+                wrap.innerHTML = html;
+            }
+
+            function renderChips(chips) {
+                var wrap = $("active-filters");
+                wrap.classList.toggle("d-none", chips.length === 0);
+                if (!chips.length) return;
+
+                wrap.innerHTML = '<span class="text-secondary fw-semibold"><i class="bi bi-sliders me-1 text-primary"></i>Active Filters:</span>' +
+                    chips.map(function (c, idx) {
+                        return '<span class="filter-chip">' + esc(c.label) +
+                            '<button type="button" data-chip="' + idx + '" aria-label="Remove filter">&times;</button></span>';
+                    }).join("") +
+                    '<button type="button" class="btn btn-link btn-sm text-decoration-none ms-auto p-0 fw-semibold" id="chips-clear" style="color:var(--primary)">Clear all</button>';
+            }
+
+            function renderSortOptions(searching) {
+                var opts = [
+                    ["popular", "Most Popular"],
+                    ["price", "Lowest Rental Rate"],
+                    ["rating", "Highest Rated"],
+                    ["newest", "Newest Arrivals"]
+                ];
+                if (searching) opts.unshift(["relevance", "Relevance (Best Match)"]);
+                if (!searching && state.sort === "relevance") state.sort = "popular";
+
+                var sel = $("sort-select");
+                sel.innerHTML = opts.map(function (o) {
+                    return '<option value="' + o[0] + '"' + (o[0] === state.sort ? " selected" : "") + '>' + o[1] + '</option>';
+                }).join("");
+            }
+
+            function renderPagination(total, start, count, totalPages) {
+                var cats = state.applied.categories;
+                var scope = cats.length ? "in " + cats.map(categoryLabel).join(", ") : "without category filter";
+
+                $("pagination-text").textContent = total === 0
+                    ? "No items to display"
+                    : "Viewing " + (start + 1) + "\u2013" + (start + count) + " of " + total + " items " + scope;
+
+                var html = '<button type="button" class="btn" data-page="' + (state.page - 1) + '"' + (state.page <= 1 ? " disabled" : "") + '>Previous</button>';
+                for (var p = 1; p <= totalPages; p++) {
+                    html += '<button type="button" class="btn' + (p === state.page ? " active" : "") + '" data-page="' + p + '">' + p + '</button>';
+                }
+                html += '<button type="button" class="btn" data-page="' + (state.page + 1) + '"' + (state.page >= totalPages ? " disabled" : "") + '>Next</button>';
+                $("pager").innerHTML = html;
+            }
+
+            /* ===================== ACTIONS ===================== */
+            function setSearch(value) {
+                var had = state.search.length > 0;
+                state.search = value.trim();
+                if (state.search && !had && state.sort === "popular") state.sort = "relevance";
+                if (!state.search && state.sort === "relevance") state.sort = "popular";
+                state.page = 1;
+                render();
+            }
+
+            function clearSearch() {
+                $("search-input").value = "";
+                setSearch("");
+            }
+
+            function resetFilters() {
+                state.applied = defaultApplied();
+                state.page = 1;
+                writeSidebar();
+                render();
+            }
+
+            function applyFilters() {
+                state.applied = readSidebar();
+                state.page = 1;
+                writeSidebar();
+                render();
+            }
+
+            /* ===================== EVENTS ===================== */
+            var debounce;
+            $("search-input").addEventListener("input", function () {
+                $("search-clear").classList.toggle("d-none", !this.value);
+                var v = this.value;
+                clearTimeout(debounce);
+                debounce = setTimeout(function () { setSearch(v); }, 250);
+            });
+
+            $("search-input").addEventListener("keydown", function (e) {
+                if (e.key === "Enter") { clearTimeout(debounce); setSearch(this.value); }
+            });
+
+            $("search-button").addEventListener("click", function () {
+                clearTimeout(debounce);
+                setSearch($("search-input").value);
+            });
+
+            $("search-clear").addEventListener("click", function () { clearSearch(); $("search-input").focus(); });
+            $("back-to-all").addEventListener("click", function (e) { e.preventDefault(); clearSearch(); });
+
+            $("toggle-filters").addEventListener("click", function () {
+                state.filtersOpen = !state.filtersOpen;
+                render();
+            });
+
+            $("apply-filters").addEventListener("click", applyFilters);
+            $("clear-filters").addEventListener("click", resetFilters);
+            $("clear-all").addEventListener("click", resetFilters);
+
+            $("empty-reset").addEventListener("click", function () {
+                $("search-input").value = "";
+                state.search = "";
+                if (state.sort === "relevance") state.sort = "popular";
+                resetFilters();
+            });
+
+            $("sort-select").addEventListener("change", function () {
+                state.sort = this.value;
+                state.page = 1;
+                render();
+            });
+
+            document.querySelector(".view-toggle").addEventListener("click", function (e) {
+                var btn = e.target.closest("[data-view]");
+                if (!btn) return;
+                state.view = btn.getAttribute("data-view");
+                render();
+            });
+
+            // Category tabs (apply immediately and sync sidebar)
+            $("category-tabs").addEventListener("click", function (e) {
+                var tab = e.target.closest(".cat-tab");
+                if (!tab) return;
+                var cat = tab.getAttribute("data-cat");
+                state.applied.categories = cat ? [cat] : [];
+                state.page = 1;
+                writeSidebar();
+                render();
+            });
+
+            // Active filter chips
+            $("active-filters").addEventListener("click", function (e) {
+                if (e.target.id === "chips-clear") { resetFilters(); return; }
+                var btn = e.target.closest("[data-chip]");
+                if (!btn) return;
+                var chip = getChips()[parseInt(btn.getAttribute("data-chip"), 10)];
+                var a = state.applied;
+                if (chip.type === "price") { a.min = PRICE_MIN; a.max = PRICE_MAX; }
+                else if (chip.type === "availability") { a.availability = "available"; }
+                else { a[chip.type] = a[chip.type].filter(function (v) { return v !== chip.value; }); }
+                state.page = 1;
+                writeSidebar();
+                render();
+            });
+
+            // Pagination
+            $("pager").addEventListener("click", function (e) {
+                var btn = e.target.closest("[data-page]");
+                if (!btn || btn.disabled) return;
+                state.page = parseInt(btn.getAttribute("data-page"), 10);
+                render();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+
+            // Price sliders / inputs
+            $("range-min").addEventListener("input", function () {
+                var lo = parseInt(this.value, 10), hi = parseInt($("range-max").value, 10);
+                if (lo > hi) lo = hi;
+                setPrice(lo, hi);
+            });
+
+            $("range-max").addEventListener("input", function () {
+                var hi = parseInt(this.value, 10), lo = parseInt($("range-min").value, 10);
+                if (hi < lo) hi = lo;
+                setPrice(lo, hi);
+            });
+
+            ["min-price", "max-price"].forEach(function (id) {
+                $(id).addEventListener("change", function () {
+                    var cur = readSidebar();
+                    setPrice(cur.min, cur.max);
+                });
+            });
+
+            /* ===================== INIT ===================== */
+            buildSidebar();
+            writeSidebar();
+            render();
+        })();
+    </script>
+}

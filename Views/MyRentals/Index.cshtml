@@ -1,0 +1,1722 @@
+﻿@model UniShare.Controllers.MyRentalsViewModel
+@{
+    ViewBag.Title = "Rentals";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/Content/MyRentals.css" />
+
+<div class="my-rentals-page">
+    <!-- A. Page Header -->
+    <header class="my-rentals-header">
+        <div class="my-rentals-header__title-group">
+            <h1 class="my-rentals-header__title">Rentals</h1>
+            <p class="my-rentals-header__description">Manage rental requests, monitor active and overdue bookings, and keep track of returns and reported issues.</p>
+        </div>
+        <button type="button"
+                id="btnRefreshRentals"
+                class="my-rentals-btn-refresh"
+                title="Refresh rentals"
+                aria-label="Refresh rentals and reset the page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span>Refresh</span>
+        </button>
+    </header>
+
+    <!-- B. Summary Cards (display-only; filtering is done through the Filter modal) -->
+    <section class="my-rentals-summary" aria-label="Rentals Summary">
+        <div class="my-rentals-card my-rentals-card--total">
+            <div class="my-rentals-card__content">
+                <span class="my-rentals-card__label">Total Rentals</span>
+                <div class="my-rentals-card__metric">
+                    <span class="my-rentals-card__value" data-summary-value="total">@Model.Summary.TotalRentals</span>
+                    <span class="my-rentals-card__hint">All records</span>
+                </div>
+            </div>
+            <div class="my-rentals-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+        </div>
+        <div class="my-rentals-card my-rentals-card--pending">
+            <div class="my-rentals-card__content">
+                <span class="my-rentals-card__label">Pending Requests</span>
+                <div class="my-rentals-card__metric">
+                    <span class="my-rentals-card__value" data-summary-value="pending">@Model.Summary.PendingRequests</span>
+                    <span class="my-rentals-card__hint">Awaiting your action</span>
+                </div>
+            </div>
+            <div class="my-rentals-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+        </div>
+        <div class="my-rentals-card my-rentals-card--active">
+            <div class="my-rentals-card__content">
+                <span class="my-rentals-card__label">Active Rentals</span>
+                <div class="my-rentals-card__metric">
+                    <span class="my-rentals-card__value" data-summary-value="active">@Model.Summary.ActiveRentals</span>
+                    <span class="my-rentals-card__hint">On loan</span>
+                </div>
+            </div>
+            <div class="my-rentals-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+        </div>
+        <div class="my-rentals-card my-rentals-card--attention">
+            <div class="my-rentals-card__content">
+                <span class="my-rentals-card__label">Need Attention</span>
+                <div class="my-rentals-card__metric">
+                    <span class="my-rentals-card__value" data-summary-value="attention">@Model.Summary.NeedAttention</span>
+                    <span class="my-rentals-card__hint" id="summaryAttentionBreakdown">Overdue: @Model.Summary.OverdueCount &middot; Disputed: @Model.Summary.DisputedCount</span>
+                </div>
+            </div>
+            <div class="my-rentals-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- C. Search and Filter Controls -->
+    <section class="my-rentals-controls" aria-label="Rental Search and Filters">
+        <div class="my-rentals-controls__search-wrapper">
+            <span class="my-rentals-controls__search-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8" fill="none" /><line x1="12.5" y1="12.5" x2="17.5" y2="17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            </span>
+            <input type="text"
+                   id="myRentalsSearchInput"
+                   class="my-rentals-search-input"
+                   placeholder="Search rentals..."
+                   aria-label="Search rentals by request ID, item, borrower, duration, or fee" />
+            <button type="button"
+                    id="myRentalsSearchClear"
+                    class="my-rentals-search-clear"
+                    title="Clear search"
+                    aria-label="Clear search input"
+                    style="display: none;">
+                &times;
+            </button>
+        </div>
+
+        <div class="my-rentals-controls__actions">
+            <!-- Filter Button triggering Filter Modal -->
+            <button type="button"
+                    id="btnOpenFilterModal"
+                    class="my-rentals-btn-filter"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="myRentalsFilterModal">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 4.5h15M5.5 10h9M8.5 15.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                <span>Filter</span>
+                <span id="activeFilterBadge" class="my-rentals-filter-badge" title="Number of statuses selected" style="display: none;">0</span>
+            </button>
+
+            <!-- Booking Date Dropdown -->
+            <div class="my-rentals-date-select-wrapper">
+                <label for="myRentalsDateFilter" class="sr-only">Booking Date</label>
+                <select id="myRentalsDateFilter" class="my-rentals-date-select" aria-label="Filter rentals by booking date">
+                    <option value="All Time" selected>All Time</option>
+                    <option value="Today">Today</option>
+                    <option value="Last 7 Days">Last 7 Days</option>
+                    <option value="Last 30 Days">Last 30 Days</option>
+                    <option value="This Month">This Month</option>
+                </select>
+                <svg class="my-rentals-select-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- D. Rentals Table Section -->
+    <section class="my-rentals-table-section" aria-label="Rentals Table">
+        <div class="my-rentals-table-responsive">
+            <table class="my-rentals-table" id="myRentalsTable">
+                <thead>
+                    <tr>
+                        <th scope="col" class="th-request-id">Request ID</th>
+                        <th scope="col" class="th-item">Item</th>
+                        <th scope="col" class="th-borrower">Borrower</th>
+                        <th scope="col" class="th-request-date">Request Date</th>
+                        <th scope="col" class="th-schedule">Handover Schedule</th>
+                        <th scope="col" class="th-duration">Duration</th>
+                        <th scope="col" class="th-fee">Rental Fee</th>
+                        <th scope="col" class="th-status">Status</th>
+                        <th scope="col" class="th-action text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="myRentalsTableBody">
+                    @foreach (var item in Model.Rentals)
+                    {
+                        var statusClass = "status-" + item.Status.ToLowerInvariant();
+                        <tr class="my-rentals-row"
+                            data-request-id="@item.RequestId"
+                            data-item="@item.ItemName"
+                            data-borrower="@item.BorrowerName"
+                            data-status="@item.Status"
+                            data-date="@item.HandoverDate.ToString("yyyy-MM-dd")"
+                            data-request-date="@item.RequestDate.ToString("yyyy-MM-dd")"
+                            data-fee="@item.RentalFee"
+                            data-duration="@item.Duration">
+                            <td class="td-request-id">
+                                <span class="request-id-badge">@item.RequestId</span>
+                            </td>
+                            <td class="td-item">
+                                <div class="item-cell">
+                                    <span class="item-name">@item.ItemName</span>
+                                    <span class="item-category">@item.Category</span>
+                                </div>
+                            </td>
+                            <td class="td-borrower">
+                                <div class="borrower-cell">
+                                    <div class="borrower-meta">
+                                        <span class="borrower-name">@item.BorrowerName</span>
+                                        <span class="borrower-program">@item.BorrowerProgram</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="td-request-date">
+                                <span class="request-date-text">@item.RequestDateFormatted</span>
+                            </td>
+                            <td class="td-schedule">
+                                <span class="schedule-text">@item.HandoverScheduleFormatted</span>
+                            </td>
+                            <td class="td-duration">
+                                <span class="duration-text">@item.Duration</span>
+                            </td>
+                            <td class="td-fee">
+                                <span class="fee-text">@item.RentalFeeFormatted</span>
+                            </td>
+                            <td class="td-status">
+                                <span class="status-badge @statusClass">
+                                    <span class="status-dot" aria-hidden="true"></span>
+                                    <span class="status-label">@item.Status</span>
+                                </span>
+                            </td>
+                            <td class="td-action text-right">
+                                <button type="button"
+                                        class="my-rentals-btn-view"
+                                        data-request-id="@item.RequestId"
+                                        aria-label="View details for @item.RequestId">
+                                    View Details
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Empty State Display -->
+            <div id="myRentalsEmptyState" class="my-rentals-empty-state" style="display: none;">
+                <div class="my-rentals-empty-state__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" fill="none" /><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="12" cy="16" r="1" fill="currentColor" /></svg>
+                </div>
+                <h3 class="my-rentals-empty-state__title" id="emptyStateTitle">No rentals found</h3>
+                <p class="my-rentals-empty-state__text" id="emptyStateText">No rentals matched your active filters. Try adjusting your search query, status selection, or date range.</p>
+                <div class="my-rentals-empty-state__actions">
+                    <button type="button" id="btnEmptyResetFilters" class="my-rentals-btn my-rentals-btn-secondary">Reset Status Filters</button>
+                    <button type="button" id="btnEmptyClearAll" class="my-rentals-btn my-rentals-btn-primary">Clear All Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- E. Pagination Controls -->
+        <footer class="my-rentals-pagination" id="myRentalsPagination" aria-label="Table pagination">
+            <div class="my-rentals-pagination__info" id="paginationInfo">
+                Showing <strong id="paginationStart">1</strong> &ndash; <strong id="paginationEnd">6</strong> of <strong id="paginationTotal">@Model.Rentals.Count</strong> rentals
+            </div>
+            <div class="my-rentals-pagination__controls">
+                <button type="button"
+                        id="btnPaginationPrev"
+                        class="my-rentals-pagination__btn"
+                        aria-label="Previous page">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 12-4-4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                    <span>Previous</span>
+                </button>
+                <span class="my-rentals-pagination__page-label" id="paginationPageLabel">Page 1 of 3</span>
+                <button type="button"
+                        id="btnPaginationNext"
+                        class="my-rentals-pagination__btn"
+                        aria-label="Next page">
+                    <span>Next</span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                </button>
+            </div>
+        </footer>
+    </section>
+
+    <!-- 5. FUNCTIONAL FILTER MODAL -->
+    <div id="myRentalsFilterModal"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="modalFilterTitle"
+         aria-describedby="modalFilterDesc">
+        <div class="my-rentals-modal">
+            <!-- Modal Header -->
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <h2 class="my-rentals-modal__title" id="modalFilterTitle">Filter Rentals</h2>
+                    <p class="my-rentals-modal__description" id="modalFilterDesc">All statuses are shown by default. Untick the statuses you want to hide, then click Apply Filters.</p>
+                </div>
+                <button type="button"
+                        class="my-rentals-modal__close-btn"
+                        id="btnCloseFilterModal"
+                        aria-label="Close filter modal">
+                    &times;
+                </button>
+            </header>
+
+            <!-- Modal Body: Status Checkboxes -->
+            <div class="my-rentals-modal__body">
+                <div class="my-rentals-modal__status-header">
+                    <span class="my-rentals-modal__section-label">Rental Status</span>
+                    <span id="statusSelectedCount" class="my-rentals-modal__count-pill">All statuses</span>
+                </div>
+
+                <label class="my-rentals-checkbox-label my-rentals-select-all">
+                    <input type="checkbox"
+                           class="my-rentals-checkbox"
+                           id="chkSelectAllStatuses" />
+                    <span class="checkbox-custom" aria-hidden="true"></span>
+                    <span class="checkbox-text-group">
+                        <span class="checkbox-name">Select All</span>
+                    </span>
+                </label>
+
+                <div class="my-rentals-modal__checkbox-list" role="group" aria-label="Status selection">
+                    <!-- Option 1: Pending -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Pending"
+                               data-status="Pending"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Pending</span>
+                            <span class="status-badge status-pending sm"><span class="status-dot"></span>Pending</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 2: Accepted -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Accepted"
+                               data-status="Accepted"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Accepted</span>
+                            <span class="status-badge status-accepted sm"><span class="status-dot"></span>Accepted</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 3: Declined -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Declined"
+                               data-status="Declined"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Declined</span>
+                            <span class="status-badge status-declined sm"><span class="status-dot"></span>Declined</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 4: Ongoing -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Ongoing"
+                               data-status="Ongoing"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Ongoing</span>
+                            <span class="status-badge status-ongoing sm"><span class="status-dot"></span>Ongoing</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 5: Overdue -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Overdue"
+                               data-status="Overdue"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Overdue</span>
+                            <span class="status-badge status-overdue sm"><span class="status-dot"></span>Overdue</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 6: Returned -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Returned"
+                               data-status="Returned"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Returned</span>
+                            <span class="status-badge status-returned sm"><span class="status-dot"></span>Returned</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 7: Disputed -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Disputed"
+                               data-status="Disputed"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Disputed</span>
+                            <span class="status-badge status-disputed sm"><span class="status-dot"></span>Disputed</span>
+                        </span>
+                    </label>
+
+                    <!-- Option 8: Completed -->
+                    <label class="my-rentals-checkbox-label">
+                        <input type="checkbox"
+                               class="my-rentals-checkbox status-filter-checkbox"
+                               value="Completed"
+                               data-status="Completed"
+                               checked />
+                        <span class="checkbox-custom" aria-hidden="true"></span>
+                        <span class="checkbox-text-group">
+                            <span class="checkbox-name">Completed</span>
+                            <span class="status-badge status-completed sm"><span class="status-dot"></span>Completed</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <footer class="my-rentals-modal__footer">
+                <button type="button"
+                        class="my-rentals-btn my-rentals-btn-secondary"
+                        id="btnFilterReset">
+                    Reset
+                </button>
+                <button type="button"
+                        class="my-rentals-btn my-rentals-btn-primary"
+                        id="btnFilterApply">
+                    Apply Filters
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL A: Pending Details (View Details on a Pending row) -->
+    <div id="modalPendingDetails"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="pendingDetailsTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <h2 class="my-rentals-modal__title" id="pendingDetailsTitle">Rental Request Details <span class="rm-request-id" id="pendingRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">Review the rental info before accepting or declining.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnClosePendingDetails" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Item card -->
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="pendingItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="pendingItemCategory"></span>
+                        <span class="rm-item-name" id="pendingItemName"></span>
+                        <span class="rm-item-location" id="pendingItemLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="pendingFeeValue"></span>
+                        <span class="rm-fee-label">est. fee</span>
+                    </div>
+                </div>
+                <!-- Borrower row -->
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="pendingBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="pendingBorrowerName"></span>
+                        <span class="rm-borrower-program" id="pendingBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <!-- Rental detail rows -->
+                <div class="rm-section-label">REQUESTED RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Date</span>
+                            <span class="rm-detail-value" id="pendingHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Time</span>
+                            <span class="rm-detail-value" id="pendingHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M10 4v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="pendingDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-location-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                    <span id="pendingHandoverLocation"></span>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return Schedule</span>
+                        <span class="rm-detail-value" id="pendingReturnSchedule"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Estimated Rental Fee</span>
+                        <span class="rm-fee-large" id="pendingFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Note to owner -->
+                <div class="rm-section-label">NOTE TO OWNER</div>
+                <div class="rm-note-box" id="pendingNote"></div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn rm-btn-decline" id="btnPendingDecline">
+                    Decline Request
+                </button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnPendingAccept">
+                    &#10003; Accept Request
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL B: Accept Request -->
+    <div id="modalAcceptConfirm"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="acceptConfirmTitle"
+         aria-describedby="acceptConfirmText">
+        <div class="my-rentals-modal my-rentals-modal--sm">
+            <div class="rm-confirm-body">
+                <div class="rm-confirm-icon rm-confirm-icon--accept" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                </div>
+                <h2 class="rm-confirm-title" id="acceptConfirmTitle">Accept Request</h2>
+                <p class="rm-confirm-text" id="acceptConfirmText">Are you sure you want to accept this rental request? Please review the request summary before confirming.</p>
+                <div class="rm-confirm-summary">
+                    <div class="rm-confirm-summary-thumb" id="acceptItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-confirm-summary-info">
+                        <span class="rm-confirm-summary-label">ITEM REQUESTED</span>
+                        <span class="rm-confirm-summary-name" id="acceptItemName"></span>
+                        <span class="rm-confirm-summary-borrower" id="acceptBorrower"></span>
+                    </div>
+                </div>
+                <div class="rm-confirm-detail-list">
+                    <div class="rm-confirm-detail-row">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3 5.5 17M14.5 3 13 17M3.5 7.5h13M3 12.5h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                        <span class="rm-detail-label">Request ID</span>
+                        <span class="rm-confirm-detail-val" id="acceptRequestId"></span>
+                    </div>
+                    <div class="rm-confirm-detail-row">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <span class="rm-detail-label">Handover Date</span>
+                        <span class="rm-confirm-detail-val" id="acceptHandoverDate"></span>
+                    </div>
+                    <div class="rm-confirm-detail-row">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <span class="rm-detail-label">Handover Time</span>
+                        <span class="rm-confirm-detail-val" id="acceptHandoverTime"></span>
+                    </div>
+                    <div class="rm-confirm-detail-row">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                        <span class="rm-detail-label">Location</span>
+                        <span class="rm-confirm-detail-val" id="acceptLocation"></span>
+                    </div>
+                    <div class="rm-confirm-detail-row">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M10 4v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-confirm-detail-val" id="acceptExpectedReturn"></span>
+                    </div>
+                    <div class="rm-confirm-detail-row rm-confirm-detail-row--fee">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 7v6M7.5 8.5h4a1.5 1.5 0 0 1 0 3h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <span class="rm-detail-label">Estimated Rental Fee</span>
+                        <span class="rm-confirm-detail-val rm-fee-accent" id="acceptFee"></span>
+                    </div>
+                </div>
+                <div class="rm-confirm-result">
+                    <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                    <span><strong>What happens next:</strong> accepting moves this request to <em>Accepted</em> so the borrower can proceed to the handover. The rental timer only starts once both parties confirm the physical handover on campus.</span>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnAcceptCancel">Cancel</button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnAcceptConfirm">&#10003; Confirm Accept</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL C: Decline Request -->
+    <div id="modalDeclineConfirm"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="declineConfirmTitle"
+         aria-describedby="declineConfirmText">
+        <div class="my-rentals-modal my-rentals-modal--lg rm-modal--warning">
+            <header class="my-rentals-modal__header rm-header--warning">
+                <span class="rm-decline-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </span>
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--warning">Final verification</span>
+                    <h2 class="my-rentals-modal__title" id="declineConfirmTitle">Confirm Decline?</h2>
+                    <p class="my-rentals-modal__description" id="declineConfirmText">Are you sure you want to decline this rental request? Choose a reason for the borrower before confirming.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseDeclineModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Request details -->
+                <div class="rm-decline-summary">
+                    <div>
+                        <span class="rm-detail-label">Request ID</span>
+                        <span class="rm-decline-summary-value" id="declineRequestId"></span>
+                    </div>
+                    <div>
+                        <span class="rm-detail-label">Requested Item</span>
+                        <span class="rm-decline-summary-value" id="declineItemName"></span>
+                    </div>
+                    <div>
+                        <span class="rm-detail-label">Borrower</span>
+                        <span class="rm-decline-summary-value" id="declineBorrower"></span>
+                    </div>
+                </div>
+                <!-- Reason -->
+                <div class="rm-section-label">REASON FOR DECLINING *</div>
+                <div class="rm-decline-reasons" role="radiogroup" aria-label="Decline reason" aria-describedby="declineReasonError">
+                    <label class="rm-radio-label">
+                        <input type="radio" name="declineReason" value="unavailable" class="rm-radio-input" />
+                        <span class="rm-radio-custom"></span>
+                        <span class="rm-radio-text">
+                            <strong>Requested schedule is unavailable</strong>
+                            <span>Conflicting class or work schedule at the requested time.</span>
+                        </span>
+                    </label>
+                    <label class="rm-radio-label">
+                        <input type="radio" name="declineReason" value="no_longer" class="rm-radio-input" />
+                        <span class="rm-radio-custom"></span>
+                        <span class="rm-radio-text">
+                            <strong>Item is no longer available</strong>
+                            <span>Currently lent to another student or no longer in usable condition.</span>
+                        </span>
+                    </label>
+                    <label class="rm-radio-label">
+                        <input type="radio" name="declineReason" value="handover" class="rm-radio-input" />
+                        <span class="rm-radio-custom"></span>
+                        <span class="rm-radio-text">
+                            <strong>Handover arrangement is not suitable</strong>
+                            <span>Meeting point, time, or location cannot be arranged.</span>
+                        </span>
+                    </label>
+                    <label class="rm-radio-label">
+                        <input type="radio" name="declineReason" value="clarification" class="rm-radio-input" />
+                        <span class="rm-radio-custom"></span>
+                        <span class="rm-radio-text">
+                            <strong>Request details need clarification</strong>
+                            <span>Borrower should contact the owner to resolve open questions.</span>
+                        </span>
+                    </label>
+                    <label class="rm-radio-label">
+                        <input type="radio" name="declineReason" value="other" class="rm-radio-input" />
+                        <span class="rm-radio-custom"></span>
+                        <span class="rm-radio-text">
+                            <strong>Other reason</strong>
+                            <span>Add an explanation for the borrower below.</span>
+                        </span>
+                    </label>
+                </div>
+                <span id="declineReasonError" class="rm-field-error" role="alert" style="display:none;">Please select a reason above.</span>
+                <!-- Optional explanation -->
+                <div class="rm-section-label rm-section-label--spaced"><label for="declineExplanationText">ADD AN EXPLANATION (OPTIONAL)</label></div>
+                <textarea id="declineExplanationText" class="rm-textarea" rows="3" placeholder="e.g. Hi, I can't lend this on Thursday, but Friday from 10 AM to 3:30 PM works!"></textarea>
+                <!-- Borrower notification (visually distinct from the request details above) -->
+                <div class="rm-warning-notice">
+                    <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                    <span><strong>The borrower will be informed.</strong> We will send an automated notice about your decision, including the reason you selected.</span>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnDeclineCancel">Cancel</button>
+                <button type="button" class="my-rentals-btn rm-btn-decline-confirm" id="btnDeclineConfirm">&#10007; Confirm Decline</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL D: Ongoing Rental -->
+    <div id="modalOngoing"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="ongoingModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--ongoing">&#9679; Ongoing</span>
+                    <h2 class="my-rentals-modal__title" id="ongoingModalTitle">Rental Details <span class="rm-request-id" id="ongoingRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">Track the active rental and confirm the return of the item.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseOngoingModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="ongoingItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="ongoingItemCategory"></span>
+                        <span class="rm-item-name" id="ongoingItemName"></span>
+                        <span class="rm-item-location" id="ongoingOwner"></span>
+                        <span class="rm-item-location" id="ongoingLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="ongoingFeeValue"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="ongoingBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="ongoingBorrowerName"></span>
+                        <span class="rm-borrower-program" id="ongoingBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <div class="rm-section-label">RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Start Date</span>
+                            <span class="rm-detail-value" id="ongoingHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Start Time</span>
+                            <span class="rm-detail-value" id="ongoingHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="ongoingDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-location-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                    <span id="ongoingHandoverLocation"></span>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="ongoingExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Rental Fee</span>
+                        <span class="rm-fee-large" id="ongoingFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Countdown + progress (kept together) -->
+                <div class="rm-countdown-section" aria-label="Rental time remaining">
+                    <div class="rm-countdown-row">
+                        <div>
+                            <div class="rm-detail-label">REMAINING TIME</div>
+                            <div class="rm-countdown-time" id="ongoingCountdownDisplay" role="timer">--:--:--</div>
+                        </div>
+                        <div class="rm-countdown-right">
+                            <div class="rm-detail-label">Rental Started</div>
+                            <span id="ongoingStartedLabel"></span>
+                            <div class="rm-detail-label rm-detail-label--spaced">Expected End</div>
+                            <span id="ongoingEndLabel"></span>
+                        </div>
+                    </div>
+                    <div class="rm-progress-bar-wrap">
+                        <div class="rm-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="ongoingProgressBar" aria-label="Rental time elapsed">
+                            <div class="rm-progress-bar__fill" id="ongoingProgressFill" style="width:0%"></div>
+                        </div>
+                        <div class="rm-progress-labels">
+                            <span id="ongoingElapsedLabel"></span>
+                            <span id="ongoingTotalLabel"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOngoingClose">Close</button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnOngoingConfirmReturn" data-flow-target="modalReturn">&#10003; Confirm Return</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL E: Overdue Rental -->
+    <div id="modalOverdue"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="overdueModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg rm-modal--overdue">
+            <header class="my-rentals-modal__header rm-header--overdue">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--overdue">&#9888; Overdue</span>
+                    <h2 class="my-rentals-modal__title" id="overdueModalTitle">Rental Details <span class="rm-request-id" id="overdueRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">This item has not been returned by the expected return time.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseOverdueModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="overdueItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="overdueItemCategory"></span>
+                        <span class="rm-item-name" id="overdueItemName"></span>
+                        <span class="rm-item-location" id="overdueOwner"></span>
+                        <span class="rm-item-location" id="overdueLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="overdueHourlyRate"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="overdueBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="overdueBorrowerName"></span>
+                        <span class="rm-borrower-program" id="overdueBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <div class="rm-section-label">RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Start Date</span>
+                            <span class="rm-detail-value" id="overdueHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Start Time</span>
+                            <span class="rm-detail-value" id="overdueHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="overdueDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="overdueExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Rental Fee</span>
+                        <span class="rm-fee-large" id="overdueBaseFee"></span>
+                    </div>
+                </div>
+
+                <!-- Overdue information -->
+                <div class="rm-overdue-section" aria-label="Overdue information">
+                    <div class="rm-overdue-header">
+                        <span class="rm-section-label">OVERDUE INFORMATION</span>
+                        <span class="rm-overdue-pill">&#9679; Overdue</span>
+                    </div>
+                    <div class="rm-overdue-stats">
+                        <div class="rm-overdue-stat">
+                            <span class="rm-detail-label">OVERDUE DURATION</span>
+                            <span class="rm-overdue-time" id="overdueTimeDisplay" role="timer">00:00:00</span>
+                            <span class="rm-overdue-sub" id="overdueStartedLabel"></span>
+                        </div>
+                        <div class="rm-overdue-stat">
+                            <span class="rm-detail-label">ESTIMATED LATE FEE</span>
+                            <span class="rm-overdue-fee" id="overdueLateFee"></span>
+                            <span class="rm-overdue-sub" id="overdueLateFeeBreakdown"></span>
+                        </div>
+                    </div>
+                    <div class="rm-progress-bar-wrap rm-progress-bar-wrap--overdue">
+                        <div class="rm-overdue-bar" id="overdueProgressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-label="Rental period elapsed, with overdue time">
+                            <span class="rm-overdue-bar__rental" id="overdueBarRental"></span>
+                            <span class="rm-overdue-bar__late" id="overdueBarLate"></span>
+                        </div>
+                        <div class="rm-progress-labels">
+                            <span id="overdueBarLeftLabel"></span>
+                            <span id="overdueBarRightLabel"></span>
+                        </div>
+                    </div>
+                    <dl class="rm-breakdown-list" aria-label="Late fee calculation">
+                        <div class="rm-breakdown-row">
+                            <dt>Grace period</dt>
+                            <dd id="overdueBdGrace"></dd>
+                        </div>
+                        <div class="rm-breakdown-row">
+                            <dt>Hourly rate used</dt>
+                            <dd id="overdueBdRate"></dd>
+                        </div>
+                        <div class="rm-breakdown-row">
+                            <dt>Billable overdue time</dt>
+                            <dd id="overdueBdBillable"></dd>
+                        </div>
+                        <div class="rm-breakdown-row">
+                            <dt>Late hours charged</dt>
+                            <dd id="overdueBdHours"></dd>
+                        </div>
+                        <div class="rm-breakdown-row rm-breakdown-row--total">
+                            <dt>Estimated late fee</dt>
+                            <dd id="overdueBdTotal"></dd>
+                        </div>
+                    </dl>
+                    <p class="rm-breakdown-note">Late fees are charged per started hour once the grace period has passed. This estimate keeps updating until the item is returned.</p>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOverdueClose">Close</button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnOverdueProceedReturn">Proceed to Return</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL F: Return Confirmation -->
+    <div id="modalReturn"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="returnModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--returned">&#9679; Returned</span>
+                    <h2 class="my-rentals-modal__title" id="returnModalTitle">Returned Rental Details <span class="rm-request-id" id="returnRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">The item has been returned and is waiting for your final confirmation.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseReturnModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="returnItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="returnItemCategory"></span>
+                        <span class="rm-item-name" id="returnItemName"></span>
+                        <span class="rm-item-location" id="returnOwner"></span>
+                        <span class="rm-item-location" id="returnLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="returnHourlyRate"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="returnBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="returnBorrowerName"></span>
+                        <span class="rm-borrower-program" id="returnBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <div class="rm-section-label">RENTAL SCHEDULE</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Start Date</span>
+                            <span class="rm-detail-value" id="returnHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Start Time</span>
+                            <span class="rm-detail-value" id="returnHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="returnDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="returnExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Rental Fee</span>
+                        <span class="rm-fee-large" id="returnFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Only shown when the rental was overdue when it was returned -->
+                <div class="rm-late-row" id="returnLateRow" style="display:none;">
+                    <div>
+                        <span class="rm-detail-label">Late Return</span>
+                        <span class="rm-detail-value" id="returnLateText"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Estimated Late Fee</span>
+                        <span class="rm-fee-large rm-fee-large--overdue" id="returnLateFee"></span>
+                    </div>
+                </div>
+
+                <!-- Return details -->
+                <div class="rm-section-label">RETURN DETAILS</div>
+                <div class="rm-detail-grid rm-detail-grid--2">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Returned On</span>
+                            <span class="rm-detail-value" id="returnReturnedOn"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Return Timing</span>
+                            <span class="rm-detail-value" id="returnTiming"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Return confirmation notice (visually distinct from the rental information above) -->
+                <div class="rm-return-confirmation-box" role="note">
+                    <div class="rm-return-confirmation-box__header">
+                        <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                        <strong>Final Confirmation</strong>
+                    </div>
+                    <p class="rm-return-confirmation-box__title">Confirm the item is in good condition</p>
+                    <p class="rm-return-confirmation-box__text">Click <strong>Mark as Completed</strong> once you have checked the item and everything is in order. If there is damage, missing parts, or any other unresolved issue, use <strong>Report a Dispute</strong> instead.</p>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer rm-footer-split">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnReturnClose">Close</button>
+                <span class="rm-footer-group">
+                    <button type="button" class="my-rentals-btn rm-btn-report-dispute" id="btnReturnReportDispute">
+                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2 1.5 13.5h13L8 2zm0 4.5v3m0 2h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                        Report a Dispute
+                    </button>
+                    <button type="button" class="my-rentals-btn rm-btn-accept" id="btnReturnConfirm">&#10003; Mark as Completed</button>
+                </span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL G: Report a Dispute -->
+    <div id="modalDispute"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="disputeModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <h2 class="my-rentals-modal__title" id="disputeModalTitle">Report a Dispute <span class="rm-request-id" id="disputeRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">Report an issue with this rental booking.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseDisputeModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Rental summary -->
+                <div class="rm-item-card rm-item-card--compact">
+                    <div class="rm-item-thumb" id="disputeItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="disputeItemCategory"></span>
+                        <span class="rm-item-name" id="disputeItemName"></span>
+                        <span class="rm-item-location" id="disputeBorrower"></span>
+                        <span class="rm-item-location" id="disputeSchedule"></span>
+                    </div>
+                </div>
+
+                <!-- Issue category -->
+                <div class="rm-section-label" id="disputeCategoryLabel">ISSUE CATEGORY *</div>
+                <p class="rm-dispute-hint">Select the category that best describes the issue.</p>
+                <div class="rm-dispute-categories" id="disputeCategories" role="radiogroup" aria-labelledby="disputeCategoryLabel" aria-describedby="disputeCategoryError">
+                    <label class="rm-dispute-tile">
+                        <input type="radio" name="disputeCategory" value="Item Damage" class="rm-dispute-input" />
+                        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M11 2 4 11h5l-1 7 8-10h-5l0-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none" /></svg>
+                        <span>Item Damage</span>
+                    </label>
+                    <label class="rm-dispute-tile">
+                        <input type="radio" name="disputeCategory" value="Missing Parts" class="rm-dispute-input" />
+                        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 7.5 10 4l7 3.5v5L10 16l-7-3.5v-5zM3 7.5l7 3.5 7-3.5M10 11v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none" /></svg>
+                        <span>Missing Parts</span>
+                    </label>
+                    <label class="rm-dispute-tile">
+                        <input type="radio" name="disputeCategory" value="Disagreement" class="rm-dispute-input" />
+                        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4h14v9H8l-4 3v-3H3V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none" /></svg>
+                        <span>Disagreement</span>
+                    </label>
+                    <label class="rm-dispute-tile">
+                        <input type="radio" name="disputeCategory" value="Not Returned" class="rm-dispute-input" />
+                        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <span>Not Returned</span>
+                    </label>
+                    <label class="rm-dispute-tile">
+                        <input type="radio" name="disputeCategory" value="Other" class="rm-dispute-input" />
+                        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M7.5 8a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5M10 14.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                        <span>Other</span>
+                    </label>
+                </div>
+                <span id="disputeCategoryError" class="rm-field-error" role="alert" style="display:none;">Please select an issue category.</span>
+
+                <!-- Description -->
+                <div class="rm-section-label rm-section-label--spaced"><label for="disputeDescriptionText">DESCRIBE THE ISSUE *</label></div>
+                <textarea id="disputeDescriptionText" class="rm-textarea" rows="4" maxlength="1000" placeholder="Explain what happened, including relevant details..." aria-describedby="disputeDescError"></textarea>
+                <span id="disputeDescError" class="rm-field-error" role="alert" style="display:none;">Please describe the issue.</span>
+
+                <!-- Evidence images -->
+                <div class="rm-evidence-header">
+                    <span class="rm-section-label rm-section-label--flush">UPLOAD EVIDENCE (OPTIONAL)</span>
+                    <span class="rm-evidence-count" id="disputeImageCount" aria-live="polite">0/2 images added</span>
+                </div>
+                <p class="rm-dispute-hint">Upload up to 2 images (JPG, PNG, GIF or WEBP).</p>
+                <div class="rm-image-previews" id="disputeImagePreviews"></div>
+                <input type="file" id="disputeImageInput" class="rm-file-input" accept="image/*" multiple tabindex="-1" aria-hidden="true" />
+                <button type="button" class="rm-upload-zone" id="btnDisputeUpload">
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M10 13V4m0 0L6.5 7.5M10 4l3.5 3.5M3.5 13v2.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                    <span class="rm-upload-zone__title" id="disputeUploadTitle">Click to upload images</span>
+                    <span class="rm-upload-zone__sub" id="disputeUploadSub">0 of 2 added</span>
+                </button>
+                <span id="disputeImageError" class="rm-field-error" role="alert" style="display:none;"></span>
+
+                <!-- Warning notice -->
+                <div class="rm-warning-notice rm-warning-notice--danger" role="note">
+                    <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 1.5 17h17L10 2zm0 5.5v4m0 2.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                    <span><strong>Submitting changes the rental status.</strong> Submitting this dispute will change the rental status to <em>Disputed</em> and the QCU Admin will be notified.</span>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnDisputeCancel">Cancel</button>
+                <button type="button" class="my-rentals-btn rm-btn-decline-confirm" id="btnDisputeSubmit">Submit Dispute</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL H: Accepted Booking (two-party handover verification) -->
+    <div id="modalAccepted"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="acceptedModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--accepted">&#9679; Accepted</span>
+                    <h2 class="my-rentals-modal__title" id="acceptedModalTitle">Accepted Booking Details <span class="rm-request-id" id="acceptedRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">Review booking details and verify the physical handover.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseAcceptedModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Item Details card (same component as the other status modals) -->
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="acceptedItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="acceptedItemCategory"></span>
+                        <span class="rm-item-name" id="acceptedItemName"></span>
+                        <span class="rm-item-location" id="acceptedOwner"></span>
+                        <span class="rm-item-location" id="acceptedLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="acceptedHourlyRate"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <!-- Borrower Information card -->
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="acceptedBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="acceptedBorrowerName"></span>
+                        <span class="rm-borrower-program" id="acceptedBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <!-- Requested Rental Details -->
+                <div class="rm-section-label">REQUESTED RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Date</span>
+                            <span class="rm-detail-value" id="acceptedHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Time</span>
+                            <span class="rm-detail-value" id="acceptedHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="acceptedDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-location-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                    <span id="acceptedHandoverLocation"></span>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="acceptedExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Estimated Rental Fee</span>
+                        <span class="rm-fee-large" id="acceptedFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Two-Party Handover Verification -->
+                <section class="rm-verify-section" aria-labelledby="acceptedVerifyHeading">
+                    <div class="rm-verify-header">
+                        <h3 class="rm-verify-title" id="acceptedVerifyHeading"><svg class="rm-verify-title__icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 3.5 4.5v5c0 4 2.7 6.9 6.5 8.5 3.8-1.6 6.5-4.5 6.5-8.5v-5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none" /><path d="m7.3 10 2 2 3.6-3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>Two-Party Handover Verification</h3>
+                        <span class="rm-verify-progress" id="acceptedVerifyProgress" role="status" aria-live="polite"></span>
+                    </div>
+                    <p class="rm-verify-sub">Each party confirms separately once the item has been handed over in person.</p>
+                    <div class="rm-verify-grid">
+                        <div class="rm-verify-card" id="acceptedOwnerCard">
+                            <div class="rm-verify-card__top">
+                                <span class="rm-verify-role">Owner</span>
+                                <span class="rm-verify-chip" id="acceptedOwnerChip"></span>
+                            </div>
+                            <span class="rm-verify-name" id="acceptedOwnerCardName"></span>
+                            <p class="rm-verify-msg" id="acceptedOwnerMsg"></p>
+                            <span class="rm-verify-foot" id="acceptedOwnerFoot"></span>
+                        </div>
+                        <div class="rm-verify-card" id="acceptedBorrowerCard">
+                            <div class="rm-verify-card__top">
+                                <span class="rm-verify-role">Borrower</span>
+                                <span class="rm-verify-chip" id="acceptedBorrowerChip"></span>
+                            </div>
+                            <span class="rm-verify-name" id="acceptedBorrowerCardName"></span>
+                            <p class="rm-verify-msg" id="acceptedBorrowerMsg"></p>
+                            <span class="rm-verify-foot" id="acceptedBorrowerFoot"></span>
+                        </div>
+                    </div>
+                    <div class="rm-info-notice" role="note">
+                        <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                        <span>The rental timer will only start after both parties confirm the physical handover in person.</span>
+                    </div>
+                </section>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnAcceptedClose">Close</button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnAcceptedConfirmHandover">&#10003; Confirm Handover</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL I: Declined Request (view only) -->
+    <div id="modalDeclined"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="declinedModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header rm-header--declined">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--declined">&#9679; Declined</span>
+                    <h2 class="my-rentals-modal__title" id="declinedModalTitle">Declined Request Details <span class="rm-request-id" id="declinedRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">This rental request was declined. Details are shown for reference.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseDeclinedModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Item Details card (same component as the other status modals) -->
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="declinedItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="declinedItemCategory"></span>
+                        <span class="rm-item-name" id="declinedItemName"></span>
+                        <span class="rm-item-location" id="declinedOwner"></span>
+                        <span class="rm-item-location" id="declinedLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="declinedHourlyRate"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <!-- Borrower Information card -->
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="declinedBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="declinedBorrowerName"></span>
+                        <span class="rm-borrower-program" id="declinedBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <!-- Requested Rental Details -->
+                <div class="rm-section-label">REQUESTED RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Date</span>
+                            <span class="rm-detail-value" id="declinedHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Time</span>
+                            <span class="rm-detail-value" id="declinedHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="declinedDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-location-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                    <span id="declinedHandoverLocation"></span>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="declinedExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Estimated Rental Fee</span>
+                        <span class="rm-fee-large" id="declinedFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Decline details -->
+                <div class="rm-section-label">DECLINE DETAILS</div>
+                <dl class="rm-info-list">
+                    <div class="rm-info-row">
+                        <dt>Decline reason</dt>
+                        <dd id="declinedReason"></dd>
+                    </div>
+                    <div class="rm-info-row" id="declinedNoteRow">
+                        <dt>Message to borrower</dt>
+                        <dd id="declinedNote"></dd>
+                    </div>
+                    <div class="rm-info-row">
+                        <dt>Declined on</dt>
+                        <dd id="declinedAt"></dd>
+                    </div>
+                </dl>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnDeclinedClose">Close</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL J: Disputed Rental -->
+    <div id="modalDisputed"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="disputedModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header rm-header--disputed">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--disputed">&#9679; Disputed</span>
+                    <h2 class="my-rentals-modal__title" id="disputedModalTitle">Disputed Rental Details <span class="rm-request-id" id="disputedRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">A reported issue is under review. Mark it as resolved once you and the borrower have settled it.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseDisputedModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Item Details card (same component as the other status modals) -->
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="disputedItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="disputedItemCategory"></span>
+                        <span class="rm-item-name" id="disputedItemName"></span>
+                        <span class="rm-item-location" id="disputedOwner"></span>
+                        <span class="rm-item-location" id="disputedLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="disputedHourlyRate"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <!-- Borrower Information card -->
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="disputedBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="disputedBorrowerName"></span>
+                        <span class="rm-borrower-program" id="disputedBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <!-- Requested Rental Details -->
+                <div class="rm-section-label">REQUESTED RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Date</span>
+                            <span class="rm-detail-value" id="disputedHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Time</span>
+                            <span class="rm-detail-value" id="disputedHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="disputedDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-location-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                    <span id="disputedHandoverLocation"></span>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="disputedExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Rental Fee</span>
+                        <span class="rm-fee-large" id="disputedFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Submitted dispute -->
+                <div class="rm-section-label">REPORTED ISSUE</div>
+                <div class="rm-dispute-card">
+                    <div class="rm-dispute-card__row">
+                        <div>
+                            <span class="rm-detail-label">Issue Category</span>
+                            <span class="rm-dispute-chip" id="disputedCategory"></span>
+                        </div>
+                        <div class="rm-return-fee">
+                            <span class="rm-detail-label">Submitted</span>
+                            <span class="rm-detail-value" id="disputedSubmittedAt"></span>
+                        </div>
+                    </div>
+                    <span class="rm-detail-label">Description</span>
+                    <div class="rm-note-box" id="disputedDescription"></div>
+                    <span class="rm-detail-label rm-detail-label--spaced">Submitted Evidence</span>
+                    <div class="rm-evidence-grid" id="disputedEvidence"></div>
+                    <p class="rm-evidence-empty" id="disputedEvidenceEmpty">No evidence images were submitted with this report.</p>
+                </div>
+                <div class="rm-info-notice rm-info-notice--review" role="note">
+                    <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                    <span>Your reported issue has been submitted and is currently under review by QCU Admin. You may coordinate with the borrower while the issue is being addressed.</span>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnDisputedClose">Close</button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnDisputedResolve">&#10003; Mark as Resolved</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- MODAL K: Completed Rental (view only) -->
+    <div id="modalCompleted"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="completedModalTitle">
+        <div class="my-rentals-modal my-rentals-modal--lg">
+            <header class="my-rentals-modal__header rm-header--completed">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--completed">&#10003; Completed</span>
+                    <h2 class="my-rentals-modal__title" id="completedModalTitle">Completed Rental Details <span class="rm-request-id" id="completedRequestId"></span></h2>
+                    <p class="my-rentals-modal__description">This rental has been completed. Details are shown for reference.</p>
+                </div>
+                <button type="button" class="my-rentals-modal__close-btn" id="btnCloseCompletedModal" aria-label="Close">&times;</button>
+            </header>
+            <div class="my-rentals-modal__body">
+                <!-- Item Details card (same component as the other status modals) -->
+                <div class="rm-item-card">
+                    <div class="rm-item-thumb" id="completedItemThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-item-info">
+                        <span class="rm-item-category" id="completedItemCategory"></span>
+                        <span class="rm-item-name" id="completedItemName"></span>
+                        <span class="rm-item-location" id="completedOwner"></span>
+                        <span class="rm-item-location" id="completedLocation"></span>
+                    </div>
+                    <div class="rm-item-rate">
+                        <span class="rm-fee-value" id="completedHourlyRate"></span>
+                        <span class="rm-fee-label">per hour</span>
+                    </div>
+                </div>
+                <!-- Borrower Information card -->
+                <div class="rm-borrower-row">
+                    <span class="rm-borrower-avatar" id="completedBorrowerInitials"></span>
+                    <div class="rm-borrower-info">
+                        <span class="rm-borrower-name" id="completedBorrowerName"></span>
+                        <span class="rm-borrower-program" id="completedBorrowerProgram"></span>
+                    </div>
+                    <span class="rm-verified-badge">&#10003; Verified</span>
+                </div>
+                <!-- Requested Rental Details -->
+                <div class="rm-section-label">REQUESTED RENTAL DETAILS</div>
+                <div class="rm-detail-grid">
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Date</span>
+                            <span class="rm-detail-value" id="completedHandoverDate"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Handover Time</span>
+                            <span class="rm-detail-value" id="completedHandoverTime"></span>
+                        </div>
+                    </div>
+                    <div class="rm-detail-item">
+                        <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                        <div>
+                            <span class="rm-detail-label">Rental Duration</span>
+                            <span class="rm-detail-value" id="completedDuration"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rm-location-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 5-6 10-6 10S4 13 4 8a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.5" fill="none" /><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+                    <span id="completedHandoverLocation"></span>
+                </div>
+                <div class="rm-return-row">
+                    <svg class="rm-detail-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    <div>
+                        <span class="rm-detail-label">Expected Return</span>
+                        <span class="rm-detail-value" id="completedExpectedReturn"></span>
+                    </div>
+                    <div class="rm-return-fee">
+                        <span class="rm-detail-label">Rental Fee</span>
+                        <span class="rm-fee-large" id="completedFeeBreakdown"></span>
+                    </div>
+                </div>
+                <!-- Transaction details -->
+                <div class="rm-section-label">TRANSACTION DETAILS</div>
+                <dl class="rm-info-list">
+                    <div class="rm-info-row">
+                        <dt>Requested on</dt>
+                        <dd id="completedRequestedOn"></dd>
+                    </div>
+                    <div class="rm-info-row">
+                        <dt>Handover (rental started)</dt>
+                        <dd id="completedStartedOn"></dd>
+                    </div>
+                    <div class="rm-info-row">
+                        <dt>Returned on</dt>
+                        <dd id="completedReturnedOn"></dd>
+                    </div>
+                    <div class="rm-info-row">
+                        <dt>Completed on</dt>
+                        <dd id="completedCompletedOn"></dd>
+                    </div>
+                    <div class="rm-info-row" id="completedLateRow">
+                        <dt>Late fee</dt>
+                        <dd id="completedLateFee"></dd>
+                    </div>
+                    <div class="rm-info-row" id="completedDisputeRow">
+                        <dt>Reported issue</dt>
+                        <dd id="completedDisputeNote"></dd>
+                    </div>
+                    <div class="rm-info-row rm-info-row--total">
+                        <dt>Total rental fee</dt>
+                        <dd id="completedTotalFee"></dd>
+                    </div>
+                </dl>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnCompletedClose">Close</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Confirmation step shared by Mark as Returned / Mark as Completed / Mark as Resolved -->
+    <div id="modalStatusConfirm"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="statusConfirmTitle"
+         aria-describedby="statusConfirmText">
+        <div class="my-rentals-modal my-rentals-modal--sm">
+            <div class="rm-confirm-body">
+                <div class="rm-confirm-icon rm-confirm-icon--accept" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                </div>
+                <h2 class="rm-confirm-title" id="statusConfirmTitle"></h2>
+                <p class="rm-confirm-text" id="statusConfirmText"></p>
+                <div class="rm-confirm-summary">
+                    <div class="rm-confirm-summary-thumb" id="statusConfirmThumb" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none" /><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+                    </div>
+                    <div class="rm-confirm-summary-info">
+                        <span class="rm-confirm-summary-label" id="statusConfirmRequestId"></span>
+                        <span class="rm-confirm-summary-name" id="statusConfirmItemName"></span>
+                        <span class="rm-confirm-summary-borrower" id="statusConfirmBorrower"></span>
+                    </div>
+                </div>
+                <div class="rm-confirm-result">
+                    <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
+                    <span id="statusConfirmResult"></span>
+                </div>
+            </div>
+            <footer class="my-rentals-modal__footer">
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnStatusConfirmCancel">Cancel</button>
+                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnStatusConfirmOk">Confirm</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- RENTAL DETAILS MODAL (generic view-only fallback; every status now has its own modal) -->
+    <div id="myRentalsDetailsModal"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="modalDetailsTitle">
+        <div class="my-rentals-modal my-rentals-modal--details">
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <h2 class="my-rentals-modal__title" id="modalDetailsTitle">Rental Details</h2>
+                    <p class="my-rentals-modal__description" id="detailsHeaderRequestId"></p>
+                </div>
+                <button type="button"
+                        class="my-rentals-modal__close-btn"
+                        id="btnCloseDetailsModal"
+                        aria-label="Close details modal">
+                    &times;
+                </button>
+            </header>
+
+            <div class="my-rentals-modal__body">
+                <dl class="my-rentals-details-grid">
+                    <div class="my-rentals-details-field my-rentals-details-field--full">
+                        <dt>Item</dt>
+                        <dd>
+                            <span class="details-primary" id="detailsItemName"></span>
+                            <span class="details-secondary" id="detailsCategory"></span>
+                        </dd>
+                    </div>
+                    <div class="my-rentals-details-field">
+                        <dt>Request ID</dt>
+                        <dd><span class="request-id-badge" id="detailsRequestId"></span></dd>
+                    </div>
+                    <div class="my-rentals-details-field">
+                        <dt>Status</dt>
+                        <dd>
+                            <span class="status-badge" id="detailsStatusBadge">
+                                <span class="status-dot" aria-hidden="true"></span>
+                                <span class="status-label" id="detailsStatusLabel"></span>
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="my-rentals-details-field my-rentals-details-field--full">
+                        <dt>Borrower</dt>
+                        <dd>
+                            <div class="borrower-cell">
+                                <span class="borrower-avatar" id="detailsBorrowerInitials" aria-hidden="true"></span>
+                                <div class="borrower-meta">
+                                    <span class="borrower-name" id="detailsBorrowerName"></span>
+                                    <span class="borrower-program" id="detailsBorrowerProgram"></span>
+                                </div>
+                            </div>
+                        </dd>
+                    </div>
+                    <div class="my-rentals-details-field">
+                        <dt>Request Date</dt>
+                        <dd><span class="details-primary" id="detailsRequestDate"></span></dd>
+                    </div>
+                    <div class="my-rentals-details-field">
+                        <dt>Handover Schedule</dt>
+                        <dd><span class="details-primary" id="detailsHandover"></span></dd>
+                    </div>
+                    <div class="my-rentals-details-field">
+                        <dt>Duration</dt>
+                        <dd><span class="details-primary" id="detailsDuration"></span></dd>
+                    </div>
+                    <div class="my-rentals-details-field">
+                        <dt>Rental Fee</dt>
+                        <dd><span class="details-primary details-fee" id="detailsFee"></span></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <footer class="my-rentals-modal__footer">
+                <button type="button"
+                        class="my-rentals-btn my-rentals-btn-secondary"
+                        id="btnDetailsClose">
+                    Close
+                </button>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<!-- Raw JSON Model for Client-Side Filtering -->
+<script id="myRentalsRawData" type="application/json">
+    @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Rentals))
+</script>
+
+@section scripts {
+    <script src="~/Scripts/MyRentals.js"></script>
+}
