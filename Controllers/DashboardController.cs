@@ -1,5 +1,10 @@
-using UniShare.Models;
+using System;
+using System.Linq;
 using System.Web.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using UniShare.Models;
+using UniShare.Services;
 
 namespace UniShare.Controllers
 {
@@ -8,44 +13,80 @@ namespace UniShare.Controllers
     {
         public ActionResult Index()
         {
-            // TODO: replace sample data with database/service calls.
-            const string img = "~/Content/img/placeholder.png";
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
+
+            var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
+            var documents = MarketplaceService.GetApprovedItems();
+            var ownerIds = documents.Select(x => x.OwnerId).Distinct().ToList();
+            var owners = ownerIds.Count == 0
+                ? new System.Collections.Generic.List<UserDocument>()
+                : MongoDatabase.Users.Find(Builders<UserDocument>.Filter.In(x => x.Id, ownerIds)).ToList();
+            var ownerMap = owners.ToDictionary(x => x.Id);
+
+            var categoryGroups = documents
+                .GroupBy(x => string.IsNullOrWhiteSpace(x.Category) ? "Other Items" : x.Category)
+                .OrderBy(x => x.Key)
+                .ToList();
+            var categoryIcons = new[] { "laptop", "book-open", "pen-tool", "activity", "box" };
+            var categoryTints = new[] { "bg-blue-50 text-blue-600", "bg-indigo-50 text-indigo-600", "bg-blue-50 text-blue-600", "bg-sky-50 text-sky-600", "bg-indigo-50 text-indigo-600" };
+            var categories = categoryGroups.Select((group, index) => new CategoryViewModel
+            {
+                Name = group.Key,
+                Description = "Available items in " + group.Key,
+                IconName = categoryIcons[Math.Min(index, categoryIcons.Length - 1)],
+                TintClasses = categoryTints[Math.Min(index, categoryTints.Length - 1)],
+                AvailableCount = group.Count(),
+                Url = Url.Action("Index", "BrowseItems", new { category = group.Key })
+            }).ToList();
+
+            var featured = documents.GroupBy(x => string.IsNullOrWhiteSpace(x.Category) ? "Other Items" : x.Category)
+                .Select(group => group.First()).Take(4).Select(item => ToDashboardItem(item, ownerMap)).ToList();
+            var recent = documents.Take(4).Select(item => ToDashboardItem(item, ownerMap)).ToList();
+            var myListingCount = MongoDatabase.Items.CountDocuments(x => x.OwnerId == userId);
+            var activeRentals = MongoDatabase.Rentals.CountDocuments(Builders<BsonDocument>.Filter.Eq("borrowerId", userId) & Builders<BsonDocument>.Filter.In("status", new[] { "ACTIVE", "ONGOING", "OVERDUE" }));
+            var pendingRequests = MongoDatabase.Bookings.CountDocuments(Builders<BsonDocument>.Filter.Eq("borrowerId", userId) & Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" }));
+            var completedRentals = MongoDatabase.Rentals.CountDocuments(Builders<BsonDocument>.Filter.Eq("borrowerId", userId) & Builders<BsonDocument>.Filter.In("status", new[] { "COMPLETED", "COMPLETE" }));
 
             var vm = new DashboardViewModel
             {
-                UserName = "Alex",
+                UserName = user == null || string.IsNullOrWhiteSpace(user.FirstName) ? "Student" : user.FirstName,
                 Metrics =
                 {
-                    new MetricViewModel { Title = "My Listings", Value = 4, IconName = "store", TintClasses = "bg-blue-50 text-blue-600", LinkText = "View Listings", LinkUrl = Url.Action("ItemListings", "MyListings") },
-                    new MetricViewModel { Title = "Active Rentals", Value = 1, IconName = "calendar-check-2", TintClasses = "bg-sky-50 text-sky-600", LinkText = "View Details", LinkUrl = Url.Action("Index", "BorrowedItems") },
-                    new MetricViewModel { Title = "Pending Requests", Value = 2, IconName = "archive", TintClasses = "bg-amber-50 text-amber-600", LinkText = "Review Requests", LinkUrl = Url.Action("Index", "BorrowedItems") },
-                    new MetricViewModel { Title = "Completed Rentals", Value = 18, IconName = "check-circle-2", TintClasses = "bg-blue-50 text-blue-600", Footnote = "All time across 2 semesters" }
+                    new MetricViewModel { Title = "My Listings", Value = (int)myListingCount, IconName = "store", TintClasses = "bg-blue-50 text-blue-600", LinkText = "View Listings", LinkUrl = Url.Action("ItemListings", "MyListings") },
+                    new MetricViewModel { Title = "Active Rentals", Value = (int)activeRentals, IconName = "calendar-check-2", TintClasses = "bg-sky-50 text-sky-600", LinkText = "View Details", LinkUrl = Url.Action("Index", "BorrowedItems") },
+                    new MetricViewModel { Title = "Pending Requests", Value = (int)pendingRequests, IconName = "archive", TintClasses = "bg-amber-50 text-amber-600", LinkText = "Review Requests", LinkUrl = Url.Action("Index", "BorrowedItems") },
+                    new MetricViewModel { Title = "Completed Rentals", Value = (int)completedRentals, IconName = "check-circle-2", TintClasses = "bg-blue-50 text-blue-600", Footnote = "From your rental history" }
                 },
-                Categories =
-                {
-                    new CategoryViewModel { Name = "Electronics", Description = "Drawing tablets, USB hubs,...", IconName = "laptop", TintClasses = "bg-blue-50 text-blue-600", AvailableCount = 42, Url = Url.Action("Index", "BrowseItems", new { category = "Electronics" }) },
-                    new CategoryViewModel { Name = "Books", Description = "Calculus, Data Structures,...", IconName = "book-open", TintClasses = "bg-indigo-50 text-indigo-600", AvailableCount = 35, Url = Url.Action("Index", "BrowseItems", new { category = "Books" }) },
-                    new CategoryViewModel { Name = "School Supplies", Description = "Scientific calcs, T-squares, drafting", IconName = "pen-tool", TintClasses = "bg-blue-50 text-blue-600", AvailableCount = 28, Url = Url.Action("Index", "BrowseItems", new { category = "School Supplies" }) },
-                    new CategoryViewModel { Name = "Sports Equipment", Description = "Badminton rackets, chess sets,...", IconName = "activity", TintClasses = "bg-sky-50 text-sky-600", AvailableCount = 16, Url = Url.Action("Index", "BrowseItems", new { category = "Sports Equipment" }) },
-                    new CategoryViewModel { Name = "Other Items", Description = "Tripods, clickers, lab coats", IconName = "box", TintClasses = "bg-indigo-50 text-indigo-600", AvailableCount = 19, Url = Url.Action("Index", "BrowseItems", new { category = "Other Items" }) }
-                },
-                FeaturedItems =
-                {
-                    new RentalItemViewModel { Id = 1, Name = "Casio fx-991EX ClassWiz", Condition = "Like New", PricePerHour = 25, OwnerName = "Maria S.", OwnerCourse = "BSCE", ImageUrl = img },
-                    new RentalItemViewModel { Id = 2, Name = "Huion Inspiroy H640P Graphic Drawing Tablet", Condition = "Excellent", PricePerHour = 120, OwnerName = "Kenneth D.", OwnerCourse = "BSIT", ImageUrl = img },
-                    new RentalItemViewModel { Id = 3, Name = "Staedtler 36-inch T-Square", Condition = "Good", PricePerHour = 40, OwnerName = "Angelo C.", OwnerCourse = "BSA", ImageUrl = img },
-                    new RentalItemViewModel { Id = 4, Name = "Sony WH-CH520 Wireless Headset", Condition = "Like New", PricePerHour = 80, OwnerName = "Aira G.", OwnerCourse = "BSIT", ImageUrl = img }
-                },
-                RecentItems =
-                {
-                    new RentalItemViewModel { Id = 5, Name = "Engineering Mechanics", Subtitle = "Statics 14th Ed. (Hibbeler)", Condition = "Good", PricePerHour = 35, ImageUrl = img },
-                    new RentalItemViewModel { Id = 6, Name = "Anker 7-in-1 USB-C Hub", Subtitle = "HDMI 4K, 100W PD, SD", Condition = "Mint", ConditionBadgeClasses = "bg-emerald-50 text-emerald-700 border border-emerald-100", PricePerHour = 45, ImageUrl = img },
-                    new RentalItemViewModel { Id = 7, Name = "Yonex Carbonex Set", Subtitle = "2 Rackets + 3 Shuttlecocks", Condition = "Very Good", PricePerHour = 60, ImageUrl = img },
-                    new RentalItemViewModel { Id = 8, Name = "Lab Coat + Goggles", Subtitle = "Size M, unisex, sanitised", Condition = "Clean & Pressed", ConditionBadgeClasses = "bg-sky-50 text-sky-700 border border-sky-100", PricePerHour = 30, ImageUrl = img }
-                }
+                Categories = categories,
+                FeaturedItems = featured,
+                RecentItems = recent
             };
-
             return View(vm);
+        }
+
+        private static RentalItemViewModel ToDashboardItem(ItemDocument item, System.Collections.Generic.Dictionary<ObjectId, UserDocument> owners)
+        {
+            var details = item.RentalDetails ?? new ItemRentalDetailsDocument();
+            var pricePerHour = details.HourlyRate > 0
+                ? (decimal)details.HourlyRate
+                : (decimal)(details.PricePerDay / 24d);
+            UserDocument owner;
+            var ownerName = owners.TryGetValue(item.OwnerId, out owner)
+                ? (owner.FirstName + " " + owner.LastName).Trim()
+                : null;
+            var ownerCourse = owner != null ? owner.Program : null;
+            return new RentalItemViewModel
+            {
+                Id = item.Id.ToString(),
+                Name = item.Name,
+                Subtitle = item.Description,
+                Condition = item.Condition == null ? "Good" : item.Condition.Replace('_', ' '),
+                PricePerHour = pricePerHour,
+                ImageUrl = item.Photos != null && item.Photos.Count > 0 ? MarketplaceService.ToImageUrl(item.Photos[0]) : null,
+                OwnerName = ownerName,
+                OwnerCourse = ownerCourse
+            };
         }
     }
 }

@@ -1,8 +1,42 @@
+@model UniShare.Models.OwnerProfileEditViewModel
 @{
     ViewBag.Title = "Account Settings";
 }
 
-<section class="account-settings-notice" aria-labelledby="account-settings-title">
-    <h1 id="account-settings-title">Account Settings</h1>
-    <p>Account editing is not available yet because this project does not currently have an account database or a working sign-in flow. No account details have been changed.</p>
-</section>
+<main class="container py-5" style="max-width: 760px">
+    <h1 class="h2">Account Settings</h1>
+    <p class="text-secondary">Manage the public details borrowers see on your owner profile.</p>
+
+    @if (TempData["ProfileSaved"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["ProfileSaved"]</div>
+    }
+
+    <section class="card border-0 shadow-sm p-4 mt-4">
+        @using (Html.BeginForm("Settings", "Account", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                @Html.LabelFor(x => x.Program, new { @class = "form-label" })
+                @Html.TextBoxFor(x => x.Program, new { @class = "form-control", maxlength = "80", placeholder = "e.g. BSIT" })
+                @Html.ValidationMessageFor(x => x.Program, "", new { @class = "text-danger small" })
+            </div>
+            <div class="mb-3">
+                @Html.LabelFor(x => x.YearLevel, new { @class = "form-label" })
+                @Html.TextBoxFor(x => x.YearLevel, new { @class = "form-control", maxlength = "40", placeholder = "e.g. 3rd Year" })
+                @Html.ValidationMessageFor(x => x.YearLevel, "", new { @class = "text-danger small" })
+            </div>
+            <div class="mb-3">
+                @Html.LabelFor(x => x.Campus, new { @class = "form-label" })
+                @Html.TextBoxFor(x => x.Campus, new { @class = "form-control", maxlength = "80", placeholder = "e.g. San Bartolome" })
+                @Html.ValidationMessageFor(x => x.Campus, "", new { @class = "text-danger small" })
+            </div>
+            <div class="mb-4">
+                @Html.LabelFor(x => x.Bio, new { @class = "form-label" })
+                @Html.TextAreaFor(x => x.Bio, 4, 1, new { @class = "form-control", maxlength = "500", placeholder = "A short introduction for other students." })
+                @Html.ValidationMessageFor(x => x.Bio, "", new { @class = "text-danger small" })
+            </div>
+            <button type="submit" class="btn btn-primary">Save profile</button>
+        }
+    </section>
+</main>

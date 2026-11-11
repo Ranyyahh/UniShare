@@ -5,7 +5,7 @@ namespace UniShare.Models
 {
     public class ItemDetailsViewModel
     {
-        public int ItemId { get; set; }
+        public string ItemId { get; set; }
         public string ItemCode { get; set; }            // e.g. QCU-EL-8842
         public string Name { get; set; }                // short name (breadcrumb)
         public string Title { get; set; }               // full page title
@@ -13,12 +13,11 @@ namespace UniShare.Models
         public string CategoryLabel { get; set; }
         public string Subcategory { get; set; }         // e.g. Electronics & Calculators
         public string Condition { get; set; }           // Like New, Excellent, Good, Fair
-        public decimal ConditionScore { get; set; }     // out of 10
         public string Campus { get; set; }
         public string Description { get; set; }
         public decimal HourlyRate { get; set; }
         public decimal DailyRate { get; set; }
-        public double Rating { get; set; }
+        public double? Rating { get; set; }
         public int ReviewCount { get; set; }
         public bool IsAvailable { get; set; }
         public string ListedText { get; set; }          // e.g. "2 hours ago"
@@ -29,6 +28,10 @@ namespace UniShare.Models
         public List<GalleryImageViewModel> Gallery { get; set; }
         public LenderViewModel Lender { get; set; }
         public List<DateTime> BookedDates { get; set; }
+        public decimal ReplacementValue { get; set; }
+        public string Accessories { get; set; }
+        public string OwnerId { get; set; }
+        public List<string> AvailableDays { get; set; } = new List<string>();
 
         public ItemDetailsViewModel()
         {
@@ -59,9 +62,26 @@ namespace UniShare.Models
         public string College { get; set; }
         public string Program { get; set; }             // e.g. "BSCE 3rd Year"
         public string ProgramCode { get; set; }         // e.g. "BSCE"
-        public double Rating { get; set; }
+        public double? Rating { get; set; }
         public int ReviewCount { get; set; }
-        public string OnTimeRate { get; set; }
         public int CompletedRentals { get; set; }
+        public bool IsVerified { get; set; }
+    }
+
+    public class OwnerProfileViewModel
+    {
+        public string OwnerId { get; set; }
+        public string Name { get; set; }
+        public string Initials { get; set; }
+        public string Campus { get; set; }
+        public string Program { get; set; }
+        public string YearLevel { get; set; }
+        public string Bio { get; set; }
+        public string ProfilePhoto { get; set; }
+        public bool IsVerified { get; set; }
+        public double? Rating { get; set; }
+        public int ReviewCount { get; set; }
+        public int CompletedRentals { get; set; }
+        public List<ListingItemViewModel> Listings { get; set; } = new List<ListingItemViewModel>();
     }
 }

@@ -12,7 +12,8 @@
     var booked = {};
     (cfg.booked || "").split(",").forEach(function (k) { if (k) booked[k] = true; });
 
-    var EVENTS = { 2: "Midterms Week", 9: "Midterms Week", 4: "Finals Week", 11: "Finals Week" };
+    var dayNumbers = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    var availableDays = (cfg.availableDays || "").split(",").map(function (d) { return dayNumbers[d]; }).filter(function (d) { return d !== undefined; });
     var MAX_MONTHS_AHEAD = 3;
     var today = new Date(); today.setHours(0, 0, 0, 0);
     var cal = { y: 0, m: 0, sel: null };
@@ -56,10 +57,10 @@
         if (!cal.sel) {
             for (var n = 0; n < 120 && !cal.sel; n++) {
                 var c = new Date(today); c.setDate(c.getDate() + n);
-                if (!booked[dkey(c)]) cal.sel = dkey(c);
+                if (!booked[dkey(c)] && availableDays.indexOf(c.getDay()) >= 0) cal.sel = dkey(c);
             }
         }
-        var sd = parseKey(cal.sel);
+        var sd = parseKey(cal.sel || dkey(today));
         cal.y = sd.getFullYear(); cal.m = sd.getMonth();
         renderCal();
         showModal();
@@ -71,12 +72,12 @@
         var html = "";
 
         $("cal-title").textContent = first.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-        $("cal-badge").textContent = EVENTS[cal.m] || "";
-        $("cal-badge").classList.toggle("d-none", !EVENTS[cal.m]);
+        $("cal-badge").textContent = availableDays.length ? "Owner schedule" : "No schedule provided";
+        $("cal-badge").classList.toggle("d-none", availableDays.length > 0);
 
         for (var n = 0; n < total; n++) {
             var d = new Date(cal.y, cal.m, 1 - first.getDay() + n), k = dkey(d);
-            var cls = (d.getMonth() !== cal.m || d < today) ? "off" : booked[k] ? "booked" : "free";
+            var cls = (d.getMonth() !== cal.m || d < today) ? "off" : booked[k] ? "booked" : availableDays.indexOf(d.getDay()) < 0 ? "off" : "free";
             if (k === cal.sel && cls === "free") cls += " sel";
             html += '<button type="button" class="cal-cell ' + cls + '" data-date="' + k + '"' +
                 (cls.indexOf("free") === 0 ? "" : " disabled") + '><span>' + d.getDate() + '</span><i class="cal-dot"></i></button>';
@@ -87,9 +88,9 @@
         $("cal-prev").disabled = monthsAhead <= 0;
         $("cal-next").disabled = monthsAhead >= MAX_MONTHS_AHEAD;
 
-        $("sel-text").textContent = "Selected: " + parseKey(cal.sel).toLocaleDateString("en-US",
-            { weekday: "long", month: "short", day: "numeric", year: "numeric" });
-        $("av-confirm-text").textContent = "Request to Rent for " + fmtShort(cal.sel);
+        $("sel-text").textContent = cal.sel ? "Selected: " + parseKey(cal.sel).toLocaleDateString("en-US",
+            { weekday: "long", month: "short", day: "numeric", year: "numeric" }) : "No available dates in the owner's schedule";
+        $("av-confirm-text").textContent = cal.sel ? "Request to Rent for " + fmtShort(cal.sel) : "No available date";
     }
 
     $("cal-days").addEventListener("click", function (e) {

@@ -5,14 +5,14 @@
 
     var inputCls = "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-brand transition";
     var errCls = "mt-1 block text-xs text-red-600 font-medium";
-    var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
     var units = new[] { new { V = 1, T = "per hour" }, new { V = 2, T = "per 2 hours" }, new { V = 4, T = "per 4 hours" }, new { V = 8, T = "per 8 hours" } };
     var conditions = new[]
     {
-        new { V = ConditionGrade.LikeNew,  Title = "Like New (9.5-10/10)",  Desc = "Zero scratches, fully responsive buttons, complete casing." },
-        new { V = ConditionGrade.Good,     Title = "Good (8-9/10)",         Desc = "Minor cosmetic wear, 100% operational functionality." },
-        new { V = ConditionGrade.Fair,     Title = "Fair (6.5-7.5/10)",     Desc = "Visible scratches or student markings, working perfectly." },
-        new { V = ConditionGrade.HeavyUse, Title = "Heavy Use (5-6/10)",    Desc = "Aesthetic blemishes; works for exams or quick sessions." }
+        new { V = ConditionGrade.LikeNew,  Title = "Like New",  Desc = "No visible wear; works as expected." },
+        new { V = ConditionGrade.Good,     Title = "Good",      Desc = "Light signs of use; works as expected." },
+        new { V = ConditionGrade.Fair,     Title = "Fair",      Desc = "Visible wear; describe any functional issues." },
+        new { V = ConditionGrade.HeavyUse, Title = "Heavy Use", Desc = "Significant wear; describe any functional issues." }
     };
 }
 
@@ -98,6 +98,12 @@
                     </p>
                     @Html.ValidationMessage("CategoryId", new { @class = errCls })
                 </div>
+                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label for="Campus" class="block text-xs font-medium text-slate-700">Campus <span class="text-red-500">*</span></label>@Html.TextBoxFor(x => x.Campus, new { @class = inputCls + " mt-1.5", maxlength = "80", required = "required" })@Html.ValidationMessage("Campus", new { @class = errCls })</div>
+                    <div><label for="Building" class="block text-xs font-medium text-slate-700">Building <span class="text-red-500">*</span></label>@Html.TextBoxFor(x => x.Building, new { @class = inputCls + " mt-1.5", maxlength = "120", required = "required" })@Html.ValidationMessage("Building", new { @class = errCls })</div>
+                    <div><label for="Room" class="block text-xs font-medium text-slate-700">Room</label>@Html.TextBoxFor(x => x.Room, new { @class = inputCls + " mt-1.5", maxlength = "80" })</div>
+                    <div><label for="HandoverLocation" class="block text-xs font-medium text-slate-700">Handover Location <span class="text-red-500">*</span></label>@Html.TextBoxFor(x => x.HandoverLocation, new { @class = inputCls + " mt-1.5", maxlength = "160", required = "required" })@Html.ValidationMessage("HandoverLocation", new { @class = errCls })</div>
+                </div>
             </div>
 
             @* Condition *@
@@ -141,6 +147,24 @@
                     <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i><span>Please provide a description of the item.</span>
                 </p>
                 @Html.ValidationMessage("Description", new { @class = errCls })
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="ReplacementValue" class="block text-sm font-semibold text-slate-900">Declared Replacement Value (₱)</label>
+                    <input type="number" id="ReplacementValue" name="ReplacementValue" min="0" max="10000000" step="0.01" value="@(Model.ReplacementValue.HasValue ? Model.ReplacementValue.Value.ToString("0.##") : "")" class="@inputCls mt-2" />
+                    @Html.ValidationMessage("ReplacementValue", new { @class = errCls })
+                </div>
+                <div>
+                    <label for="SecurityDeposit" class="block text-sm font-semibold text-slate-900">Security Deposit (₱)</label>
+                    <input type="number" id="SecurityDeposit" name="SecurityDeposit" min="0" max="10000000" step="0.01" value="@(Model.SecurityDeposit.HasValue ? Model.SecurityDeposit.Value.ToString("0.##") : "")" class="@inputCls mt-2" />
+                    @Html.ValidationMessage("SecurityDeposit", new { @class = errCls })
+                </div>
+                <div>
+                    <label for="Accessories" class="block text-sm font-semibold text-slate-900">Included Accessories</label>
+                    <input type="text" id="Accessories" name="Accessories" maxlength="500" value="@Model.Accessories" class="@inputCls mt-2" placeholder="e.g. case, charger, cables" />
+                    @Html.ValidationMessage("Accessories", new { @class = errCls })
+                </div>
             </div>
 
             @* Photos *@
@@ -204,12 +228,12 @@
                         <input type="hidden" name="EnableFullDayBundle" value="false" />
                         <span class="flex-1">
                             <span class="block text-sm font-medium text-slate-900">Enable full day bundle</span>
-                            <span id="bundle-text" class="block text-xs text-slate-600">&#8369;0 / whole day (max 24 hrs)</span>
+                            <span id="bundle-text" class="block text-xs text-slate-600">&#8369;0 / whole day</span>
                         </span>
                         <span id="bundle-badge" class="bg-indigo-50 text-brand text-[11px] font-semibold px-2.5 py-1 rounded">Active Bundle</span>
                     </label>
                     <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-600">
-                        <i data-lucide="shield" class="w-3.5 h-3.5"></i>UniShare enforces a maximum 24-hour rental period per student booking.
+                        <i data-lucide="shield" class="w-3.5 h-3.5"></i>The whole-day rate is stored with this listing.
                     </p>
                 </div>
             </div>
@@ -319,7 +343,7 @@
         }
         if (priceEl && bundleText && bundleBadge && bundleEl) {
             var price = parseFloat(priceEl.value) || 0;
-            bundleText.textContent = '\u20B1' + (price * 2) + ' / whole day (max 24 hrs)';
+            bundleText.textContent = '\u20B1' + (price * 2) + ' / whole day';
             bundleBadge.classList.toggle('hidden', !bundleEl.checked);
             if (price > 0 && price <= 10000) {
                 priceEl.classList.remove('broken-red-border');

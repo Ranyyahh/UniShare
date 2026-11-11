@@ -4,9 +4,9 @@
 
     var anchors = new[]
     {
-        new { Icon = "clock",   Title = "Max 24-Hour Rental Cap",     Text = "Items return daily before campus curfew." },
-        new { Icon = "shield",  Title = "100% Verified QCU Students", Text = "Enrolled QCians only; zero outside parties." },
-        new { Icon = "map-pin", Title = "On-Campus Handover Only",    Text = "Main Library, Admin Lobby, or Campus Canteen." }
+        new { Icon = "clock",   Title = "Rates from each listing", Text = "Review the hourly or daily rate shown by the owner." },
+        new { Icon = "shield",  Title = "Student verification", Text = "Account verification status is shown on each owner profile." },
+        new { Icon = "map-pin", Title = "Owner-provided handover", Text = "Check each listing for its campus, building, and handover location." }
     };
 }
 
@@ -40,7 +40,7 @@
         <div class="max-w-2xl">
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Welcome back, @Model.UserName!</h1>
             <p class="mt-4 text-slate-600 text-base sm:text-lg leading-relaxed">
-                Borrow essential tech, engineering tools, and course textbooks directly from verified fellow QCU students. Save money, travel light, and collaborate on campus.
+                Browse student listings, compare rental details, and coordinate handovers using the location and schedule provided by each owner.
             </p>
         </div>
         <div class="mt-8 flex flex-wrap items-center gap-3.5">
@@ -63,7 +63,7 @@
                 <h2>Guaranteed Safety Anchors</h2>
             </div>
             <p class="mt-1.5 text-xs text-slate-500 leading-normal">
-                Built strictly for QCU students with verified student ID credentials and active university email security.
+                Check each owner's verification status and review the item's details before arranging a rental.
             </p>
             <div class="mt-4 space-y-2.5">
                 @foreach (var a in anchors)
@@ -144,7 +144,8 @@
             <article class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden flex flex-col justify-between shadow-[0_2px_6px_-2px_rgba(0,0,0,0.02)]">
                 <div>
                     <div class="relative h-48 w-full bg-slate-100 overflow-hidden">
-                        <img src="@Url.Content(item.ImageUrl)" alt="@item.Name" class="w-full h-full object-cover" />
+                        @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Name" class="w-full h-full object-cover" /> }
+                        else { <div class="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500"><i data-lucide="camera" class="w-6 h-6"></i><span class="text-xs">No photo uploaded</span></div> }
                         <span class="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-[11px] font-bold text-slate-700 px-2.5 py-1 rounded-md shadow-sm">@item.Condition</span>
                         <span class="absolute bottom-3 right-3 bg-brand text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-md">
                             ₱@item.PricePerHour.ToString("0.##") <span class="font-normal text-[10px] opacity-90">/ hr</span>
@@ -186,7 +187,8 @@
         {
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 flex flex-col justify-between shadow-[0_2px_6px_-2px_rgba(0,0,0,0.02)]">
                 <div class="flex items-start gap-3.5">
-                    <img src="@Url.Content(item.ImageUrl)" alt="@item.Name" class="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100" />
+                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Name" class="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100" /> }
+                    else { <div class="w-12 h-12 rounded-xl shrink-0 bg-slate-100 flex items-center justify-center text-slate-500"><i data-lucide="camera" class="w-4 h-4"></i></div> }
                     <div class="min-w-0">
                         <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded @item.ConditionBadgeClasses">@item.Condition</span>
                         <h3 class="text-xs font-bold text-slate-900 truncate mt-1">@item.Name</h3>

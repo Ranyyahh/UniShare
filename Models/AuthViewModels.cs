@@ -4,6 +4,14 @@ using System.Web;
 
 namespace UniShare.Models
 {
+    public class OwnerProfileEditViewModel
+    {
+        [StringLength(80)] public string Program { get; set; }
+        [StringLength(40)] public string YearLevel { get; set; }
+        [StringLength(80)] public string Campus { get; set; }
+        [StringLength(500)] public string Bio { get; set; }
+    }
+
     public class RegisterViewModel
     {
         [Required(ErrorMessage = "Required"), StringLength(60)] public string FirstName { get; set; }

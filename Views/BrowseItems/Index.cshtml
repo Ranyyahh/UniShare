@@ -1,4 +1,4 @@
-﻿@model UniShare.Models.BrowseItemsViewModel
+@model UniShare.Models.BrowseItemsViewModel
 @{
     ViewBag.Title = "Browse Items";
 }
@@ -188,86 +188,17 @@
             "use strict";
 
             /* ===================== DATA ===================== */
-            // Static sample data. Replace with Model data / an API call when the backend is ready.
             var DETAILS_URL = "@Url.Action("ItemDetails", "BrowseItems")?id=__ID__";
             var PAGE_SIZE = 8;
-            var PRICE_MIN = 0, PRICE_MAX = 100;
+            var PRICE_MIN = 0, PRICE_MAX = @(Model.Items.Count == 0 ? 100 : Math.Max(100, Math.Ceiling((double)Model.Items.Max(i => i.DailyRate) / 100) * 100));
 
-            var CATEGORIES = [
-                { key: "Electronics", label: "Electronics" },
-                { key: "Books", label: "Textbooks & Reviewers" },
-                { key: "School Supplies", label: "School Supplies" },
-                { key: "Sports Equipment", label: "Sports Equipment" },
-                { key: "Other Items", label: "Other Items" }
-            ];
+            var CATEGORIES = @Html.Raw(Json.Encode(Model.Categories.Select(c => new { key = c, label = c })));
 
-            var CAMPUSES = [
-                { key: "San Bartolome", label: "San Bartolome (Main)" },
-                { key: "Quirino", label: "Quirino Campus" },
-                { key: "San Francisco", label: "San Francisco" },
-                { key: "Batasan", label: "Batasan" }
-            ];
+            var CAMPUSES = @Html.Raw(Json.Encode(Model.Campuses.Select(c => new { key = c, label = c })));
 
-            var CONDITIONS = ["Like New", "Excellent", "Good", "Fair"];
+            var CONDITIONS = @Html.Raw(Json.Encode(Model.Conditions));
 
-            var ITEMS = [
-                {
-                    id: 1, name: "Casio fx-991EX ClassWiz Calculator", category: "Electronics", campus: "San Bartolome",
-                    condition: "Like New", hour4: 25, day: 50, rating: 4.9, reviews: 18, available: true, popular: 1, newest: 8,
-                    keywords: "casio scientific calculator fx-991ex classwiz math engineering exam",
-                    desc: "Non-programmable scientific calculator approved for most QCU exams. Fresh batteries and hard case included.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuD43NDeaCI8F4hBx3FLTNk0uwj5y5SboznXM6ER4GsM08TZZDMYIrzZaRAGaSg9FeuvvyaDtKs_TRTmbeoITdxLzKYsJrrGA2RWPzHjD2XQAo965xacYbseOWJFHVDdOrviIMi_331wbAh0tQZCnImV3TbrDl7HiZ4iygl9A8kRdoFJ3jYFMSBY35a-hI4eEmymArheje_VRBYvB-GH0P1HRypI9Q79sU7vurcfl8U"
-                },
-                {
-                    id: 2, name: "Logitech M590 Silent Mouse", category: "Electronics", campus: "Quirino",
-                    condition: "Excellent", hour4: 15, day: 35, rating: 4.8, reviews: 14, available: true, popular: 2, newest: 7,
-                    keywords: "logitech mouse wireless silent bluetooth computer peripheral",
-                    desc: "Quiet-click wireless mouse with Bluetooth and USB receiver. Great for long laptop sessions in the library.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAeqNCyhCudAPDf6GioorIUM7OJRABvY4OPE7o-AtOSGLSKVTz4eCnYFwLQx447-bdZWiSeoOjyM2qrHU2AAjiH9FGz3J55IlDjOH_D4LNkG35uf6pA6qHlNHtDj1XdJsO2__ZsCtMeafbDSmBklGqyCDvbZDjbyKdLDtwoWM7Hf6eaXsGMSQLpmxhvndzMj0tgm5bXu-4BFpK95tlnl_d8gwGP4o3Q9pNuEtF8LVo"
-                },
-                {
-                    id: 3, name: "Anker 7-in-1 USB-C Hub", category: "Electronics", campus: "San Bartolome",
-                    condition: "Like New", hour4: 20, day: 45, rating: 4.9, reviews: 21, available: true, popular: 3, newest: 6,
-                    keywords: "anker usb hub usb-c adapter hdmi card reader laptop dongle",
-                    desc: "HDMI, USB-A, SD/microSD and USB-C power passthrough. Handy for presentations and project demos.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA14k44VRTZh1TLEpfoOTL9DDpZqp3lScIsxbMbpQHBR7btU6kSZsMmwzq0n6gHS-pSCHydbiDC8BlRgErvoxGtWvpQWiHlU2ehmU8e2ec6Qp5hAq6mXl3hvmKSw5PWUb8ft1XMj_rXgGBMC9onN-zzBYeAZVIZDQ0N95KU4f_XPIqS5xFkQCQfTNz3pqHoeWjhr4xsfMh2wTnFNxkezqckLoEjGANJx1rP47hW__w"
-                },
-                {
-                    id: 4, name: "SanDisk Extreme 128GB SD Card", category: "Electronics", campus: "Quirino",
-                    condition: "Excellent", hour4: 15, day: 30, rating: 5.0, reviews: 11, available: true, popular: 4, newest: 5,
-                    keywords: "sandisk sd card memory storage dslr camera photography 128gb",
-                    desc: "Fast UHS-I card for DSLR and mirrorless cameras. Formatted and ready to shoot.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB8kRvGBOF0Ly9h7ENtF1PtW1f9TD-pk0kmcCnP5TU2dvphy8FjuvQSf8JftokhIKIByLa6GCmjmz0Lw37EUyzYvjCp6jo_X-XkpVeG0OFHS97sRELoSkSlJLtT93Gd8XfO-Jtykx_fGDbslIpnJ_bQFRM_e_MuNaf8XbnMK7QGXtOcrcFXWpCEG2AFHtB5QQcoFGseq9Uv0M5kbgSUS03SGc_rpggMWQWo4Z9adXA"
-                },
-                {
-                    id: 5, name: "Sony WH-CH520 Wireless Headset", category: "Electronics", campus: "San Bartolome",
-                    condition: "Excellent", hour4: 30, day: 60, rating: 4.8, reviews: 16, available: true, popular: 5, newest: 4,
-                    keywords: "sony headset headphones wireless bluetooth audio online class",
-                    desc: "Lightweight Bluetooth headset with built-in mic. Good for online classes and group calls.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBJu54DB8y0iKBOHnb08fQjPnxuvssuqm-yU_h686n07NJgbhp7Z1QyK1Th2Y_-mLUX95z2lgw3JG4p4aJVSQksakOYM-tGaKqOhK4kwwEsrh7_mKtvv0lfFKSk7gpsQvyZRIhCPcxzV36qnr1B0iJxCpa34UWRyHcE-l5L2q6KtSQaJO0pVNxEhHtnqTupgAc4lPrl_-jmKemoAG_FZ5WBtW53ZCRb-TBZsqbv4Q0"
-                },
-                {
-                    id: 6, name: "Rotring 300 Drafting Pencil", category: "School Supplies", campus: "San Bartolome",
-                    condition: "Like New", hour4: 10, day: 20, rating: 4.9, reviews: 9, available: true, popular: 6, newest: 3,
-                    keywords: "rotring drafting pencil engineering architecture t-square mechanical pencil",
-                    desc: "0.5 mm mechanical drafting pencil with a knurled grip. Perfect for plates and technical drawing.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBASRK8_HeIEBdBkPhK9e9usdsEYGcL3Ff6ZAJ_i-Ks9Yd7l3zd0fim7TV7PEze0EbivXH8EwdnIEBuJmdcJnjY6qNeA8KsuUZbSaK4TkIwTqsX_bII7VHPPkw_qYoPqCrfT1UQ568tFL_ultk_feehMD9tw-xFsYFYtOUs6fsXPs6Li3mEdyBPoS5UD0DTb9mpauycIyDIMbfVWe_qfSurFS4fUpgY9RIG-lv4AVY"
-                },
-                {
-                    id: 7, name: "White Lab Coat (Size M)", category: "Other Items", campus: "Quirino",
-                    condition: "Good", hour4: 20, day: 40, rating: 4.7, reviews: 24, available: true, popular: 7, newest: 2,
-                    keywords: "lab coat laboratory uniform white medtech nursing chemistry",
-                    desc: "Clean, pressed white lab coat, size Medium. Required for most laboratory classes.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA9WdwOWagw7kH2v-OmWqDqxnUfADFR5p8GfOpPI1FFZ2LTiu3mfxHMb9TlTvcq7xppAN9ixvnWbJ_r9dJLdw65I2XS0UA6z2oyHZxg5Ns5rmGBywtSyXabaUE2x6LeiqGYE49FiybG6D289iNcEPXvAp7O7E8zDvYJs7BowDg5sFRYr17pQ6wYBkYQxtD6hXdqQLLmzyLTVFl4ONN9IDOObCLGtNko-y1aja16pcI"
-                },
-                {
-                    id: 8, name: "Casio fx-991ES PLUS 2nd Ed.", category: "Electronics", campus: "San Bartolome",
-                    condition: "Good", hour4: 20, day: 40, rating: 4.6, reviews: 13, available: true, popular: 8, newest: 1,
-                    keywords: "casio scientific calculator fx-991es plus second edition math exam",
-                    desc: "Reliable scientific calculator with natural textbook display. Light wear on the case, works perfectly.",
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJ6LsA9K4An3KGvF56ga1WHFDdSQQlnx94Q8Snfl1yd_PZWnS1HuZibAq01seL1mu_DlDvAy9t2CschJF7iNagN4zLBpmi3-zDnsXp96NRuxdX5J91XiF3SzUb3CadOS4eH_6mIIjLjTBr-WHOvSpHSgekmSeqYJmVmrJCqzGbKs34VDLy-zabxENKjEoIeMrn1clujsUJ0VfPPUxI7aatkvBc7ObEcpMDr7w2g8Y"
-                }
-            ];
+            var ITEMS = @Html.Raw(Json.Encode(Model.Items.Select(i => new { id = i.ItemId, name = i.ItemName, category = i.Category, campus = i.Campus, condition = i.Condition, hour4 = i.HourlyRate * 4, day = i.DailyRate, rating = i.Rating, reviews = i.ReviewCount, available = i.IsAvailable, popular = i.BookingCount, newest = i.CreatedAtTicks, keywords = (i.ItemName + " " + i.Category + " " + i.Description), desc = i.Description, img = i.ImageUrl })));
 
             /* ===================== STATE ===================== */
             var initialCategory = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Request.QueryString["category"] ?? ""));
@@ -512,14 +443,14 @@
                 return '<div class="' + colClass + '">' +
                     '<article class="item-card">' +
                     '<div class="item-media">' +
-                    '<img src="' + esc(i.img) + '" alt="' + esc(i.name) + '" loading="lazy">' +
+                    (i.img ? '<img src="' + esc(i.img) + '" alt="' + esc(i.name) + '" loading="lazy">' : '<div class="item-photo-empty" role="img" aria-label="No photo uploaded"><i class="bi bi-camera"></i><span>No photo uploaded</span></div>') +
                     '<span class="cond-pill">Condition: ' + esc(i.condition) + '</span>' +
                     (i.available ? '' : '<span class="rented-pill">Rented</span>') +
                     '</div>' +
                     '<div class="item-body">' +
                     '<h3 class="item-title">' + esc(i.name) + '</h3>' +
                     '<div class="item-price">' + priceText(i) + '</div>' +
-                    '<div class="item-rating"><i class="bi bi-star-fill"></i> <strong>' + i.rating.toFixed(1) + '</strong> (' + i.reviews + ' reviews)</div>' +
+                    '<div class="item-rating">' + (i.rating == null ? '<span class="text-secondary">No owner ratings yet</span>' : '<i class="bi bi-star-fill"></i> <strong>' + Number(i.rating).toFixed(1) + '</strong> (' + i.reviews + ' reviews)') + '</div>' +
                     '<a class="btn btn-soft view-details" href="' + DETAILS_URL.replace("__ID__", i.id) + '">View Details <i class="bi bi-arrow-right"></i></a>' +
                     '</div></article></div>';
             }
@@ -728,3 +659,4 @@
         })();
     </script>
 }
+
