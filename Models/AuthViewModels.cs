@@ -6,27 +6,27 @@ namespace UniShare.Models
 {
     public class RegisterViewModel
     {
-        [Required, StringLength(60)] public string FirstName { get; set; }
-        [Required, StringLength(60)] public string LastName { get; set; }
-        [Required, StringLength(40, MinimumLength = 3)] public string Username { get; set; }
-        [Required, EmailAddress, StringLength(180)] public string SchoolEmail { get; set; }
-        [Required, StringLength(100, MinimumLength = 8), DataType(DataType.Password)] public string Password { get; set; }
-        [Required, Compare("Password"), DataType(DataType.Password), Display(Name = "Confirm password")] public string ConfirmPassword { get; set; }
-        [Required, StringLength(10)] public string Birthdate { get; set; }
-        [Required, StringLength(30)] public string Phone { get; set; }
-        [Required, StringLength(40)] public string Section { get; set; }
-        [Required, StringLength(40)] public string StudentIdNumber { get; set; }
-        [Required, StringLength(80)] public string Program { get; set; }
-        [Required, StringLength(40)] public string YearLevel { get; set; }
-        [Required] public HttpPostedFileBase SchoolIdPhoto { get; set; }
-        [Required] public HttpPostedFileBase OneByOnePhoto { get; set; }
-        [Required] public HttpPostedFileBase RegistrationForm { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(60)] public string FirstName { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(60)] public string LastName { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(40, MinimumLength = 3, ErrorMessage = "Min 3 chars")] public string Username { get; set; }
+        [Required(ErrorMessage = "Required"), EmailAddress(ErrorMessage = "Invalid email"), StringLength(180)] public string SchoolEmail { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(100, MinimumLength = 8, ErrorMessage = "Min 8 chars"), DataType(DataType.Password)] public string Password { get; set; }
+        [Required(ErrorMessage = "Required"), Compare("Password", ErrorMessage = "Passwords don't match"), DataType(DataType.Password), Display(Name = "Confirm password")] public string ConfirmPassword { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(10)] public string Birthdate { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(30)] public string Phone { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(40)] public string Section { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(40)] public string StudentIdNumber { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(80)] public string Program { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(40)] public string YearLevel { get; set; }
+        [Required(ErrorMessage = "Document required")]
+        [Display(Name = "Student ID or COR Document")]
+        public HttpPostedFileBase StudentDocument { get; set; }
     }
 
     public class LoginViewModel
     {
-        [Required, EmailAddress] public string SchoolEmail { get; set; }
-        [Required, DataType(DataType.Password)] public string Password { get; set; }
+        [Required(ErrorMessage = "Required"), EmailAddress(ErrorMessage = "Invalid email")] public string SchoolEmail { get; set; }
+        [Required(ErrorMessage = "Required"), DataType(DataType.Password)] public string Password { get; set; }
         public bool RememberMe { get; set; }
     }
 

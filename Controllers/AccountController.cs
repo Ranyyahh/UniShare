@@ -52,44 +52,40 @@ namespace UniShare.Controllers
         {
             var email = (model.SchoolEmail ?? "").Trim().ToLowerInvariant();
             if (!email.EndsWith("@unishare.qcu.edu.ph") && !email.EndsWith("@qcu.edu.ph"))
-                ModelState.AddModelError("SchoolEmail", "Use your official @qcu.edu.ph or @unishare.qcu.edu.ph school email.");
+                ModelState.AddModelError("SchoolEmail", "Must be @qcu.edu.ph email");
 
             var dateFormats = new[] { "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "M/d/yyyy", "dd-MM-yyyy" };
             DateTime birthdate;
             if (!DateTime.TryParseExact((model.Birthdate ?? "").Trim(), dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthdate) || birthdate.Date >= DateTime.Today)
-                ModelState.AddModelError("Birthdate", "Enter a valid birthdate (e.g. dd/mm/yyyy).");
-            ValidateDocument(model.SchoolIdPhoto, "School ID photo");
-            ValidateDocument(model.OneByOnePhoto, "1×1 photo", false);
-            ValidateDocument(model.RegistrationForm, "Registration form");
+                ModelState.AddModelError("Birthdate", "Use dd/mm/yyyy");
+            ValidateDocument(model.StudentDocument, "StudentDocument");
             if (!ModelState.IsValid) return View(model);
 
             ObjectId userId = ObjectId.Empty;
             var userInserted = false;
-            string schoolIdPath = null, oneByOnePath = null, registrationFormPath = null;
+            string documentPath = null;
             try
             {
                 if (MongoDatabase.Users.Find(x => x.SchoolEmail == email).Any())
                 {
-                    ModelState.AddModelError("SchoolEmail", "An account with this school email already exists.");
+                    ModelState.AddModelError("SchoolEmail", "Email already exists");
                     return View(model);
                 }
                 var studentNo = model.StudentIdNumber.Trim();
                 if (MongoDatabase.Users.Find(x => x.StudentIdNumber == studentNo).Any())
                 {
-                    ModelState.AddModelError("StudentIdNumber", "An account with this Student ID Number already exists.");
+                    ModelState.AddModelError("StudentIdNumber", "Student ID already exists");
                     return View(model);
                 }
                 userId = ObjectId.GenerateNewId();
                 var now = DateTime.UtcNow;
-                schoolIdPath = SaveDocument(model.SchoolIdPhoto, userId, "school-id");
-                oneByOnePath = SaveDocument(model.OneByOnePhoto, userId, "one-by-one");
-                registrationFormPath = SaveDocument(model.RegistrationForm, userId, "registration-form");
+                documentPath = SaveDocument(model.StudentDocument, userId, "student-doc");
                 MongoDatabase.Users.InsertOne(new UserDocument
                 {
                     Id = userId, SchoolEmail = email, Username = model.Username.Trim(),
                     FirstName = model.FirstName.Trim(), LastName = model.LastName.Trim(), Birthdate = birthdate,
                     Phone = model.Phone.Trim(), Section = model.Section.Trim(), StudentIdNumber = model.StudentIdNumber.Trim(),
-                    SchoolIdPhoto = schoolIdPath, OneByOnePhoto = oneByOnePath, RegistrationForm = registrationFormPath,
+                    SchoolIdPhoto = documentPath, RegistrationForm = documentPath,
                     Role = "STUDENT", Status = "PENDING", PasswordHash = PasswordHasher.Hash(model.Password),
                     VerificationStatus = "PENDING", CreatedAt = now, UpdatedAt = now
                 });
@@ -98,7 +94,7 @@ namespace UniShare.Controllers
                 {
                     Id = ObjectId.GenerateNewId(), UserId = userId, SchoolEmail = email,
                     StudentIdNumber = model.StudentIdNumber.Trim(), Program = model.Program.Trim(), YearLevel = model.YearLevel,
-                    SchoolIdPath = schoolIdPath, OneByOnePhotoPath = oneByOnePath, RegistrationFormPath = registrationFormPath,
+                    SchoolIdPath = documentPath, RegistrationFormPath = documentPath, SubmittedDocument = documentPath,
                     Status = "PENDING", SubmittedAt = now
                 });
                 return RedirectToAction("Login", new { registered = true });
@@ -106,7 +102,7 @@ namespace UniShare.Controllers
             catch (Exception ex) when (ex is MongoException || ex is InvalidOperationException || ex is IOException)
             {
                 if (userInserted) MongoDatabase.Users.DeleteOne(x => x.Id == userId);
-                DeleteUpload(schoolIdPath); DeleteUpload(oneByOnePath); DeleteUpload(registrationFormPath);
+                DeleteUpload(documentPath);
                 ModelState.AddModelError("", "Registration could not be saved. Check the database connection and try again.");
                 return View(model);
             }
@@ -147,13 +143,13 @@ namespace UniShare.Controllers
             return RedirectToAction("Login", "Account");
         }
 
-        private void ValidateDocument(HttpPostedFileBase file, string label, bool allowPdf = true)
+        private void ValidateDocument(HttpPostedFileBase file, string key, bool allowPdf = true)
         {
-            if (file == null || file.ContentLength == 0) { ModelState.AddModelError("", label + " is required."); return; }
+            if (file == null || file.ContentLength == 0) { ModelState.AddModelError(key, "Document required"); return; }
             var extension = Path.GetExtension(Path.GetFileName(file.FileName)).ToLowerInvariant();
-            if (file.ContentLength > 8 * 1024 * 1024) ModelState.AddModelError("", label + " must be 8 MB or smaller.");
+            if (file.ContentLength > 8 * 1024 * 1024) ModelState.AddModelError(key, "Max 8 MB allowed");
             var allowed = allowPdf ? new[] { ".jpg", ".jpeg", ".png", ".pdf" } : new[] { ".jpg", ".jpeg", ".png" };
-            if (!allowed.Contains(extension)) ModelState.AddModelError("", label + (allowPdf ? " must be a JPG, PNG, or PDF." : " must be a JPG or PNG image."));
+            if (!allowed.Contains(extension)) ModelState.AddModelError(key, allowPdf ? "JPG, PNG, or PDF only" : "JPG or PNG only");
         }
 
         private string SaveDocument(HttpPostedFileBase file, ObjectId userId, string prefix)

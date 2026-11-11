@@ -29,15 +29,15 @@
         var message = "";
 
         if (field.type === "file") {
-            if (field.required && !field.files.length) message = "Please upload your institutional ID or COR.";
+            if (field.required && !field.files.length) message = "Document required";
         } else if (field.required && !value) {
-            message = "This field is required.";
+            message = "Required";
         } else if (value && field.type === "email" && !field.validity.valid) {
-            message = "Enter a valid email address.";
+            message = "Invalid email";
         } else if (value && field.minLength > 0 && value.length < field.minLength) {
-            message = "Please enter at least " + field.minLength + " characters.";
+            message = "Min " + field.minLength + " chars";
         } else if (field.hasAttribute("data-date-input") && value && !/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/.test(value)) {
-            message = "Use the format dd/mm/yyyy.";
+            message = "Use dd/mm/yyyy";
         }
 
         setError(field, message);
