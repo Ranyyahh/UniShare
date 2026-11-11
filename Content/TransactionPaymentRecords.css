@@ -1,0 +1,426 @@
+/* ==========================================================================
+   UniShare - Transaction & Payment Records Stylesheet (TransactionPaymentRecords.css)
+   ========================================================================== */
+
+/* --- Stat Cards --- */
+
+/* --- Filter Bar Flexbox --- */
+.filter-bar-flex {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.clear-filters-link {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: underline;
+    margin-left: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.clear-filters-link:hover {
+    color: #0f172a;
+}
+
+/* --- Table Styles --- */
+
+.amount-col {
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.currency {
+    color: #0f172a;
+}
+
+.font-weight-bold {
+    font-weight: 700;
+}
+
+.method-col {
+    text-align: center;
+    width: 95px;
+    white-space: nowrap;
+}
+
+.badge-method {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+
+.badge-method-gcash {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.badge-method-maya {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+/* Dense Table Elements */
+.txn-code {
+    font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6d28d9;
+}
+
+.txn-item-name {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.txn-item-booking {
+    font-family: monospace;
+    font-size: 10px;
+    color: #64748b;
+}
+
+/* Badges */
+
+.badge-confirmed {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.badge-pending {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.badge-live-record {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+/* ==========================================================================
+   Transaction Modal Overlay & Form Components
+   ========================================================================== */
+
+.modal-txn-id {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.img-placeholder {
+    width: 44px;
+    height: 44px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.modal-item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.modal-item-text {
+    flex: 1;
+}
+
+.modal-item-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.modal-item-sub {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.modal-meta-sep {
+    color: #cbd5e1;
+    margin: 0 4px;
+}
+
+/* Two-column Parties Layout */
+.modal-two-col {
+    display: flex;
+    gap: 12px;
+}
+
+.party-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    flex: 1;
+}
+
+.party-card-borrower {
+    border-top: 3px solid #6366f1;
+}
+
+.party-card-owner {
+    border-top: 3px solid #10b981;
+}
+
+.role-borrower { color: #4f46e5; }
+.role-owner { color: #059669; }
+
+.party-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.party-sub {
+    font-size: 11px;
+    color: #475569;
+    margin-bottom: 2px;
+}
+
+.party-label {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.owner-rating {
+    font-weight: 700;
+    color: #d97706;
+}
+
+/* Recorded Settlement Breakdown Box */
+.settlement-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.settlement-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.settlement-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.penalty-text {
+    color: #b45309;
+    font-weight: 600;
+}
+
+.total-row {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 8px;
+    margin-top: 8px;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.gcash-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.btn-copy-ref {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1d4ed8;
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-copy-ref:hover {
+    background: #dbeafe;
+}
+
+/* Audit Handshake Timeline */
+.audit-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.timeline-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.timeline-icon {
+    font-size: 15px;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.icon-emerald { color: #059669; }
+.icon-blue    { color: #2563eb; }
+.icon-amber   { color: #d97706; }
+
+.timeline-content {
+    line-height: 1.35;
+}
+
+.timeline-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.timeline-meta {
+    font-size: 10.5px;
+    color: #64748b;
+}
+
+/* Modal Bottom Actions */
+
+.btn-audit-verify {
+    background-color: #7c3aed;
+    color: #ffffff;
+    border: 1px solid #6d28d9;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.btn-audit-verify:hover, .btn-audit-verify:focus {
+    background-color: #6d28d9;
+    color: #ffffff;
+}
+
+.btn-send-reminder {
+    background-color: #ffffff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.btn-send-reminder:hover, .btn-send-reminder:focus {
+    background-color: #f8fafc;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.link-flag-dispute {
+    color: #e11d48;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: auto;
+    padding: 6px 8px;
+}
+
+.link-flag-dispute:hover {
+    color: #be123c;
+    text-decoration: underline;
+}
+
+/* Modal Alert Box */
+.modal-alert-box {
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.modal-alert-success {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+}
+
+.modal-alert-info {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+}
+
+.modal-alert-danger {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #9f1239;
+}
+
+/* Modal Loading & Error States */
+
