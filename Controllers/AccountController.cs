@@ -43,6 +43,17 @@ namespace UniShare.Controllers
                 ModelState.AddModelError("", "Sign in is temporarily unavailable. Check the database connection and try again.");
                 return View(model);
             }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Login(LoginForm form)
+        {
+            if (!ModelState.IsValid) return View(form);
+            if (!form.Email.EndsWith("@qcu.edu.ph", System.StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Email", "Please use your QCU email (@qcu.edu.ph).");
+                return View(form);
+            }
+            return RedirectToAction("Index", "Dashboard");
         }
 
         [HttpGet] public ActionResult Register() { return View(new RegisterViewModel()); }

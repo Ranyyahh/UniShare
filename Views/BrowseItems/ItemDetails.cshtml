@@ -110,6 +110,7 @@
                         {
                             <a class="btn btn-outline-soft w-100 py-2" href="@Url.Action("Login", "Account", new { returnUrl = Request.RawUrl })">Sign in to request a rental</a>
                         }
+                        <a id="d-rent-form" class="btn btn-brand w-100 py-2 @(Model.IsAvailable ? "" : "disabled")" href="@(Model.IsAvailable ? Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId }) : "#")" aria-disabled="@(!Model.IsAvailable)">Request to Rent <i class="bi bi-arrow-right ms-1"></i></a>
                     </div>
                 </div>
             </div>

@@ -109,11 +109,8 @@
 
     $("av-confirm").addEventListener("click", function () { hideModal(); submitRequest(); });
 
-    var checkBtn = $("d-check"), requestBtn = $("d-request");
+    var checkBtn = $("d-check");
     if (checkBtn) checkBtn.addEventListener("click", openAvailability);
-    if (requestBtn) requestBtn.addEventListener("click", function () {
-        if (cal.sel) submitRequest(); else openAvailability();
-    });
 
     window.UniShareAvail = { open: openAvailability, toast: toast };
 })();

@@ -79,6 +79,13 @@ namespace UniShare.Controllers
             return RedirectToAction("ItemListings");
         }
 
+        // Keep the earlier action name as an alias while the UI uses ToggleAvailability.
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ToggleVisibility(int id)
+        {
+            return ToggleAvailability(id);
+        }
+
         // POST: MyListings/Delete   (id comes from the delete dialog's hidden field)
         [HttpPost, ValidateAntiForgeryToken]
         [VerifiedStudent]

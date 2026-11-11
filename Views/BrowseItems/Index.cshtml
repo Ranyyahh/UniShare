@@ -40,7 +40,7 @@
                 <span id="banner-count" class="ms-2 small text-secondary"></span>
             </div>
         </div>
-        <a href="#" id="back-to-all"><i class="bi bi-arrow-left me-1"></i>Back to all items</a>
+        <a href="@Url.Action("Index", "BrowseItems")" id="back-to-all"><i class="bi bi-arrow-left me-1"></i>Back to all items</a>
     </div>
 
     <!-- Category tabs -->
@@ -270,13 +270,17 @@
             ];
 
             /* ===================== STATE ===================== */
+            var initialCategory = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Request.QueryString["category"] ?? ""));
+            var initialApplied = defaultApplied();
+            if (CATEGORIES.some(function (category) { return category.key === initialCategory; })) initialApplied.categories = [initialCategory];
+
             var state = {
                 search: "",
                 sort: "popular",
                 view: "grid",
                 page: 1,
                 filtersOpen: false,
-                applied: defaultApplied()
+                applied: initialApplied
             };
 
             function defaultApplied() {

@@ -15,18 +15,18 @@ namespace UniShare.Controllers
                 UserName = "Alex",
                 Metrics =
                 {
-                    new MetricViewModel { Title = "My Listings", Value = 4, IconName = "store", TintClasses = "bg-blue-50 text-blue-600", LinkText = "View Listings ?" },
-                    new MetricViewModel { Title = "Active Rentals", Value = 1, IconName = "calendar-check-2", TintClasses = "bg-sky-50 text-sky-600", LinkText = "View Details ?" },
-                    new MetricViewModel { Title = "Pending Requests", Value = 2, IconName = "archive", TintClasses = "bg-amber-50 text-amber-600", LinkText = "Review ?" },
+                    new MetricViewModel { Title = "My Listings", Value = 4, IconName = "store", TintClasses = "bg-blue-50 text-blue-600", LinkText = "View Listings", LinkUrl = Url.Action("ItemListings", "MyListings") },
+                    new MetricViewModel { Title = "Active Rentals", Value = 1, IconName = "calendar-check-2", TintClasses = "bg-sky-50 text-sky-600", LinkText = "View Details", LinkUrl = Url.Action("Index", "BorrowedItems") },
+                    new MetricViewModel { Title = "Pending Requests", Value = 2, IconName = "archive", TintClasses = "bg-amber-50 text-amber-600", LinkText = "Review Requests", LinkUrl = Url.Action("Index", "BorrowedItems") },
                     new MetricViewModel { Title = "Completed Rentals", Value = 18, IconName = "check-circle-2", TintClasses = "bg-blue-50 text-blue-600", Footnote = "All time across 2 semesters" }
                 },
                 Categories =
                 {
-                    new CategoryViewModel { Name = "Electronics", Description = "Drawing tablets, USB hubs,...", IconName = "laptop", TintClasses = "bg-blue-50 text-blue-600", AvailableCount = 42 },
-                    new CategoryViewModel { Name = "Books", Description = "Calculus, Data Structures,...", IconName = "book-open", TintClasses = "bg-indigo-50 text-indigo-600", AvailableCount = 35 },
-                    new CategoryViewModel { Name = "School Supplies", Description = "Scientific calcs, T-squares, drafting", IconName = "pen-tool", TintClasses = "bg-blue-50 text-blue-600", AvailableCount = 28 },
-                    new CategoryViewModel { Name = "Sports Equipment", Description = "Badminton rackets, chess sets,...", IconName = "activity", TintClasses = "bg-sky-50 text-sky-600", AvailableCount = 16 },
-                    new CategoryViewModel { Name = "Other Items", Description = "Tripods, clickers, lab coats", IconName = "box", TintClasses = "bg-indigo-50 text-indigo-600", AvailableCount = 19 }
+                    new CategoryViewModel { Name = "Electronics", Description = "Drawing tablets, USB hubs,...", IconName = "laptop", TintClasses = "bg-blue-50 text-blue-600", AvailableCount = 42, Url = Url.Action("Index", "BrowseItems", new { category = "Electronics" }) },
+                    new CategoryViewModel { Name = "Books", Description = "Calculus, Data Structures,...", IconName = "book-open", TintClasses = "bg-indigo-50 text-indigo-600", AvailableCount = 35, Url = Url.Action("Index", "BrowseItems", new { category = "Books" }) },
+                    new CategoryViewModel { Name = "School Supplies", Description = "Scientific calcs, T-squares, drafting", IconName = "pen-tool", TintClasses = "bg-blue-50 text-blue-600", AvailableCount = 28, Url = Url.Action("Index", "BrowseItems", new { category = "School Supplies" }) },
+                    new CategoryViewModel { Name = "Sports Equipment", Description = "Badminton rackets, chess sets,...", IconName = "activity", TintClasses = "bg-sky-50 text-sky-600", AvailableCount = 16, Url = Url.Action("Index", "BrowseItems", new { category = "Sports Equipment" }) },
+                    new CategoryViewModel { Name = "Other Items", Description = "Tripods, clickers, lab coats", IconName = "box", TintClasses = "bg-indigo-50 text-indigo-600", AvailableCount = 19, Url = Url.Action("Index", "BrowseItems", new { category = "Other Items" }) }
                 },
                 FeaturedItems =
                 {

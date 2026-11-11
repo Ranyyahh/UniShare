@@ -44,11 +44,11 @@
             </p>
         </div>
         <div class="mt-8 flex flex-wrap items-center gap-3.5">
-            <a href="#" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-opacity-95 transition-all shadow-sm shadow-indigo-900/10 active:scale-[0.98]">
+            <a href="@Url.Action("Index", "BrowseItems")" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-opacity-95 transition-all shadow-sm shadow-indigo-900/10 active:scale-[0.98]">
                 <i data-lucide="search" class="w-4 h-4 stroke-[2.5]"></i>
                 <span>Browse Items</span>
             </a>
-            <a href="@Url.Action("ItemListings", "MyListings")" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-all active:scale-[0.98]">
+            <a href="@Url.Action("Create", "MyListings")" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-all active:scale-[0.98]">
                 <i data-lucide="plus-square" class="w-4 h-4 stroke-[2.2] text-slate-600"></i>
                 <span>List an Item</span>
             </a>
@@ -117,7 +117,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         @foreach (var category in Model.Categories)
         {
-            <a href="@category.Url" class="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col justify-between h-48 hover:shadow-md hover:border-slate-300 transition">
+            <a href="@(string.IsNullOrEmpty(category.Url) || category.Url == "#" ? Url.Action("Index", "BrowseItems", new { category = category.Name }) : category.Url)" class="bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col justify-between h-48 hover:shadow-md hover:border-slate-300 transition">
                 <div>
                     <div class="w-10 h-10 rounded-xl @category.TintClasses flex items-center justify-center">
                         <i data-lucide="@category.IconName" class="w-5 h-5 stroke-[2]"></i>
@@ -161,7 +161,7 @@
                     </div>
                 </div>
                 <div class="p-5 pt-3">
-                    <a href="@Url.Action("Details", "Items", new { id = item.Id })"
+                    <a href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })"
                        class="w-full py-2.5 px-4 rounded-xl bg-indigo-50/80 text-brand font-bold text-xs hover:bg-indigo-100 transition flex items-center justify-center gap-1">
                         <span>View Details</span>
                         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -176,7 +176,7 @@
 <section>
     <div class="flex items-center justify-between mb-5">
         <h2 class="text-xl font-extrabold text-slate-900">Recently Listed Items</h2>
-        <a href="#" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+        <a href="@Url.Action("Index", "BrowseItems")" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
             <span>View All Items</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </a>
@@ -193,8 +193,9 @@
                         <p class="text-[11px] text-slate-500 truncate">@item.Subtitle</p>
                     </div>
                 </div>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end text-xs">
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                     <span class="font-extrabold text-brand shrink-0">₱@item.PricePerHour.ToString("0.##") <span class="font-normal text-[10px] text-slate-500">/ hr</span></span>
+                    <a class="text-xs font-bold text-brand hover:underline" href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })">View Details</a>
                 </div>
             </div>
         }
