@@ -1,7 +1,8 @@
 @model UniShare.Models.ItemDetailsViewModel
+@using System.Linq
 @{
     ViewBag.Title = Model.Name;
-    var first = Model.Gallery[0];
+    var first = Model.Gallery.FirstOrDefault();
 }
 
 @section Styles {
@@ -34,9 +35,10 @@
         <div class="col-lg-6">
             <div class="d-card">
                 <div class="gal-main">
-                    <img id="g-main" src="@first.ImageUrl" alt="@Model.Name" style="transform:@first.Transform;transform-origin:@first.TransformOrigin">
+                    @if (first != null) { <img id="g-main" src="@first.ImageUrl" alt="@Model.Name" style="transform:@first.Transform;transform-origin:@first.TransformOrigin"> }
+                    else { <div class="item-photo-empty" role="img" aria-label="No photo uploaded"><i class="bi bi-camera"></i><span>No photo uploaded</span></div> }
                     <span class="gal-badge tl"><i class="bi bi-patch-check me-1"></i>Actual Item Condition</span>
-                    <span class="gal-badge br"><i class="bi bi-geo-alt me-1 text-primary"></i>@Model.Campus Campus</span>
+                    @if (!string.IsNullOrWhiteSpace(Model.Campus)) { <span class="gal-badge br"><i class="bi bi-geo-alt me-1 text-primary"></i>@Model.Campus Campus</span> }
                 </div>
 
                 <div class="gal-thumbs">
@@ -55,9 +57,10 @@
             <div class="d-card handover">
                 <div class="h-ico"><i class="bi bi-shield-check"></i></div>
                 <div>
-                    <strong>Guaranteed Safe Campus Handover</strong><span class="reg-badge">QCU REGULATED</span>
+                    <strong>Owner-provided handover location</strong>
                     <p class="mb-0 mt-1">
-                        All peer rentals must occur at designated QCU security zones: <strong>@Model.HandoverZones</strong>. Never meet outside campus perimeter.
+                        @if (!string.IsNullOrWhiteSpace(Model.HandoverZones)) { <span>Coordinate the handover at <strong>@Model.HandoverZones</strong>.</span> }
+                        else { <span>The owner has not provided a handover location.</span> }
                     </p>
                 </div>
             </div>
@@ -70,17 +73,15 @@
                 <span class="tag green">
                     <i class="bi bi-circle-fill me-1" style="font-size:.4rem;vertical-align:middle"></i>@(Model.IsAvailable ? "Available Now" : "Currently Rented")
                 </span>
-                <span class="tag">@Model.Condition (@(Model.ConditionScore.ToString("0.0"))/10)</span>
-                <span class="ms-auto small text-secondary">Listed @Model.ListedText</span>
+                <span class="tag">@Model.Condition</span>
+                @if (!string.IsNullOrWhiteSpace(Model.ListedText)) { <span class="ms-auto small text-secondary">Listed @Model.ListedText</span> }
             </div>
 
             <h1 class="d-title mb-2">@Model.Title</h1>
 
             <div class="small mb-3">
-                <i class="bi bi-star-fill" style="color:#f5a524"></i> <strong>@Model.Rating.ToString("0.0")</strong>
-                <span class="text-secondary">(@Model.ReviewCount reviews)</span>
-                <span class="mx-2 text-secondary">|</span>
-                <span class="text-success fw-semibold"><i class="bi bi-patch-check me-1"></i>High Reliability</span>
+                @if (Model.Rating.HasValue) { <i class="bi bi-star-fill" style="color:#f5a524"></i><strong>@Model.Rating.Value.ToString("0.0")</strong><span class="text-secondary">(@Model.ReviewCount reviews)</span> }
+                else { <span class="text-secondary">No owner ratings yet</span> }
             </div>
 
             <!-- Rate card -->
@@ -88,10 +89,13 @@
                 <div class="rate-label">CAMPUS RENTAL RATE</div>
                 <div class="d-flex justify-content-between align-items-end">
                     <div><span class="rate-price">₱@Model.HourlyRate.ToString("0.##")</span> <span class="text-secondary">/ hr</span></div>
-                    <span class="state-badge">Hourly rate only</span>
+                    <span class="state-badge">Daily rate ₱@Model.DailyRate.ToString("0.##")</span>
                 </div>
                 <div class="small my-3">
-                    <i class="bi bi-circle-fill text-success me-2" style="font-size:.45rem;vertical-align:middle"></i><i class="bi bi-clock text-success me-2"></i>Available today: <strong>@Model.AvailableHours</strong>
+                    @if (!string.IsNullOrWhiteSpace(Model.AvailableHours))
+                    {
+                        <i class="bi bi-circle-fill text-success me-2" style="font-size:.45rem;vertical-align:middle"></i><i class="bi bi-clock text-success me-2"></i><text>Handover window: </text><strong>@Model.AvailableHours</strong>
+                    }
                 </div>
                 <div class="row g-2">
                     <div class="col-sm-6">
@@ -118,19 +122,19 @@
             <div class="d-card">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="mb-0"><i class="bi bi-person"></i>Lender Profile</h3>
-                    <span class="tag blue"><i class="bi bi-shield-check me-1"></i>Verified QCU Student</span>
+                    @if (Model.Lender.IsVerified) { <span class="tag blue"><i class="bi bi-shield-check me-1"></i>Verified student</span> }
                 </div>
                 <div class="d-flex align-items-center gap-3">
                     <div class="lender-av">@Model.Lender.Initials</div>
                     <div class="flex-grow-1">
                         <div class="fw-bold">@Model.Lender.Name</div>
-                        <div class="small text-secondary">@Model.Lender.College &middot; @Model.Lender.Program</div>
+                        <div class="small text-secondary">@string.Join(" · ", new[] { Model.Lender.College, Model.Lender.Program }.Where(x => !string.IsNullOrWhiteSpace(x)))</div>
                     </div>
+                    <a class="btn btn-link btn-sm text-decoration-none fw-semibold" href="@Url.Action("OwnerProfile", "BrowseItems", new { id = Model.OwnerId })">View profile</a>
                     <a id="d-msg" class="btn btn-link btn-sm text-decoration-none fw-semibold" href="@Url.Action("Index", "Messages")"><i class="bi bi-chat-left-text me-1"></i>Message</a>
                 </div>
                 <div class="d-flex flex-wrap gap-3 small mt-3 pt-3 border-top">
-                    <span><i class="bi bi-star-fill" style="color:#f5a524"></i> <strong>@Model.Lender.Rating.ToString("0.0")</strong> (@Model.Lender.ReviewCount reviews)</span>
-                    <span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>@Model.Lender.OnTimeRate on-time handover</span>
+                    @if (Model.Lender.Rating.HasValue) { <span><i class="bi bi-star-fill" style="color:#f5a524"></i> <strong>@Model.Lender.Rating.Value.ToString("0.0")</strong> (@Model.Lender.ReviewCount reviews)</span> }
                     <span class="text-secondary">@Model.Lender.CompletedRentals completed rentals</span>
                 </div>
             </div>
@@ -139,6 +143,14 @@
             <div class="d-card">
                 <h3><i class="bi bi-file-text"></i>Item Description</h3>
                 <p class="small text-secondary mb-0">@Model.Description</p>
+                @if (!string.IsNullOrWhiteSpace(Model.Accessories))
+                {
+                    <p class="small mt-3 mb-0"><strong>Included accessories:</strong> @Model.Accessories</p>
+                }
+                @if (Model.ReplacementValue > 0)
+                {
+                    <p class="small mt-2 mb-0"><strong>Declared replacement value:</strong> ₱@Model.ReplacementValue.ToString("N2")</p>
+                }
             </div>
 
             <!-- Condition -->
@@ -147,7 +159,7 @@
                 <div class="verify-box">
                     <i class="bi bi-check-circle-fill"></i>
                     <div>
-                        <strong>Physical State: @Model.Condition (@(Model.ConditionScore.ToString("0.0"))/10)</strong>
+                        <strong>Physical condition: @Model.Condition</strong>
                         <p class="mb-0 mt-1">@Model.ConditionNotes</p>
                         @foreach (var tag in Model.ConditionTags)
                         {

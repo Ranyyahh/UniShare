@@ -46,7 +46,8 @@
         @* ===== Listing summary card ===== *@
         <div class="mt-8 rounded-xl border border-indigo-100 bg-indigo-50/40 p-5 flex flex-col sm:flex-row gap-5">
             <div class="relative shrink-0 w-full sm:w-28 h-40 sm:h-28 rounded-lg overflow-hidden bg-slate-100">
-                <img src="@Url.Content(Model.ImageUrl)" alt="@Model.ItemName" class="w-full h-full object-cover" />
+                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl)) { <img src="@Url.Content(Model.ImageUrl)" alt="@Model.ItemName" class="w-full h-full object-cover" /> }
+                else { <div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500"><i data-lucide="camera" class="w-6 h-6"></i></div> }
                 <span class="absolute top-2 left-2 bg-slate-900/85 text-white text-[10px] font-semibold px-2 py-0.5 rounded">@Model.Condition</span>
             </div>
 
@@ -89,7 +90,7 @@
                 <span class="w-9 h-9 shrink-0 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center"><i data-lucide="shield" class="w-4 h-4"></i></span>
                 <div>
                     <h3 class="text-sm font-semibold text-slate-900">2. Safe Handover</h3>
-                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">Meet borrowers safely on campus at designated checkpoints.</p>
+                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">Share the handover location saved with your listing and agree on pickup details with the borrower.</p>
                 </div>
             </div>
             <div class="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 flex items-start gap-3">

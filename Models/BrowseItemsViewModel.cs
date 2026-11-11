@@ -40,7 +40,7 @@ namespace UniShare.Models
 
     public class ItemViewModel
     {
-        public int ItemId { get; set; }
+        public string ItemId { get; set; }
 
         public string ItemName { get; set; }
 
@@ -59,5 +59,13 @@ namespace UniShare.Models
         public string Availability { get; set; }
 
         public string OwnerName { get; set; }
+
+        public decimal HourlyRate { get; set; }
+        public decimal DailyRate { get; set; }
+        public double? Rating { get; set; }
+        public int ReviewCount { get; set; }
+        public bool IsAvailable { get; set; }
+        public int BookingCount { get; set; }
+        public long CreatedAtTicks { get; set; }
     }
 }

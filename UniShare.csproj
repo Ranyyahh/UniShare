@@ -194,8 +194,8 @@
     <Compile Include="Models\ListingCreatedViewModel.cs" />
     <Compile Include="Models\ListingsviewModels.cs" />
     <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
-    <Compile Include="Models\SampleItemData.cs" />
     <Compile Include="Services\MongoDatabase.cs" />
+    <Compile Include="Services\MarketplaceService.cs" />
     <Compile Include="Services\PasswordHasher.cs" />
     <Compile Include="Services\VerifiedStudentAttribute.cs" />
   </ItemGroup>
@@ -251,6 +251,7 @@
     <Content Include="Web.config" />
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Account\Register.cshtml" />
+    <Content Include="Views\Account\Settings.cshtml" />
     <Content Include="Views\Verification\Status.cshtml" />
     <Content Include="Views\Verification\Apply.cshtml" />
     <Content Include="Views\Admin\DisputeReports.cshtml" />
@@ -260,6 +261,7 @@
     <Content Include="Views\Admin\StudentVerification.cshtml" />
     <Content Include="Views\BrowseItems\Index.cshtml" />
     <Content Include="Views\BrowseItems\ItemDetails.cshtml" />
+    <Content Include="Views\BrowseItems\OwnerProfile.cshtml" />
     <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
     <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
     <Content Include="Views\Chatroom\Chatroom.cshtml" />

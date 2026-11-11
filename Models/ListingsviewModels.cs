@@ -21,17 +21,18 @@ namespace UniShare.Models
         public int TotalCount => Listings.Count;
         public int AvailableCount => Listings.Count(l => l.Status == ListingStatus.Available);
         public int UnavailableCount => TotalCount - AvailableCount;
+        public int PendingRequestCount { get; set; }
+        public int ActiveRentalCount { get; set; }
     }
 
     public class ListingItemViewModel
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string Title { get; set; }
         public string CategoryLabel { get; set; }   // small text above the title, e.g. "Electronics & Gadgets"
         public string CategoryBadge { get; set; }   // badge on the image, e.g. "Electronics"
         public string ImageUrl { get; set; }
         public string Condition { get; set; }       // e.g. "Like New"
-        public decimal ConditionScore { get; set; } // e.g. 9.5
         public decimal Price { get; set; }
         public int PerHours { get; set; } = 4;
         public string PriceNote { get; set; }       // e.g. "₱50 whole day" or "Fixed flat rate"
@@ -44,7 +45,9 @@ namespace UniShare.Models
         public string Description { get; set; }
         public bool EnableFullDayBundle { get; set; }
         public List<string> AvailableDays { get; set; } = new List<string>();
-        public string Checkpoint { get; set; }
+        public decimal ReplacementValue { get; set; }
+        public decimal SecurityDeposit { get; set; }
+        public string Accessories { get; set; }
 
         public bool IsAvailable => Status == ListingStatus.Available;
     }

@@ -1,7 +1,7 @@
 @model UniShare.Models.ItemDetailsViewModel
 @{
     ViewBag.Title = "Rental Request Submitted";
-    var image = Model.Gallery.Count > 0 ? Model.Gallery[0].ImageUrl : Url.Content("~/Content/img/placeholder.png");
+    var image = Model.Gallery.Count > 0 ? Model.Gallery[0].ImageUrl : null;
     var date = (DateTime)ViewBag.HandoverDate;
     var hours = (int)ViewBag.Duration;
 }
@@ -14,8 +14,8 @@
     </style>
 }
 <main class="rental-page"><section class="thankyou"><div class="success-icon"><i class="bi bi-check-circle-fill"></i></div><h1>Rental Request Submitted</h1><p>Your request has been sent to the owner for review. You can track its status in Rentals.</p>
-    <div class="confirm-card submitted-item"><img src="@image" alt="@Model.Name"><div><strong>@Model.Title</strong><div>Owner: @Model.Lender.Name · @Model.Lender.Program</div></div><span class="pending">● Pending</span></div>
-    <div class="confirm-card"><div class="submitted-summary"><div><small>Requested Handover</small>@date.ToString("ddd, MMM dd, yyyy") at @ViewBag.HandoverTime</div><div><small>Selected Duration</small>@hours hour@(hours == 1 ? "" : "s")</div><div><small>Handover Location</small><i class="bi bi-geo-alt text-primary"></i> @Model.Campus Campus · @Model.HandoverZones</div><div><small>Estimated Rental Fee</small><div class="total">₱@((decimal)ViewBag.Total).ToString("0.00")</div></div></div></div>
+    <div class="confirm-card submitted-item">@if (!string.IsNullOrWhiteSpace(image)) { <img src="@image" alt="@Model.Name"> } else { <div class="item-photo-empty">No photo uploaded</div> }<div><strong>@Model.Title</strong><div>Owner: @Model.Lender.Name · @Model.Lender.Program</div></div><span class="pending">● Pending</span></div>
+    <div class="confirm-card"><div class="submitted-summary"><div><small>Requested Handover</small>@date.ToString("ddd, MMM dd, yyyy") at @ViewBag.HandoverTime</div><div><small>Selected Duration</small>@hours hour@(hours == 1 ? "" : "s")</div><div><small>Handover Location</small><i class="bi bi-geo-alt text-primary"></i> @Model.Campus Campus · @Model.HandoverZones</div><div><small>Estimated Rental Fee</small><div class="total">₱@(((decimal)ViewBag.Total).ToString("N2"))</div></div></div></div>
     <div class="request-notice"><i class="bi bi-info-circle text-primary me-2"></i>The owner still needs to review your request. Your rental timer has not started yet because physical handover must first be confirmed in person by both parties.</div>
     <a class="submit-btn" href="@Url.Action("Index", "BorrowedItems")">View Request in Rentals <i class="bi bi-arrow-right ms-2"></i></a><a class="back-text" href="@Url.Action("Index", "BrowseItems")">Back to Items</a>
 </section></main>

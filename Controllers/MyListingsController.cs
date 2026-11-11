@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using UniShare.Models;
 using UniShare.Services;
 
@@ -13,53 +15,27 @@ namespace UniShare.Controllers
     [Authorize]
     public class MyListingsController : Controller
     {
-        private static readonly object _lock = new object();
-        private static List<ListingItemViewModel> _listings;
-
-        internal static List<ListingItemViewModel> GetOrCreateListings()
-        {
-            if (_listings == null)
-            {
-                lock (_lock)
-                {
-                    if (_listings == null)
-                    {
-                        const string img = "~/Content/img/placeholder.png";
-                        _listings = new List<ListingItemViewModel>
-                        {
-                            new ListingItemViewModel { Id = 1, Title = "Casio fx-991EX ClassWiz Scientific Calculator", CategoryLabel = "Electronic Gadgets", CategoryBadge = "Gadgets", CategoryId = 1, ImageUrl = img, Condition = "Like New", ConditionScore = 9.5m, Price = 25, PriceNote = "\u20B150 whole day", Location = "CEA Building Lobby (San Bartolome Campus)", Status = ListingStatus.Available },
-                            new ListingItemViewModel { Id = 2, Title = "Engineering Mechanics: Statics & Dynamics", CategoryLabel = "Books & References", CategoryBadge = "Books", ImageUrl = img, Condition = "Excellent", ConditionScore = 9m, Price = 15, PriceNote = "\u20B130 whole day", Location = "University Library Front Desk", Status = ListingStatus.Available },
-                            new ListingItemViewModel { Id = 3, Title = "Rotring Isograph Junior Pen Set (0.2, 0.3, 0.5)", CategoryLabel = "School Supplies (Drafting)", CategoryBadge = "Drafting", ImageUrl = img, Condition = "Like New", ConditionScore = 10m, Price = 30, PriceNote = "\u20B160 whole day", Location = "CEA Drafting Studio Room 304", Status = ListingStatus.Available },
-                            new ListingItemViewModel { Id = 4, Title = "Casio Calculator Hard Slide-on Case", CategoryLabel = "Electronic Accessories", CategoryBadge = "Accessories", CategoryId = 2, ImageUrl = img, Condition = "Good", ConditionScore = 8m, Price = 10, PriceNote = "Fixed flat rate", Location = "Student Canteen Guard Station", Status = ListingStatus.Rented },
-                            new ListingItemViewModel { Id = 5, Title = "Molten GG7X Official Indoor/Outdoor Basketball", CategoryLabel = "Sports Equipment", CategoryBadge = "Sports", ImageUrl = img, Condition = "Good", ConditionScore = 8.5m, Price = 20, PriceNote = "Standard match ball", Location = "QCU Gymnasium Entrance", Status = ListingStatus.Available }
-                        };
-                    }
-                }
-            }
-            return _listings;
-        }
+        private ObjectId CurrentOwnerId { get { return ObjectId.Parse(User.Identity.Name); } }
 
         // ===================== LIST =====================
 
         // GET: MyListings / Listings
-        public ActionResult Index(bool empty = false)
+        public ActionResult Index()
         {
-            return RedirectToAction("ItemListings", new { empty });
+            return RedirectToAction("ItemListings");
         }
 
         // GET: MyListings/ItemListings
-        // TEMP: /MyListings/ItemListings?empty=true previews the empty state. Remove the parameter once real data is wired up.
-        public ActionResult ItemListings(bool empty = false)
+        public ActionResult ItemListings()
         {
             var vm = new ListingsPageViewModel();
-
-            if (!empty)
-            {
-                lock (_lock)
-                {
-                    vm.Listings = GetOrCreateListings().ToList();
-                }
-            }
+            vm.Listings = MarketplaceService.GetOwnerListings(CurrentOwnerId);
+            vm.PendingRequestCount = (int)MongoDatabase.Bookings.CountDocuments(
+                Builders<BsonDocument>.Filter.Eq("ownerId", CurrentOwnerId) &
+                Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" }));
+            vm.ActiveRentalCount = (int)MongoDatabase.Rentals.CountDocuments(
+                Builders<BsonDocument>.Filter.Eq("ownerId", CurrentOwnerId) &
+                Builders<BsonDocument>.Filter.In("status", new[] { "ACTIVE", "ONGOING", "OVERDUE" }));
 
             return View("~/Views/MyListings/ItemListings.cshtml", vm);
         }
@@ -67,22 +43,21 @@ namespace UniShare.Controllers
         // POST: MyListings/ToggleAvailability/5  (pause / resume)
         [HttpPost, ValidateAntiForgeryToken]
         [VerifiedStudent]
-        public ActionResult ToggleAvailability(int id)
+        public ActionResult ToggleAvailability(string id)
         {
-            lock (_lock)
+            var item = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
+            if (item != null && !string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase))
             {
-                var item = GetOrCreateListings().FirstOrDefault(l => l.Id == id);
-                if (item != null)
-                {
-                    item.Status = (item.Status == ListingStatus.Available) ? ListingStatus.Paused : ListingStatus.Available;
-                }
+                var next = string.Equals(item.AvailabilityStatus, "AVAILABLE", StringComparison.OrdinalIgnoreCase) ? "PAUSED" : "AVAILABLE";
+                MongoDatabase.Items.UpdateOne(x => x.Id == item.Id && x.OwnerId == CurrentOwnerId,
+                    Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, next).Set(x => x.UpdatedAt, DateTime.UtcNow));
             }
             return RedirectToAction("ItemListings");
         }
 
         // Keep the earlier action name as an alias while the UI uses ToggleAvailability.
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult ToggleVisibility(int id)
+        public ActionResult ToggleVisibility(string id)
         {
             return ToggleAvailability(id);
         }
@@ -90,21 +65,23 @@ namespace UniShare.Controllers
         // POST: MyListings/Delete   (id comes from the delete dialog's hidden field)
         [HttpPost, ValidateAntiForgeryToken]
         [VerifiedStudent]
-        public ActionResult Delete(int id)
+        public ActionResult Delete(string id)
         {
-            lock (_lock)
+            var item = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
+            if (item != null)
             {
-                var item = GetOrCreateListings().FirstOrDefault(l => l.Id == id);
-                if (item != null)
+                if (string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (item.Status == ListingStatus.Rented)
-                    {
-                        TempData["Error"] = "Cannot delete a listing with an active rental.";
-                        return RedirectToAction("ItemListings");
-                    }
-                    GetOrCreateListings().Remove(item);
+                    TempData["Error"] = "Cannot delete a listing with an active rental.";
+                    return RedirectToAction("ItemListings");
+                }
+                var deleted = MongoDatabase.Items.DeleteOne(x => x.Id == item.Id && x.OwnerId == CurrentOwnerId && x.AvailabilityStatus != "RENTED");
+                if (deleted.DeletedCount > 0)
+                {
+                    DeletePhotos(item.Photos);
                     TempData["Message"] = "Listing deleted.";
                 }
+                else TempData["Error"] = "The listing could not be deleted. It may now be rented.";
             }
             return RedirectToAction("ItemListings");
         }
@@ -116,10 +93,7 @@ namespace UniShare.Controllers
         [VerifiedStudent]
         public ActionResult Create()
         {
-            var model = new CreateListingViewModel
-            {
-                AvailableDays = new List<string> { "Mon", "Tue", "Wed", "Thu", "Fri" }
-            };
+            var model = new CreateListingViewModel();
             PopulateOptions(model);
             return View("~/Views/MyListings/CreateListing.cshtml", model);
         }
@@ -146,127 +120,87 @@ namespace UniShare.Controllers
                 return View("~/Views/MyListings/CreateListing.cshtml", model);
             }
 
-            // Save first photo as cover photo
-            string imageUrl = "~/Content/img/placeholder.png";
             var photos = GetUploadedFiles(model);
-            if (photos.Count > 0 && photos[0] != null)
-            {
-                try
-                {
-                    var uploadDir = Server.MapPath("~/Uploads");
-                    if (!Directory.Exists(uploadDir))
-                    {
-                        Directory.CreateDirectory(uploadDir);
-                    }
-                    var ext = Path.GetExtension(photos[0].FileName);
-                    if (string.IsNullOrEmpty(ext)) ext = ".jpg";
-                    var fileName = Guid.NewGuid().ToString("N") + ext;
-                    var filePath = Path.Combine(uploadDir, fileName);
-                    photos[0].SaveAs(filePath);
-                    imageUrl = "~/Uploads/" + fileName;
-                }
-                catch
-                {
-                    imageUrl = "~/Content/img/placeholder.png";
-                }
-            }
-
             var catOptions = GetCategoryOptions();
             var selectedCat = catOptions.FirstOrDefault(c => c.Id == model.CategoryId);
-            var catLabel = selectedCat != null ? selectedCat.Name : "Academic Supplies";
-            var catBadge = selectedCat != null ? selectedCat.Group : "Supplies";
-
-            var cpOptions = GetCheckpointOptions();
-            var selectedCp = cpOptions.FirstOrDefault(c => c.Value == model.Checkpoint);
-            var location = selectedCp != null ? $"{selectedCp.Name} ({selectedCp.Detail})" : "CEA Building Lobby (San Bartolome Campus)";
-
-            string conditionStr = "Good";
-            decimal conditionScore = 8.5m;
-            if (model.Condition.HasValue)
+            List<string> savedPhotos;
+            try
             {
-                switch (model.Condition.Value)
-                {
-                    case ConditionGrade.LikeNew:
-                        conditionStr = "Like New";
-                        conditionScore = 9.8m;
-                        break;
-                    case ConditionGrade.Good:
-                        conditionStr = "Good";
-                        conditionScore = 8.5m;
-                        break;
-                    case ConditionGrade.Fair:
-                        conditionStr = "Fair";
-                        conditionScore = 7.0m;
-                        break;
-                    case ConditionGrade.HeavyUse:
-                        conditionStr = "Heavy Use";
-                        conditionScore = 5.5m;
-                        break;
-                }
+                savedPhotos = SavePhotos(photos);
+            }
+            catch (IOException)
+            {
+                ModelState.AddModelError("Photos", "The uploaded photos could not be saved. Please try again.");
+                PopulateOptions(model);
+                return View("~/Views/MyListings/CreateListing.cshtml", model);
             }
 
-            var rate = model.Price ?? 0;
-            var priceNote = model.EnableFullDayBundle ? $"\u20B1{(rate * 2):0.##} whole day" : "Fixed rate";
-
-            int newId;
-            lock (_lock)
+            var now = DateTime.UtcNow;
+            var rate = model.Price.GetValueOrDefault();
+            var unitHours = model.PricingUnitHours > 0 ? model.PricingUnitHours : 4;
+            var dailyRate = model.EnableFullDayBundle ? rate * 2 : rate * 24 / unitHours;
+            var item = new ItemDocument
             {
-                var list = GetOrCreateListings();
-                newId = list.Count > 0 ? list.Max(x => x.Id) + 1 : 1;
-                list.Insert(0, new ListingItemViewModel
+                Id = ObjectId.GenerateNewId(),
+                OwnerId = CurrentOwnerId,
+                Name = model.ItemName.Trim(),
+                Description = model.Description.Trim(),
+                Category = selectedCat != null ? selectedCat.Name : "Other Items",
+                Photos = savedPhotos,
+                Condition = ToStoredCondition(model.Condition),
+                AvailabilityStatus = "AVAILABLE",
+                ApprovalStatus = "APPROVED",
+                AvailableDays = model.AvailableDays ?? new List<string>(),
+                EarliestHandoverTime = model.EarliestHandoverTime,
+                LatestReturnTime = model.LatestReturnTime,
+                Accessories = model.Accessories,
+                RentalDetails = new ItemRentalDetailsDocument
                 {
-                    Id = newId,
-                    Title = model.ItemName,
-                    CategoryLabel = catLabel,
-                    CategoryBadge = catBadge,
-                    ImageUrl = imageUrl,
-                    Condition = conditionStr,
-                    ConditionScore = conditionScore,
-                    Price = rate,
-                    PerHours = model.PricingUnitHours > 0 ? model.PricingUnitHours : 4,
-                    PriceNote = priceNote,
-                    Location = location,
-                    Status = ListingStatus.Available,
-                    // store the handover times
-                    EarliestHandoverTime = model.EarliestHandoverTime,
-                    LatestReturnTime = model.LatestReturnTime,
-                    CategoryId = model.CategoryId ?? 1,
-                    Description = model.Description,
-                    EnableFullDayBundle = model.EnableFullDayBundle,
-                    AvailableDays = new List<string>(model.AvailableDays ?? new List<string>()),
-                    Checkpoint = selectedCp != null ? selectedCp.Value : "cea-lobby"
-                });
+                    PricePerDay = (double)dailyRate,
+                    DailyRate = (double)dailyRate,
+                    HourlyRate = (double)(rate / unitHours),
+                    PricingUnitHours = unitHours,
+                    SecurityDeposit = (double)model.SecurityDeposit.GetValueOrDefault(),
+                    ReplacementValue = (double)model.ReplacementValue.GetValueOrDefault(),
+                    MinimumRentalDays = 1,
+                    MaximumRentalDays = 7,
+                    EnableFullDayBundle = model.EnableFullDayBundle
+                },
+                Location = new ItemLocationDocument
+                {
+                    Campus = model.Campus.Trim(),
+                    Building = model.Building.Trim(),
+                    Room = string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(),
+                    HandoverLocation = model.HandoverLocation.Trim()
+                },
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            try
+            {
+                MongoDatabase.Items.InsertOne(item);
+            }
+            catch (MongoException)
+            {
+                DeletePhotos(savedPhotos);
+                ModelState.AddModelError("", "The listing could not be saved. Check the database connection and try again.");
+                PopulateOptions(model);
+                return View("~/Views/MyListings/CreateListing.cshtml", model);
             }
 
-            return RedirectToAction("Created", new { id = newId });
+            return RedirectToAction("Created", new { id = item.Id.ToString() });
         }
 
         // GET: MyListings/Created/5  (success screen shown after Create)
         [HttpGet]
-        public ActionResult Created(int id)
+        public ActionResult Created(string id)
         {
-            ListingItemViewModel item;
-            lock (_lock)
-            {
-                item = GetOrCreateListings().FirstOrDefault(l => l.Id == id);
-            }
-
+            var document = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
+            if (document == null) return HttpNotFound();
+            var item = MarketplaceService.ToListing(document);
             if (item == null)
-            {
-                item = new ListingItemViewModel
-                {
-                    Id = id,
-                    Title = "Academic Course Gear",
-                    CategoryLabel = "Electronic Gadgets",
-                    CategoryBadge = "Gadgets",
-                    ImageUrl = "~/Content/img/placeholder.png",
-                    Condition = "Like New",
-                    Price = 25,
-                    PerHours = 4,
-                    PriceNote = "\u20B150 whole day",
-                    Location = "CEA Building Lobby (San Bartolome Campus)"
-                };
-            }
+                return HttpNotFound();
 
             decimal? wholeDayPrice = null;
             if (item.PriceNote != null && item.PriceNote.Contains("whole day"))
@@ -277,16 +211,17 @@ namespace UniShare.Controllers
             var vm = new ListingCreatedViewModel
             {
                 Id = item.Id,
-                ListingCode = $"QCU-EL-{item.Id + 8840}",
+                ListingCode = "QCU-" + item.Id.Substring(item.Id.Length - 6).ToUpperInvariant(),
                 ItemName = item.Title,
                 CategoryBadge = item.CategoryLabel ?? item.CategoryBadge,
-                Campus = "San Bartolome",
+                Campus = document.Location != null ? document.Location.Campus : null,
                 Condition = item.Condition,
                 ImageUrl = item.ImageUrl,
                 Price = item.Price,
                 PerHours = item.PerHours,
                 WholeDayPrice = wholeDayPrice,
-                AvailabilityText = $"Available Weekdays {FormatTimeForDisplay(item.EarliestHandoverTime)} \u2013 {FormatTimeForDisplay(item.LatestReturnTime)}",
+                AvailabilityText = (item.AvailableDays == null || item.AvailableDays.Count == 0 ? "Schedule not provided" : string.Join(", ", item.AvailableDays)) +
+                    (string.IsNullOrWhiteSpace(item.EarliestHandoverTime) || string.IsNullOrWhiteSpace(item.LatestReturnTime) ? "" : " · " + FormatTimeForDisplay(item.EarliestHandoverTime) + " – " + FormatTimeForDisplay(item.LatestReturnTime)),
                 Location = item.Location
             };
 
@@ -298,7 +233,7 @@ namespace UniShare.Controllers
         // GET: MyListings/Edit/5
         [HttpGet]
         [VerifiedStudent]
-        public ActionResult Edit(int id)
+        public ActionResult Edit(string id)
         {
             var model = LoadEditModel(id);
             if (model == null)
@@ -311,14 +246,15 @@ namespace UniShare.Controllers
         // POST: MyListings/Edit/5
         [HttpPost, ValidateAntiForgeryToken]
         [VerifiedStudent]
-        public ActionResult Edit(int id, EditListingViewModel model)
+        public ActionResult Edit(string id, EditListingViewModel model)
         {
             model.Id = id;
             var original = LoadEditModel(id);
             if (original == null)
                 return HttpNotFound();
 
-            var kept = model.KeptPhotoIds ?? new List<int>();
+            var validPhotoIds = new HashSet<int>(original.ExistingPhotos.Select(p => p.Id));
+            var kept = (model.KeptPhotoIds ?? new List<int>()).Where(validPhotoIds.Contains).Distinct().ToList();
 
             ValidatePhotos(GetUploadedFiles(model), kept.Count, 10);
             ValidateSchedule(model);
@@ -328,89 +264,69 @@ namespace UniShare.Controllers
                 model.Status = original.Status;
                 model.CoverImageUrl = original.CoverImageUrl;
                 model.PriceSummary = original.PriceSummary;
-                model.CategoryApprovalNote = original.CategoryApprovalNote;
-                model.ExamSuitabilityLabel = original.ExamSuitabilityLabel;
-                model.ExamSuitabilityBadge = original.ExamSuitabilityBadge;
-                model.ExamSuitabilityNote = original.ExamSuitabilityNote;
                 model.ExistingPhotos = original.ExistingPhotos.Where(p => kept.Contains(p.Id)).ToList();
                 PopulateOptions(model);
                 return View("~/Views/MyListings/EditListing.cshtml", model);
             }
 
-            // Update the in-memory item
-            lock (_lock)
+            var existing = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
+            if (existing == null) return HttpNotFound();
+            if (string.Equals(existing.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase))
             {
-                var item = GetOrCreateListings().FirstOrDefault(l => l.Id == id);
-                if (item != null)
-                {
-                    item.Title = model.ItemName;
-                    item.Description = model.Description;
-                    item.CategoryId = model.CategoryId ?? item.CategoryId;
-                    item.EnableFullDayBundle = model.EnableFullDayBundle;
-                    item.AvailableDays = new List<string>(model.AvailableDays ?? new List<string>());
-                    item.EarliestHandoverTime = model.EarliestHandoverTime;
-                    item.LatestReturnTime = model.LatestReturnTime;
-                    item.Checkpoint = model.Checkpoint;
-                    var cat = GetCategoryOptions().FirstOrDefault(c => c.Id == model.CategoryId);
-                    if (cat != null)
-                    {
-                        item.CategoryLabel = cat.Name;
-                        item.CategoryBadge = cat.Group;
-                    }
-
-                    if (model.Condition.HasValue)
-                    {
-                        switch (model.Condition.Value)
-                        {
-                            case ConditionGrade.LikeNew:
-                                item.Condition = "Like New";
-                                item.ConditionScore = 9.8m;
-                                break;
-                            case ConditionGrade.Good:
-                                item.Condition = "Good";
-                                item.ConditionScore = 8.5m;
-                                break;
-                            case ConditionGrade.Fair:
-                                item.Condition = "Fair";
-                                item.ConditionScore = 7.0m;
-                                break;
-                            case ConditionGrade.HeavyUse:
-                                item.Condition = "Heavy Use";
-                                item.ConditionScore = 5.5m;
-                                break;
-                        }
-                    }
-
-                    item.Price = model.Price ?? 0;
-                    item.PerHours = model.PricingUnitHours > 0 ? model.PricingUnitHours : 4;
-                    item.PriceNote = model.EnableFullDayBundle
-                        ? $"\u20B1{((model.Price ?? 0) * 2):0.##} whole day"
-                        : "Fixed flat rate";
-
-                    var cp = GetCheckpointOptions().FirstOrDefault(c => c.Value == model.Checkpoint);
-                    if (cp != null)
-                    {
-                        item.Location = $"{cp.Name} ({cp.Detail})";
-                    }
-
-                    // If new photo was uploaded, save it
-                    var newFiles = GetUploadedFiles(model);
-                    if (newFiles.Count > 0 && newFiles[0] != null)
-                    {
-                        try
-                        {
-                            var uploadDir = Server.MapPath("~/Uploads");
-                            if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                            var ext = Path.GetExtension(newFiles[0].FileName);
-                            if (string.IsNullOrEmpty(ext)) ext = ".jpg";
-                            var fileName = Guid.NewGuid().ToString("N") + ext;
-                            newFiles[0].SaveAs(Path.Combine(uploadDir, fileName));
-                            item.ImageUrl = "~/Uploads/" + fileName;
-                        }
-                        catch { }
-                    }
-                }
+                TempData["Error"] = "A listing cannot be changed during an active rental.";
+                return RedirectToAction("ItemListings");
             }
+
+            var category = GetCategoryOptions().FirstOrDefault(c => c.Id == model.CategoryId);
+            var retainedPhotos = existing.Photos.Where((photo, index) => kept.Contains(index + 1)).ToList();
+            List<string> addedPhotos;
+            try { addedPhotos = SavePhotos(GetUploadedFiles(model)); }
+            catch (IOException)
+            {
+                ModelState.AddModelError("Photos", "The uploaded photos could not be saved. Please try again.");
+                model.ExistingPhotos = original.ExistingPhotos.Where(p => kept.Contains(p.Id)).ToList();
+                PopulateOptions(model);
+                return View("~/Views/MyListings/EditListing.cshtml", model);
+            }
+            var newPhotos = retainedPhotos.Concat(addedPhotos).ToList();
+            var price = model.Price.GetValueOrDefault();
+            var unitHours = model.PricingUnitHours > 0 ? model.PricingUnitHours : 4;
+            var dailyRate = model.EnableFullDayBundle ? price * 2 : price * 24 / unitHours;
+            var update = Builders<ItemDocument>.Update
+                .Set(x => x.Name, model.ItemName.Trim())
+                .Set(x => x.Description, model.Description.Trim())
+                .Set(x => x.Category, category != null ? category.Name : "Other Items")
+                .Set(x => x.Condition, ToStoredCondition(model.Condition))
+                .Set(x => x.Photos, newPhotos)
+                .Set(x => x.AvailableDays, model.AvailableDays ?? new List<string>())
+                .Set(x => x.EarliestHandoverTime, model.EarliestHandoverTime)
+                .Set(x => x.LatestReturnTime, model.LatestReturnTime)
+                .Set(x => x.Accessories, model.Accessories)
+                .Set(x => x.RentalDetails, new ItemRentalDetailsDocument
+                {
+                    PricePerDay = (double)dailyRate, DailyRate = (double)dailyRate,
+                    HourlyRate = (double)(price / unitHours), PricingUnitHours = unitHours,
+                    SecurityDeposit = (double)model.SecurityDeposit.GetValueOrDefault(),
+                    ReplacementValue = (double)model.ReplacementValue.GetValueOrDefault(),
+                    MinimumRentalDays = 1, MaximumRentalDays = 7,
+                    EnableFullDayBundle = model.EnableFullDayBundle
+                })
+                .Set(x => x.Location, new ItemLocationDocument
+                {
+                    Campus = model.Campus.Trim(),
+                    Building = model.Building.Trim(),
+                    Room = string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(),
+                    HandoverLocation = model.HandoverLocation.Trim()
+                })
+                .Set(x => x.UpdatedAt, DateTime.UtcNow);
+            var result = MongoDatabase.Items.UpdateOne(x => x.Id == existing.Id && x.OwnerId == CurrentOwnerId && x.AvailabilityStatus != "RENTED", update);
+            if (result.MatchedCount == 0)
+            {
+                DeletePhotos(addedPhotos);
+                TempData["Error"] = "The listing was not updated. It may have changed or be rented.";
+                return RedirectToAction("ItemListings");
+            }
+            DeletePhotos(existing.Photos.Except(newPhotos));
 
             TempData["Message"] = "Listing updated.";
             return RedirectToAction("ItemListings");
@@ -455,15 +371,11 @@ namespace UniShare.Controllers
         }
 
         // Load existing data for Edit page
-        private static EditListingViewModel LoadEditModel(int id)
+        private EditListingViewModel LoadEditModel(string id)
         {
-            ListingItemViewModel item;
-            lock (_lock)
-            {
-                item = GetOrCreateListings().FirstOrDefault(l => l.Id == id);
-            }
-
-            if (item == null) return null;
+            var document = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
+            if (document == null) return null;
+            var item = MarketplaceService.ToListing(document);
 
             int catId = item.CategoryId > 0 ? item.CategoryId : 1;
             var cat = GetCategoryOptions().FirstOrDefault(c => c.Id == catId || c.Name.Equals(item.CategoryLabel, StringComparison.OrdinalIgnoreCase));
@@ -485,56 +397,95 @@ namespace UniShare.Controllers
                 ItemName = item.Title,
                 CategoryId = catId,
                 Condition = cond,
-                Description = item.Description ?? "Official QCU compliant equipment in great condition. Perfect for engineering, math, and coursework sessions. Maintained carefully with high performance.",
+                Description = item.Description ?? "",
                 Price = item.Price,
                 PricingUnitHours = item.PerHours,
+                ReplacementValue = item.ReplacementValue,
+                SecurityDeposit = item.SecurityDeposit,
+                Accessories = item.Accessories,
                 EnableFullDayBundle = item.EnableFullDayBundle || fullDay,
-                AvailableDays = item.AvailableDays != null && item.AvailableDays.Count > 0 ? new List<string>(item.AvailableDays) : new List<string> { "Mon", "Tue", "Wed", "Thu", "Fri" },
+                AvailableDays = item.AvailableDays != null ? new List<string>(item.AvailableDays) : new List<string>(),
                 EarliestHandoverTime = item.EarliestHandoverTime,
-                LatestReturnTime = item.LatestReturnTime ?? "17:30",
-                Checkpoint = item.Checkpoint ?? "cea-lobby",
+                LatestReturnTime = item.LatestReturnTime,
+                Campus = document.Location != null ? document.Location.Campus : null,
+                Building = document.Location != null ? document.Location.Building : null,
+                Room = document.Location != null ? document.Location.Room : null,
+                HandoverLocation = document.Location != null ? document.Location.HandoverLocation : null,
                 Status = item.Status,
                 CoverImageUrl = item.ImageUrl,
                 PriceSummary = $"\u20B1{item.Price:0.##} / {item.PerHours} hrs ({(fullDay ? "\u20B1" + (item.Price * 2).ToString("0.##") + " whole day" : item.PriceNote)})",
-                CategoryApprovalNote = "College of Engineering & Architecture (CEA) approved.",
-                ExamSuitabilityLabel = "PRC & QCU Exam Legal",
-                ExamSuitabilityBadge = "Non-Programmable",
-                ExamSuitabilityNote = "Verified against latest PRC non-programmable list for 2024\u20132025.",
-                ExistingPhotos = new List<ListingPhotoViewModel>
+                ExistingPhotos = (document.Photos ?? new List<string>()).Select((photo, index) => new ListingPhotoViewModel
                 {
-                    new ListingPhotoViewModel { Id = 101, Url = item.ImageUrl, Label = "Cover Photo", Caption = "Angle: Main Front Setup" },
-                    new ListingPhotoViewModel { Id = 102, Url = item.ImageUrl, Label = "Detail View", Caption = "Screen and Buttons" }
-                }
+                    Id = index + 1, Url = MarketplaceService.ToImageUrl(photo),
+                    Label = index == 0 ? "Cover Photo" : "Photo " + (index + 1), Caption = "Listing photo"
+                }).ToList()
             };
+        }
+
+        private List<string> SavePhotos(IEnumerable<HttpPostedFileBase> files)
+        {
+            var saved = new List<string>();
+            var uploadDir = Server.MapPath("~/Uploads");
+            Directory.CreateDirectory(uploadDir);
+            try
+            {
+                foreach (var file in files ?? Enumerable.Empty<HttpPostedFileBase>())
+                {
+                    if (file == null || file.ContentLength <= 0) continue;
+                    var extension = Path.GetExtension(Path.GetFileName(file.FileName)).ToLowerInvariant();
+                    if (!new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension))
+                        throw new IOException("Unsupported image format.");
+                    var fileName = Guid.NewGuid().ToString("N") + extension;
+                    file.SaveAs(Path.Combine(uploadDir, fileName));
+                    saved.Add(fileName);
+                }
+                return saved;
+            }
+            catch { DeletePhotos(saved); throw; }
+        }
+
+        private void DeletePhotos(IEnumerable<string> photos)
+        {
+            var uploadDir = Server.MapPath("~/Uploads");
+            foreach (var photo in photos ?? Enumerable.Empty<string>())
+            {
+                if (string.IsNullOrWhiteSpace(photo) || photo.Contains("/") || photo.Contains("\\") || !Directory.Exists(uploadDir)) continue;
+                var fileName = Path.GetFileName(photo);
+                Guid generatedName;
+                if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(fileName), "N", out generatedName)) continue;
+                var path = Path.Combine(uploadDir, fileName);
+                if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+            }
+        }
+
+        private static string ToStoredCondition(ConditionGrade? condition)
+        {
+            switch (condition.GetValueOrDefault(ConditionGrade.Good))
+            {
+                case ConditionGrade.LikeNew: return "LIKE_NEW";
+                case ConditionGrade.Good: return "GOOD";
+                case ConditionGrade.Fair: return "FAIR";
+                default: return "HEAVY_USE";
+            }
         }
 
         internal static List<CategoryOptionViewModel> GetCategoryOptions()
         {
             return new List<CategoryOptionViewModel>
             {
-                new CategoryOptionViewModel { Id = 1, Name = "Electronic Gadgets",          Group = "Gadgets" },
-                new CategoryOptionViewModel { Id = 2, Name = "Electronic Accessories",      Group = "Accessories" },
+                new CategoryOptionViewModel { Id = 1, Name = "Electronics",                 Group = "Gadgets" },
+                new CategoryOptionViewModel { Id = 2, Name = "Camera",                      Group = "Cameras" },
                 new CategoryOptionViewModel { Id = 3, Name = "Books & References",          Group = "Books" },
                 new CategoryOptionViewModel { Id = 4, Name = "School Supplies (Drafting)",  Group = "School Supplies" },
                 new CategoryOptionViewModel { Id = 5, Name = "Sports Equipment",            Group = "Sports" },
-                new CategoryOptionViewModel { Id = 6, Name = "Other Items",                 Group = "Other" }
-            };
-        }
-
-        internal static List<CheckpointOptionViewModel> GetCheckpointOptions()
-        {
-            return new List<CheckpointOptionViewModel>
-            {
-                new CheckpointOptionViewModel { Value = "cea-lobby",     Name = "CEA Building Lobby",            Detail = "San Bartolome Campus \u2022 Main Gate 1 Access",   IconName = "building-2", Feature = "Guard Desk CCTV Active" },
-                new CheckpointOptionViewModel { Value = "library-front", Name = "University Library Front",      Detail = "San Bartolome Campus \u2022 2nd Floor Mezzanine",  IconName = "library",    Feature = "Quiet Zone Turnstiles" },
-                new CheckpointOptionViewModel { Value = "canteen-guard", Name = "Student Canteen Guard Station", Detail = "San Bartolome Campus \u2022 Gazebo Area",        IconName = "store",      Feature = "High Foot Traffic Zone" }
+                new CategoryOptionViewModel { Id = 6, Name = "Other Items",                 Group = "Other" },
+                new CategoryOptionViewModel { Id = 7, Name = "Electronic Accessories",      Group = "Accessories" }
             };
         }
 
         internal static void PopulateOptions(CreateListingViewModel model)
         {
             model.Categories = GetCategoryOptions();
-            model.Checkpoints = GetCheckpointOptions();
         }
     }
 }

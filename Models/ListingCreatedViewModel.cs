@@ -2,7 +2,7 @@ namespace UniShare.Models
 {
     public class ListingCreatedViewModel
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string ListingCode { get; set; }       // public ID, e.g. "QCU-EL-8842"
         public string ItemName { get; set; }
         public string CategoryBadge { get; set; }     // e.g. "Electronics & Gadgets"

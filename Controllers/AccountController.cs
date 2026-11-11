@@ -85,6 +85,7 @@ namespace UniShare.Controllers
                     Id = userId, SchoolEmail = email, Username = model.Username.Trim(),
                     FirstName = model.FirstName.Trim(), LastName = model.LastName.Trim(), Birthdate = birthdate,
                     Phone = model.Phone.Trim(), Section = model.Section.Trim(), StudentIdNumber = model.StudentIdNumber.Trim(),
+                    Program = model.Program.Trim(), YearLevel = model.YearLevel,
                     SchoolIdPhoto = documentPath, RegistrationForm = documentPath,
                     Role = "STUDENT", Status = "PENDING", PasswordHash = PasswordHasher.Hash(model.Password),
                     VerificationStatus = "PENDING", CreatedAt = now, UpdatedAt = now
@@ -133,7 +134,39 @@ namespace UniShare.Controllers
             catch { return new HttpUnauthorizedResult(); }
         }
 
-        [HttpGet, Authorize] public ActionResult Settings() { return View(); }
+        [HttpGet, Authorize]
+        public ActionResult Settings()
+        {
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
+            var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
+            if (user == null) return new HttpUnauthorizedResult();
+            return View(new OwnerProfileEditViewModel
+            {
+                Program = user.Program,
+                YearLevel = user.YearLevel,
+                Campus = user.Campus,
+                Bio = user.Bio
+            });
+        }
+
+        [HttpPost, Authorize, ValidateAntiForgeryToken]
+        public ActionResult Settings(OwnerProfileEditViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
+            var update = Builders<UserDocument>.Update
+                .Set(x => x.Program, (model.Program ?? "").Trim())
+                .Set(x => x.YearLevel, (model.YearLevel ?? "").Trim())
+                .Set(x => x.Campus, (model.Campus ?? "").Trim())
+                .Set(x => x.Bio, (model.Bio ?? "").Trim())
+                .Set(x => x.UpdatedAt, DateTime.UtcNow);
+            var result = MongoDatabase.Users.UpdateOne(x => x.Id == userId, update);
+            if (result.MatchedCount == 0) return new HttpUnauthorizedResult();
+            TempData["ProfileSaved"] = "Your owner profile has been updated.";
+            return RedirectToAction("Settings");
+        }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Logout()
