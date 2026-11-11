@@ -177,6 +177,7 @@
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Controllers\MyListingsController.cs" />
     <Compile Include="Controllers\MyRentalsController.cs" />
+    <Compile Include="Controllers\RentalRequestsController.cs" />
     <Compile Include="Controllers\NotificationsController.cs" />
     <Compile Include="Controllers\ReportsAnalyticsController.cs" />
     <Compile Include="Controllers\SalesReportController.cs" />
@@ -196,6 +197,8 @@
     <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
     <Compile Include="Services\MongoDatabase.cs" />
     <Compile Include="Services\MarketplaceService.cs" />
+    <Compile Include="Services\BookingService.cs" />
+    <Compile Include="Services\BorrowedItemsService.cs" />
     <Compile Include="Services\PasswordHasher.cs" />
     <Compile Include="Services\VerifiedStudentAttribute.cs" />
   </ItemGroup>
@@ -267,6 +270,9 @@
     <Content Include="Views\BrowseItems\OwnerProfile.cshtml" />
     <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
     <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
+    <Content Include="Views\MyRentals\Details.cshtml" />
+    <Content Include="Views\MyRentals\History.cshtml" />
+    <Content Include="Views\RentalRequests\Index.cshtml" />
     <Content Include="Views\Chatroom\Chatroom.cshtml" />
     <Content Include="Views\Dashboard\Index.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
