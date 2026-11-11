@@ -98,7 +98,7 @@
                         <button type="button" id="d-check" class="btn btn-outline-soft w-100 py-2"><i class="bi bi-calendar-event me-2 text-primary"></i>Check Availability</button>
                     </div>
                     <div class="col-sm-6">
-                        <button type="button" id="d-request" class="btn btn-brand w-100 py-2" @(Model.IsAvailable ? "" : "disabled")>Request to Rent <i class="bi bi-arrow-right ms-1"></i></button>
+                        <a id="d-rent-form" class="btn btn-brand w-100 py-2 @(Model.IsAvailable ? "" : "disabled")" href="@(Model.IsAvailable ? Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId }) : "#")" aria-disabled="@(!Model.IsAvailable)">Request to Rent <i class="bi bi-arrow-right ms-1"></i></a>
                     </div>
                 </div>
             </div>

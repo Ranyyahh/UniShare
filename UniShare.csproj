@@ -222,6 +222,8 @@
     <Content Include="Views\MyListings\EditListing.cshtml" />
     <Content Include="Views\MyListings\ItemListings.cshtml" />
     <Content Include="Views\BrowseItems\ItemDetails.cshtml" />
+    <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
+    <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
     <Content Include="Views\Shared\_AvailabilityModal.cshtml" />
   </ItemGroup>
   <ItemGroup>

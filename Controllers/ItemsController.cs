@@ -1,5 +1,4 @@
 using System.Web.Mvc;
-using UniShare.Models;
 
 namespace UniShare.Controllers
 {
@@ -8,15 +7,13 @@ namespace UniShare.Controllers
         // /Items/Browse
         public ActionResult Browse()
         {
-            return View("BrowseItems", new BrowseItemsViewModel());
+            return RedirectToAction("Index", "BrowseItems");
         }
 
         // /Items/Details?id=1
         public ActionResult Details(int id)
         {
-            var item = SampleItemData.Get(id);   // TODO: load from your database
-            if (item == null) return HttpNotFound();
-            return View("ItemDetails", item);
+            return RedirectToAction("ItemDetails", "BrowseItems", new { id = id });
         }
     }
 }
