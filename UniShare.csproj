@@ -198,6 +198,7 @@
     <Compile Include="Services\MongoDatabase.cs" />
     <Compile Include="Services\MarketplaceService.cs" />
     <Compile Include="Services\BookingService.cs" />
+    <Compile Include="Services\BorrowedItemsService.cs" />
     <Compile Include="Services\PasswordHasher.cs" />
     <Compile Include="Services\VerifiedStudentAttribute.cs" />
   </ItemGroup>

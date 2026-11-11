@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Web.Mvc;
+using MongoDB.Bson;
 using UniShare.Models;
 using UniShare.Services;
 
@@ -10,60 +11,89 @@ namespace UniShare.Controllers
     [VerifiedStudent]
     public class BorrowedItemsController : Controller
     {
-        // /BorrowedItems  (optional ?status=Ongoing|Completed|Disputed pre-selects a tab)
+        [HttpGet]
         public ActionResult Index(string status)
         {
-            ViewBag.Status = status;
-            return View(SampleData.Borrowed.ToList());
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return new HttpStatusCodeResult(401);
+            ViewBag.Status = NormalizeTab(status);
+            return View(BorrowedItemsService.GetForBorrower(borrowerId));
         }
 
-        // Confirm handover: the item STAYS in Ongoing and the rental timer starts.
-        [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult ConfirmHandover(int id)
+        [HttpGet]
+        public ActionResult Details(string id)
         {
-            var b = SampleData.Borrowed.FirstOrDefault(x => x.Id == id);
-            if (b == null) return HttpNotFound();
-            if ((b.Status != "Pending" && b.Status != "Ongoing") || b.HandoverConfirmed) return Json(new { ok = false });
-            b.Status = "Ongoing";
-            b.HandoverConfirmed = true;
-            b.HandoverAt = DateTime.Now;
-            b.HandoverOn = DateTime.Today;
-            return Json(new { ok = true });
-        }
-
-        // Return item: only after the handover was confirmed. Moves the item to Completed.
-        [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult ReturnItem(int id)
-        {
-            var b = SampleData.Borrowed.FirstOrDefault(x => x.Id == id);
-            if (b == null) return HttpNotFound();
-            if (b.Status != "Ongoing" || !b.HandoverConfirmed) return Json(new { ok = false });
-            b.Status = "Completed";
-            b.CompletedOn = DateTime.Today;
-            return Json(new { ok = true });
-        }
-
-        // Rating is only allowed once the item is Completed (returned).
-        [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Rate(int id, int rating, string review)
-        {
-            var b = SampleData.Borrowed.FirstOrDefault(x => x.Id == id);
-            if (b == null) return HttpNotFound();
-            if (b.Status != "Completed" || b.Rating.HasValue || rating < 1 || rating > 5) return Json(new { ok = false });
-            b.Rating = rating;
-            b.Review = string.IsNullOrWhiteSpace(review) ? null : review.Trim();
-            return Json(new { ok = true });
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return new HttpStatusCodeResult(401);
+            var record = BorrowedItemsService.GetDetails(borrowerId, id);
+            return record == null ? (ActionResult)HttpNotFound() : Json(record, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Dispute(int id, string reason, string details)
+        public ActionResult ConfirmHandover(string id, bool received)
         {
-            var b = SampleData.Borrowed.FirstOrDefault(x => x.Id == id);
-            if (b == null) return HttpNotFound();
-            if ((b.Status != "Pending" && b.Status != "Ongoing") || string.IsNullOrWhiteSpace(reason)) return Json(new { ok = false });
-            b.Status = "Disputed";
-            b.DisputeReason = string.IsNullOrWhiteSpace(details) ? reason : reason + ": " + details.Trim();
-            return Json(new { ok = true });
+            if (!received) return Json(new { ok = false, message = "Confirm that you received the item before continuing." });
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
+            return Run(() => BorrowedItemsService.ConfirmHandover(borrowerId, id), "Handover confirmed. Your rental timer has started.", "This handover is no longer awaiting your confirmation.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ReturnItem(string id, bool returned)
+        {
+            if (!returned) return Json(new { ok = false, message = "Confirm that you returned the item before continuing." });
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
+            return Run(() => BorrowedItemsService.RequestReturn(borrowerId, id), "Return request sent to the item owner.", "This rental cannot be returned from its current status.");
+        }
+
+        // Owner confirmation is kept separate from the borrower's return request.
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ConfirmReturn(string id)
+        {
+            ObjectId ownerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return Json(new { ok = false, message = "Please sign in again." });
+            return Run(() => BorrowedItemsService.ConfirmReturnByOwner(ownerId, id), "Return confirmed.", "This record is not awaiting your confirmation.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Rate(string id, int itemRating, int ownerRating, string review)
+        {
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
+            if (itemRating < 1 || itemRating > 5 || ownerRating < 1 || ownerRating > 5 || (review ?? "").Length > 300)
+                return Json(new { ok = false, message = "Choose a rating from one to five stars." });
+            return Run(() => BorrowedItemsService.SubmitRating(borrowerId, id, itemRating, ownerRating, review), "Thanks for reviewing this rental.", "Only completed, unrated rentals can be reviewed.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Dispute(string id, string reason, string details)
+        {
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
+            if (string.IsNullOrWhiteSpace(reason) || reason.Length > 100 || (details ?? "").Length > 400)
+                return Json(new { ok = false, message = "Select a reason and check the details." });
+            return Run(() => BorrowedItemsService.SubmitDispute(borrowerId, id, reason, details), "Dispute sent for review.", "A dispute cannot be submitted for this rental.");
+        }
+
+        private JsonResult Run(Func<bool> action, string success, string failure)
+        {
+            try
+            {
+                var changed = action();
+                return Json(new { ok = changed, message = changed ? success : failure });
+            }
+            catch
+            {
+                Response.StatusCode = 409;
+                return Json(new { ok = false, message = "This rental changed while you were viewing it. Refresh the page and try again." });
+            }
+        }
+
+        private static string NormalizeTab(string status)
+        {
+            var allowed = new[] { "Pending", "Ongoing", "Completed", "Disputed" };
+            return allowed.FirstOrDefault(x => string.Equals(x, status, StringComparison.OrdinalIgnoreCase)) ?? "Pending";
         }
     }
 }
