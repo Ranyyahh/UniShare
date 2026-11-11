@@ -22,30 +22,53 @@ const restrictionId = ObjectId();
 const auditLogId = ObjectId();
 const verificationId = ObjectId();
 
+// Seed-only test login password for all four users: UniShareDemo!2026.
+// These per-user PBKDF2 hashes match Services/PasswordHasher; only hashes are stored in MongoDB.
 db.users.insertMany([
   {
     _id: ownerId,
     schoolEmail: "owner@unishare.qcu.edu.ph",
+    password: "120000.0ySOINFQJJ9moB0BbG5l0Q==.BqWMz5aVKwSqsDiEHXkpXO6oU8+erWMY3ACKrqEvTQQ=",
     firstName: "Juan",
     lastName: "Owner",
-    role: "OWNER",
+    username: "juan.owner",
+    birthdate: ISODate("2003-04-10T00:00:00Z"),
+    phone: "+639000000001",
+    section: "BSIT-3C",
+    studentIdNumber: "21-00001",
+    schoolIdPhoto: null,
+    oneByOnePhoto: null,
+    registrationForm: null,
+    role: "STUDENT",
     status: "ACTIVE",
+    verificationStatus: "APPROVED",
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     _id: borrowerId,
     schoolEmail: "borrower@unishare.qcu.edu.ph",
+    password: "120000./9E9iKlxjdkB8pTLyQ/Fnw==.LdmWvJYIr4zsBaALgBSpXHZ/ju9oLaCJtUeoome6VS4=",
     firstName: "Maria",
     lastName: "Borrower",
-    role: "BORROWER",
+    username: "maria.borrower",
+    birthdate: ISODate("2003-09-22T00:00:00Z"),
+    phone: "+639000000002",
+    section: "BSIT-3C",
+    studentIdNumber: "21-00002",
+    schoolIdPhoto: null,
+    oneByOnePhoto: null,
+    registrationForm: null,
+    role: "STUDENT",
     status: "ACTIVE",
+    verificationStatus: "APPROVED",
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
     _id: adminId,
     schoolEmail: "admin@unishare.qcu.edu.ph",
+    password: "120000.hdxzhS/+9Z+oz7shySfyng==.lVp/rN3QR44QolGHbSAjHvv+2cU1rPwYvUNV7ns0q6M=",
     firstName: "Admin",
     lastName: "User",
     role: "ADMIN",
@@ -56,10 +79,20 @@ db.users.insertMany([
   {
     _id: studentId,
     schoolEmail: "student@unishare.qcu.edu.ph",
+    password: "120000.qrRru/O7syLBnrtQmU2LPg==.nRDtoUASjkFZ/eHwZya3QqoV8cGPcebPUbZip7ojdRI=",
     firstName: "Student",
     lastName: "User",
+    username: "student.user",
+    birthdate: ISODate("2004-02-18T00:00:00Z"),
+    phone: "+639000000003",
+    section: "BSIT-2A",
+    studentIdNumber: "22-00003",
+    schoolIdPhoto: null,
+    oneByOnePhoto: null,
+    registrationForm: null,
     role: "STUDENT",
     status: "ACTIVE",
+    verificationStatus: "APPROVED",
     createdAt: new Date(),
     updatedAt: new Date()
   }
@@ -196,6 +229,10 @@ db.auditLogs.insertOne({
 db.users.createIndex(
   { schoolEmail: 1 },
   { unique: true }
+);
+
+db.verificationApplications.createIndex(
+  { userId: 1 }
 );
 
 db.items.createIndex(
