@@ -137,25 +137,6 @@ namespace UniShare.Models
 
     public static class SampleData
     {
-        public static readonly string[] Categories = { "Electronics", "Books", "Lab & Tools", "Clothing", "Sports", "Other" };
-
-        public static List<Item> Items = new List<Item>
-        {
-            new Item { Id = 1, Name = "Scientific Calculator (fx-991EX)", Category = "Electronics", Owner = "Maria Santos", PricePerDay = 25, Condition = "Like new", Status = "Available", Description = "Allowed in most exams. Includes cover." },
-            new Item { Id = 2, Name = "Engineering Drawing Set", Category = "Lab & Tools", Owner = "Paolo Reyes", PricePerDay = 30, Condition = "Good", Status = "Available", Description = "Compass, T-square and triangles." },
-            new Item { Id = 3, Name = "Calculus Textbook (Stewart)", Category = "Books", Owner = "Ana Cruz", PricePerDay = 15, Condition = "Good", Status = "Rented", Description = "8th edition, no missing pages." },
-            new Item { Id = 4, Name = "Lab Gown (Medium)", Category = "Clothing", Owner = "Leah Mendoza", PricePerDay = 20, Condition = "Fair", Status = "Available", Description = "Washed and ready." },
-            new Item { Id = 5, Name = "Arduino Uno Kit", Category = "Electronics", Owner = "Kevin Lim", PricePerDay = 60, Condition = "Like new", Status = "Available", Description = "Includes breadboard and jumper wires." },
-            new Item { Id = 6, Name = "Badminton Racket", Category = "Sports", Owner = "Jose Ramos", PricePerDay = 35, Condition = "Good", Status = "Available", Description = "Yonex, with 3 shuttlecocks." }
-        };
-
-        public static List<Item> MyListings = new List<Item>
-        {
-            new Item { Id = 101, Name = "Arduino Starter Kit", Category = "Electronics", Owner = "Julian Vance", PricePerDay = 55, Condition = "Like new", Status = "Available", Description = "Complete set." },
-            new Item { Id = 102, Name = "Data Structures Book", Category = "Books", Owner = "Julian Vance", PricePerDay = 12, Condition = "Good", Status = "Rented", Description = "Annotated margins." },
-            new Item { Id = 103, Name = "USB-C Hub", Category = "Electronics", Owner = "Julian Vance", PricePerDay = 20, Condition = "Good", Status = "Hidden", Description = "4 ports." }
-        };
-
         public static List<Rental> MyRentals = new List<Rental>
         {
             new Rental { Id = 1, ItemName = "Engineering Drawing Set", Owner = "Paolo Reyes", StartDate = DateTime.Today.AddDays(-2), EndDate = DateTime.Today.AddDays(3), Total = 150, Status = "Ongoing" },

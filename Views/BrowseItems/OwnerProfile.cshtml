@@ -1,0 +1,67 @@
+@model UniShare.Models.OwnerProfileViewModel
+@{
+    ViewBag.Title = Model.Name + " | Owner Profile";
+}
+
+<main class="container py-5" style="max-width: 1100px">
+    <a class="text-decoration-none" href="@Url.Action("Index", "BrowseItems")">&larr; Browse items</a>
+    <section class="card border-0 shadow-sm mt-4 p-4 p-md-5">
+        <div class="d-flex align-items-center gap-3">
+            @if (!string.IsNullOrWhiteSpace(Model.ProfilePhoto))
+            {
+                <img src="@Url.Content(Model.ProfilePhoto)" alt="@Model.Name" class="rounded-circle" style="width:76px;height:76px;object-fit:cover" />
+            }
+            else
+            {
+                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width:76px;height:76px;font-size:1.4rem">@Model.Initials</div>
+            }
+            <div>
+                <h1 class="h3 mb-1">@Model.Name</h1>
+                <div class="text-secondary">
+                    @Model.Campus
+                    @if (!string.IsNullOrWhiteSpace(Model.Program)) { <span> · @Model.Program</span> }
+                    @if (!string.IsNullOrWhiteSpace(Model.YearLevel)) { <span> · @Model.YearLevel</span> }
+                </div>
+                <div class="small text-secondary mt-1">
+                    @if (Model.Rating.HasValue) { <span>★ @Model.Rating.Value.ToString("0.0") (@Model.ReviewCount reviews) · </span> }
+                    @Model.CompletedRentals completed rentals
+                </div>
+            </div>
+            @if (Model.IsVerified)
+            {
+                <span class="badge bg-success ms-auto">Verified student</span>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.Bio))
+        {
+            <p class="mt-4 mb-0">@Model.Bio</p>
+        }
+    </section>
+
+    <section class="mt-5">
+        <h2 class="h4">Available listings <span class="text-secondary">(@Model.Listings.Count)</span></h2>
+        @if (Model.Listings.Count == 0)
+        {
+            <p class="text-secondary mt-3">This owner has no available listings right now.</p>
+        }
+        else
+        {
+            <div class="row g-3 mt-1">
+                @foreach (var item in Model.Listings)
+                {
+                    <div class="col-sm-6 col-lg-4">
+                        <a class="card h-100 text-decoration-none text-reset overflow-hidden" href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })">
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Title" style="height:190px;object-fit:cover" /> }
+                            else { <div class="d-flex flex-column align-items-center justify-content-center bg-light text-secondary" style="height:190px"><i class="bi bi-camera"></i><span>No photo uploaded</span></div> }
+                            <div class="card-body">
+                                <div class="small text-secondary">@item.CategoryLabel · @item.Condition</div>
+                                <h3 class="h6 mt-2">@item.Title</h3>
+                                <div class="fw-semibold">₱@item.Price.ToString("0.##") / @item.PerHours hours</div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</main>

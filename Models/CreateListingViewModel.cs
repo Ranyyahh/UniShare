@@ -30,6 +30,18 @@ namespace UniShare.Models
         [StringLength(500, ErrorMessage = "Description can be at most 500 characters.")]
         public string Description { get; set; }
 
+        [Range(typeof(decimal), "0", "10000000", ErrorMessage = "Replacement value cannot be negative.")]
+        [Display(Name = "Declared Replacement Value")]
+        public decimal? ReplacementValue { get; set; }
+
+        [Range(typeof(decimal), "0", "10000000", ErrorMessage = "Security deposit cannot be negative.")]
+        [Display(Name = "Security Deposit")]
+        public decimal? SecurityDeposit { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Included Accessories")]
+        public string Accessories { get; set; }
+
         // Up to 4 images. The first one is the cover photo.
         public IEnumerable<HttpPostedFileBase> Photos { get; set; }
 
@@ -39,22 +51,23 @@ namespace UniShare.Models
         public decimal? Price { get; set; }
 
         public int PricingUnitHours { get; set; } = 4;
-        public bool EnableFullDayBundle { get; set; } = true;
+        public bool EnableFullDayBundle { get; set; }
 
         public List<string> AvailableDays { get; set; } = new List<string>();
 
         [Required, RegularExpression(@"^([01]\d|2[0-3]):[0-5]\d$", ErrorMessage = "Use HH:mm (24-hour).")]
-        public string EarliestHandoverTime { get; set; } = "08:00";
+        public string EarliestHandoverTime { get; set; }
 
         [Required, RegularExpression(@"^([01]\d|2[0-3]):[0-5]\d$", ErrorMessage = "Use HH:mm (24-hour).")]
-        public string LatestReturnTime { get; set; } = "17:30";
+        public string LatestReturnTime { get; set; }
 
-        // Checkpoint is optional for Create Listing
-        public string Checkpoint { get; set; }
+        [Required, StringLength(80)] public string Campus { get; set; }
+        [Required, StringLength(120)] public string Building { get; set; }
+        [StringLength(80)] public string Room { get; set; }
+        [Required, StringLength(160)] public string HandoverLocation { get; set; }
 
         // ----- Dropdown / option data (filled by the controller, not posted) -----
         public List<CategoryOptionViewModel> Categories { get; set; } = new List<CategoryOptionViewModel>();
-        public List<CheckpointOptionViewModel> Checkpoints { get; set; } = new List<CheckpointOptionViewModel>();
     }
 
     public class CategoryOptionViewModel
@@ -64,12 +77,4 @@ namespace UniShare.Models
         public string Group { get; set; }   // shown as "Categorized under {Group}"
     }
 
-    public class CheckpointOptionViewModel
-    {
-        public string Value { get; set; }
-        public string Name { get; set; }
-        public string Detail { get; set; }
-        public string IconName { get; set; } // Lucide icon name
-        public string Feature { get; set; }
-    }
 }

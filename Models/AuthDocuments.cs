@@ -1,6 +1,7 @@
 using System;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Collections.Generic;
 
 namespace UniShare.Models
 {
@@ -20,6 +21,11 @@ namespace UniShare.Models
         [BsonIgnoreIfNull] [BsonElement("phone")] public string Phone { get; set; }
         [BsonIgnoreIfNull] [BsonElement("contactNumber")] public string ContactNumber { get; set; }
         [BsonIgnoreIfNull] [BsonElement("section")] public string Section { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("program")] public string Program { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("yearLevel")] public string YearLevel { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("campus")] public string Campus { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("bio")] public string Bio { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("profilePhoto")] public string ProfilePhoto { get; set; }
         [BsonElement("studentNumber")] public string StudentIdNumber { get; set; }
         [BsonIgnoreIfNull] [BsonElement("schoolIdPhoto")] public string SchoolIdPhoto { get; set; }
         [BsonIgnoreIfNull] [BsonElement("oneByOnePhoto")] public string OneByOnePhoto { get; set; }
@@ -61,5 +67,51 @@ namespace UniShare.Models
         [BsonIgnoreIfNull] [BsonElement("entityId")] public ObjectId? EntityId { get; set; }
         [BsonIgnoreIfNull] [BsonElement("details")] public BsonDocument Details { get; set; }
         [BsonElement("createdAt")] public DateTime CreatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class ItemDocument
+    {
+        [BsonId] public ObjectId Id { get; set; }
+        [BsonElement("ownerId")] public ObjectId OwnerId { get; set; }
+        [BsonElement("name")] public string Name { get; set; }
+        [BsonElement("description")] public string Description { get; set; }
+        [BsonElement("category")] public string Category { get; set; }
+        [BsonElement("photos")] public List<string> Photos { get; set; } = new List<string>();
+        [BsonElement("condition")] public string Condition { get; set; }
+        [BsonElement("rentalDetails")] public ItemRentalDetailsDocument RentalDetails { get; set; } = new ItemRentalDetailsDocument();
+        [BsonElement("location")] public ItemLocationDocument Location { get; set; } = new ItemLocationDocument();
+        [BsonElement("availabilityStatus")] public string AvailabilityStatus { get; set; } = "AVAILABLE";
+        [BsonElement("approvalStatus")] public string ApprovalStatus { get; set; } = "APPROVED";
+        [BsonElement("availableDays")] public List<string> AvailableDays { get; set; } = new List<string>();
+        [BsonElement("earliestHandoverTime")] public string EarliestHandoverTime { get; set; }
+        [BsonElement("latestReturnTime")] public string LatestReturnTime { get; set; }
+        [BsonElement("checkpoint")] public string Checkpoint { get; set; }
+        [BsonElement("accessories")][BsonIgnoreIfNull] public string Accessories { get; set; }
+        [BsonElement("createdAt")] public DateTime CreatedAt { get; set; }
+        [BsonElement("updatedAt")] public DateTime UpdatedAt { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class ItemRentalDetailsDocument
+    {
+        [BsonElement("pricePerDay")] public double PricePerDay { get; set; }
+        [BsonElement("hourlyRate")] public double HourlyRate { get; set; }
+        [BsonElement("dailyRate")] public double DailyRate { get; set; }
+        [BsonElement("pricingUnitHours")] public int PricingUnitHours { get; set; }
+        [BsonElement("securityDeposit")] public double SecurityDeposit { get; set; }
+        [BsonElement("replacementValue")] public double ReplacementValue { get; set; }
+        [BsonElement("minimumRentalDays")] public int MinimumRentalDays { get; set; }
+        [BsonElement("maximumRentalDays")] public int MaximumRentalDays { get; set; }
+        [BsonElement("enableFullDayBundle")] public bool EnableFullDayBundle { get; set; }
+    }
+
+    [BsonIgnoreExtraElements]
+    public class ItemLocationDocument
+    {
+        [BsonElement("campus")] public string Campus { get; set; }
+        [BsonElement("building")] public string Building { get; set; }
+        [BsonElement("room")] public string Room { get; set; }
+        [BsonElement("handoverLocation")] public string HandoverLocation { get; set; }
     }
 }

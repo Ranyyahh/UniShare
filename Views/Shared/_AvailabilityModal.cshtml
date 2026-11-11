@@ -1,10 +1,12 @@
 @model UniShare.Models.ItemDetailsViewModel
 @using System.Linq
+@using System.Collections.Generic
 
 @* Booked dates are read by Scripts/availability.js from data-booked (yyyy-MM-dd, comma separated). *@
 <div class="ua-overlay" id="avail-modal" aria-hidden="true"
      data-item-id="@Model.ItemId"
      data-item-name="@Model.Name"
+     data-available-days="@string.Join(",", Model.AvailableDays ?? new List<string>())"
      data-request-url="@Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId })"
      data-booked="@string.Join(",", Model.BookedDates.Select(d => d.ToString("yyyy-MM-dd")))">
     <div class="ua-dialog-wrap">
@@ -44,7 +46,7 @@
             <div class="sel-box">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <span><i class="bi bi-calendar-check text-primary me-2"></i><strong id="sel-text"></strong></span>
-                    <span class="tag green"><i class="bi bi-check2 me-1"></i>Available All Day (8:00 AM &ndash; 5:30 PM)</span>
+                    <span class="tag green"><i class="bi bi-check2 me-1"></i>Available on selected handover days</span>
                 </div>
                 <hr class="my-2">
                 <div class="small text-secondary">Hourly campus rate: <strong class="text-body">₱@Model.HourlyRate.ToString("0.##")/hr</strong></div>
