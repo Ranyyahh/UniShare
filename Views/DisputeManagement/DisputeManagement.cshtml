@@ -1,8 +1,12 @@
 @model List<UniShare.Models.DisputeViewModel>
 @{
     ViewBag.Title = "Dispute Management";
+    ViewBag.ShowAdminSidebar = true;
 }
-<link rel="stylesheet" href="~/Content/DisputeManagement.css" />
+
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/DisputeManagement.css")" />
+}
 
 <div class="dispute-page-wrapper">
     <!-- Header Block (Clean Title & Subtitle Only) -->

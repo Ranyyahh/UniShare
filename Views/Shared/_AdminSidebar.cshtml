@@ -1,0 +1,71 @@
+@{
+    var activeController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
+    var activeAction = (ViewContext.RouteData.Values["action"] as string) ?? "";
+    var isVerification = activeController == "Admin" && activeAction == "StudentVerification";
+}
+<aside class="admin-sidebar" aria-label="Admin navigation">
+    <div class="admin-sidebar__brand">
+        <a class="admin-sidebar__brand-link" href="@Url.Action("Index", "Home")" aria-label="UniShare Admin Portal home">
+            <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3" /></svg></span>
+            <span class="brand__copy"><span class="brand__name">UniShare</span><span class="brand__school">ADMIN PORTAL</span></span>
+        </a>
+    </div>
+
+    <nav class="admin-sidebar__nav" aria-label="Admin pages">
+        <a class="admin-sidebar__link @(activeController == "AdminDashboard" ? "is-active" : "")" href="@Url.Action("Index", "AdminDashboard")" @(activeController == "AdminDashboard" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>
+            <span>Admin Dashboard</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "DisputeManagement" ? "is-active" : "")" href="@Url.Action("Index", "DisputeManagement")" @(activeController == "DisputeManagement" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4m0 3h.01"/></svg>
+            <span>Dispute Management</span>
+        </a>
+        <a class="admin-sidebar__link @(isVerification ? "is-active" : "")" href="@Url.Action("StudentVerification", "Admin")" @(isVerification ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.4-3.4 2.6-5.2 6.5-5.2 2 0 3.5.5 4.6 1.4M16 19l2 2 4-5"/></svg>
+            <span>Student Verification</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "AdminItemBooking" ? "is-active" : "")" href="@Url.Action("Index", "AdminItemBooking")" @(activeController == "AdminItemBooking" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+            <span>Item &amp; Booking Monitoring</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "TransactionPaymentRecords" ? "is-active" : "")" href="@Url.Action("Index", "TransactionPaymentRecords")" @(activeController == "TransactionPaymentRecords" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+            <span>Transactions &amp; Payments</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "ReportsAnalytics" ? "is-active" : "")" href="@Url.Action("Index", "ReportsAnalytics")" @(activeController == "ReportsAnalytics" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17"/><path d="m7 15 4-4 3 2 6-7"/><path d="M16 6h4v4"/></svg>
+            <span>Reports &amp; Analytics</span>
+        </a>
+    </nav>
+
+    <div class="admin-sidebar__footer">
+        @if (Request.IsAuthenticated)
+        {
+            <div class="account-menu admin-sidebar__account-menu" data-account-menu>
+                <button class="account-button admin-sidebar__account" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="account-dropdown" data-account-toggle>
+                    <span class="account-avatar" aria-hidden="true" data-account-avatar>?</span>
+                    <span class="account-copy"><span class="account-copy__top" data-account-name>Administrator</span><span class="account-copy__bottom" data-account-subtitle>Admin</span></span>
+                    <svg class="account-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
+                </button>
+                <div class="account-dropdown" id="account-dropdown" role="menu" hidden>
+                    <button class="account-dropdown__item" type="button" role="menuitem" data-account-open>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-3.3 3.1-5 7-5s6.5 1.7 7 5"/></svg>My Account
+                    </button>
+                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Settings", "Account")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg>Account Settings
+                    </a>
+                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("StudentVerification", "Admin")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Verification Queue
+                    </a>
+                </div>
+            </div>
+            <form action="@Url.Action("Logout", "Account")" method="post" class="admin-sidebar__logout-form">
+                @Html.AntiForgeryToken()
+                <button class="admin-sidebar__logout" type="submit">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+                    <span>Log Out</span>
+                </button>
+            </form>
+        }
+    </div>
+</aside>

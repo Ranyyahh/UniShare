@@ -1,11 +1,14 @@
 ﻿@model UniShare.Models.ReportsAnalyticsViewModel
 @{
     ViewBag.Title = "Reports & Analytics";
+    ViewBag.ShowAdminSidebar = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
     string noticeClass = string.IsNullOrWhiteSpace(Model.DataSourceNote) ? "reports-notice" : "reports-notice is-visible";
 }
 
-<link rel="stylesheet" href="~/Content/ReportsAnalytics.css" />
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/ReportsAnalytics.css")" />
+}
 
 <div class="reports-page"
      id="reportsPage"

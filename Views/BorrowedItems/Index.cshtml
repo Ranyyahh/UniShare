@@ -44,6 +44,10 @@
         System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Scripts/borrowed-items.js")).Ticks;
 }
 
+@section Styles {
+    <link href="@Url.Content("~/Content/borrowed-items.css")" rel="stylesheet" />
+}
+
 <div class="bi-page" data-initial="@initial" data-messages-url="@Url.Action("Index", "Messages")">
 
     <div class="us-page-head" style="display: flex; justify-content: space-between; align-items: flex-start;">

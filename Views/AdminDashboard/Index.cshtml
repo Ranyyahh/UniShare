@@ -1,19 +1,18 @@
 ﻿@{
-    Layout = null;
     ViewBag.Title = "Admin Dashboard";
+    ViewBag.ShowAdminSidebar = true;
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewBag.Title | UniShare</title>
-
+@section Styles {
     <link rel="stylesheet" href="@Url.Content("~/Content/admin-dashboard.css")" />
-</head>
-<body>
-    <main class="dashboard">
+}
+
+@section scripts {
+    <script src="@Url.Content("~/Scripts/admin-dashboard.js")"></script>
+}
+
+<div class="dashboard">
         <header class="welcome-card">
             <h1>Welcome back, Admin Mark!</h1>
             <p>Monitor essential campus tech, engineering tools, and course textbooks across verified fellow QCU students. Review verifications and disputes promptly.</p>
@@ -240,8 +239,4 @@
         </section>
 
         <div id="dashboardToast" class="dashboard-toast" aria-live="polite"></div>
-    </main>
-
-    <script src="@Url.Content("~/Scripts/admin-dashboard.js")"></script>
-</body>
-</html>
+</div>

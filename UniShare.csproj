@@ -214,6 +214,9 @@
     <Content Include="Content\auth.css" />
     <Content Include="Content\chatroom.css" />
     <Content Include="Content\items.css" />
+    <Content Include="Content\borrowed-items.css" />
+    <Content Include="Content\unishare-popups.css" />
+    <Content Include="Content\admin-sidebar.css" />
     <Content Include="Content\img\placeholder.png" />
     <Content Include="Content\images\casio-fx991ex.jpg" />
     <Content Include="Content\images\engineering-mechanics-statics.jpg" />
@@ -283,6 +286,7 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Footer.cshtml" />
     <Content Include="Views\Shared\_Header.cshtml" />
+    <Content Include="Views\Shared\_AdminSidebar.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Shared\_AuthLayout.cshtml" />
     <Content Include="Views\Shared\_AvailabilityModal.cshtml" />

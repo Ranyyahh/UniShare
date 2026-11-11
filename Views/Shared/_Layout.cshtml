@@ -1,4 +1,30 @@
 <!DOCTYPE html>
+@{
+    var showAdminSidebar = ViewBag.ShowAdminSidebar != null && (bool)ViewBag.ShowAdminSidebar;
+    var popupPayload = new
+    {
+        conversations = UniShare.Models.SampleData.Conversations.Select(c => new
+        {
+            id = c.Id,
+            person = c.With,
+            initials = c.Initials,
+            item = c.ItemName,
+            last = c.LastMessage,
+            time = c.Time,
+            unread = c.Unread,
+            messages = c.Messages.Select(m => new { mine = m.Mine, text = m.Text, time = m.Time })
+        }),
+        notifications = UniShare.Models.SampleData.Notifications.Select(n => new
+        {
+            id = n.Id,
+            title = n.Title,
+            body = n.Body,
+            time = n.Time,
+            unread = n.Unread
+        })
+    };
+    var popupJson = System.Web.Helpers.Json.Encode(popupPayload).Replace("<", "\\u003c");
+}
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,7 +34,9 @@
     @Scripts.Render("~/bundles/modernizr")
     @RenderSection("Styles", required: false)
 </head>
-<body>
+<body class="@(showAdminSidebar ? "admin-layout" : "")">
+    @if (!showAdminSidebar)
+    {
     <header class="site-header">
         <div class="site-header__inner">
             <a class="brand" href="@Url.Action("Index", "Home")" aria-label="UniShare home">
@@ -42,7 +70,7 @@
                 </div>
                 <div class="site-navigation__actions">
                     <a class="icon-button message-button" href="@Url.Action("Index", "Messages")" aria-label="Messages"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.8-.95L4 20l1.2-3.9A7.5 7.5 0 1 1 20 11.5Z" /><path d="M8 11.5h8M8 14.5h5" /></svg></a>
-                    <a class="icon-button notification-button" href="@Url.Action("Index", "Notifications")" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg><span class="notification-dot"></span></a>
+                    <button class="icon-button notification-button" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-controls="pm-notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg><span class="notification-dot"></span></button>
                     @if (Request.IsAuthenticated)
                     {
                         <div class="account-menu" data-account-menu>
@@ -67,13 +95,12 @@
                                 <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Settings", "Account")">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg>Account Settings
                                 </a>
-                                @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "account-logout-form" }))
-                                {
+                                <form action="@Url.Action("Logout", "Account")" method="post" class="account-logout-form">
                                     @Html.AntiForgeryToken()
                                     <button class="account-dropdown__item account-dropdown__item--danger" type="submit" role="menuitem">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>Logout
                                     </button>
-                                }
+                                </form>
                             </div>
                         </div>
                     }
@@ -100,8 +127,32 @@
             });
         }());
     </script>
-    <main class="site-main" id="main-content">
-        @RenderBody()
+    }
+    else
+    {
+        <div class="admin-topbar" role="banner">
+            <div class="admin-topbar__actions">
+                <a class="admin-topbar__button message-button" href="@Url.Action("Index", "Messages")" aria-label="Messages">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.8-.95L4 20l1.2-3.9A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11.5h8M8 14.5h5"/></svg>
+                </a>
+                <button class="admin-topbar__button notification-button" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-controls="pm-notes">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-dot"></span>
+                </button>
+            </div>
+        </div>
+    }
+    <main class="site-main @(showAdminSidebar ? "site-main--admin" : "")" id="main-content">
+        @if (showAdminSidebar)
+        {
+            <div class="admin-workspace">
+                @Html.Partial("_AdminSidebar")
+                <div class="admin-workspace__content">@RenderBody()</div>
+            </div>
+        }
+        else
+        {
+            @RenderBody()
+        }
     </main>
     <footer class="site-footer">
         <div class="site-footer__inner">
@@ -123,8 +174,40 @@
         </section>
     </div>
 
+    <script type="application/json" id="pm-data">@Html.Raw(popupJson)</script>
+    <dialog class="pm-dialog pm-dialog--notifications" id="pm-notes" aria-labelledby="pm-notes-title">
+        <header class="pm-dialog__header">
+            <div>
+                <span class="pm-dialog__eyebrow">UNISHARE UPDATES</span>
+                <h2 id="pm-notes-title">Notifications <span id="pm-notes-count" class="pm-count" hidden></span></h2>
+            </div>
+            <button class="pm-close" type="button" aria-label="Close notifications" data-pm-close>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+        </header>
+        <div class="pm-dialog__toolbar">
+            <p>Latest updates about your rentals and messages.</p>
+            <button id="pm-notes-readall" class="pm-readall" type="button">Mark all as read</button>
+        </div>
+        <ul class="pm-notes-list" id="pm-notes-list"></ul>
+    </dialog>
+
+    <dialog class="pm-dialog pm-dialog--messages" id="pm-msgs" aria-labelledby="pm-msgs-title">
+        <header class="pm-dialog__header pm-dialog__header--messages">
+            <div><span class="pm-dialog__eyebrow">STAY CONNECTED</span><h2 id="pm-msgs-title">Messages</h2></div>
+            <button class="pm-close" type="button" aria-label="Close messages" data-pm-close>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+        </header>
+        <div class="pm-messages-layout">
+            <aside class="pm-messages-sidebar"><h3>Conversations</h3><div id="pm-chat-list" class="pm-chat-list"></div></aside>
+            <section id="pm-chat-panel" class="pm-chat-panel" aria-live="polite"></section>
+        </div>
+    </dialog>
+
     @Scripts.Render("~/bundles/jquery")
     <script src="@Url.Content("~/Scripts/account-menu.js")"></script>
+    <script src="@Url.Content("~/Scripts/unishare-popups.js")"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

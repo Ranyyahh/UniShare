@@ -20,7 +20,9 @@ namespace UniShare
             // Bootstrap 6 alpha JS is an ES module, so it is intentionally NOT bundled.
             bundles.Add(new Bundle("~/Content/css").Include(
                         "~/Content/bootstrap.css",
-                        "~/Content/Site.css"));
+                        "~/Content/Site.css",
+                        "~/Content/unishare-popups.css",
+                        "~/Content/admin-sidebar.css"));
         }
     }
 }
