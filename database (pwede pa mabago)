@@ -9,241 +9,672 @@ const borrowerId = ObjectId();
 const adminId = ObjectId();
 const studentId = ObjectId();
 
-const itemId = ObjectId();
-const bookingId = ObjectId();
-const paymentId = ObjectId();
-const handoverId = ObjectId();
-const rentalId = ObjectId();
-const returnId = ObjectId();
-const disputeId = ObjectId();
-const noShowId = ObjectId();
-const ratingId = ObjectId();
-const restrictionId = ObjectId();
-const auditLogId = ObjectId();
-const verificationId = ObjectId();
-
 db.users.insertMany([
-  {
-    _id: ownerId,
-    schoolEmail: "owner@unishare.qcu.edu.ph",
-    firstName: "Juan",
-    lastName: "Owner",
-    role: "OWNER",
-    status: "ACTIVE",
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    _id: borrowerId,
-    schoolEmail: "borrower@unishare.qcu.edu.ph",
-    firstName: "Maria",
-    lastName: "Borrower",
-    role: "BORROWER",
-    status: "ACTIVE",
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    _id: adminId,
-    schoolEmail: "admin@unishare.qcu.edu.ph",
-    firstName: "Admin",
-    lastName: "User",
-    role: "ADMIN",
-    status: "ACTIVE",
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    _id: studentId,
-    schoolEmail: "student@unishare.qcu.edu.ph",
-    firstName: "Student",
-    lastName: "User",
-    role: "STUDENT",
-    status: "ACTIVE",
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
+    {
+        _id: ownerId,
+        schoolEmail: "owner@qcu.edu.ph",
+        passwordHash: "hashed_password_owner",
+
+        firstName: "Juan",
+        middleName: "Santos",
+        lastName: "Dela Cruz",
+
+        studentNumber: "20240001",
+        contactNumber: "09171234567",
+
+        role: "STUDENT",
+        status: "ACTIVE",
+        verificationStatus: "APPROVED",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+
+    {
+        _id: borrowerId,
+        schoolEmail: "borrower@qcu.edu.ph",
+        passwordHash: "hashed_password_borrower",
+
+        firstName: "Maria",
+        middleName: "Reyes",
+        lastName: "Santos",
+
+        studentNumber: "20240002",
+        contactNumber: "09181234567",
+
+        role: "STUDENT",
+        status: "ACTIVE",
+        verificationStatus: "APPROVED",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+
+    {
+        _id: studentId,
+        schoolEmail: "student@qcu.edu.ph",
+        passwordHash: "hashed_password_student",
+
+        firstName: "Pedro",
+        middleName: "Garcia",
+        lastName: "Cruz",
+
+        studentNumber: "20240003",
+        contactNumber: "09191234567",
+
+        role: "STUDENT",
+        status: "PENDING",
+        verificationStatus: "PENDING",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+
+    {
+        _id: adminId,
+        schoolEmail: "admin@qcu.edu.ph",
+        passwordHash: "hashed_password_admin",
+
+        firstName: "UniShare",
+        middleName: "",
+        lastName: "Administrator",
+
+        studentNumber: null,
+        contactNumber: "09201234567",
+
+        role: "ADMIN",
+        status: "ACTIVE",
+        verificationStatus: "APPROVED",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    }
 ]);
 
+
+// ======================================================
+// 3. VERIFICATION APPLICATIONS
+// ======================================================
+
+const verificationId = ObjectId();
+
 db.verificationApplications.insertOne({
-  _id: verificationId,
-  userId: studentId,
-  schoolEmail: "student@unishare.qcu.edu.ph",
-  status: "APPROVED",
-  submittedAt: new Date(),
-  reviewedAt: new Date(),
-  reviewedBy: adminId
+    _id: verificationId,
+
+    userId: studentId,
+
+    schoolEmail: "student@qcu.edu.ph",
+    studentNumber: "20240003",
+
+    firstName: "Pedro",
+    lastName: "Cruz",
+
+    submittedDocument: "student_id_20240003.jpg",
+
+    status: "PENDING",
+
+    reviewedBy: null,
+    reviewedAt: null,
+    remarks: null,
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
 
-db.items.insertOne({
-  _id: itemId,
-  ownerId: ownerId,
-  name: "Scientific Calculator",
-  description: "Casio scientific calculator for academic use",
-  category: "ACADEMIC",
-  condition: "GOOD",
-  availability: "AVAILABLE",
-  rentalPrice: 50,
-  createdAt: new Date(),
-  updatedAt: new Date()
-});
+
+// ======================================================
+// 4. ITEMS
+// ======================================================
+
+const laptopItemId = ObjectId();
+const cameraItemId = ObjectId();
+const projectorItemId = ObjectId();
+
+db.items.insertMany([
+    {
+        _id: laptopItemId,
+
+        ownerId: ownerId,
+
+        name: "Laptop",
+        description: "Lenovo laptop suitable for school activities.",
+        category: "Electronics",
+
+        photos: [
+            "laptop1.jpg",
+            "laptop2.jpg"
+        ],
+
+        condition: "GOOD",
+
+        rentalDetails: {
+            pricePerDay: 500,
+            securityDeposit: 1000,
+            minimumRentalDays: 1,
+            maximumRentalDays: 7
+        },
+
+        location: {
+            campus: "QCU",
+            building: "Academic Building 1",
+            room: "Room 401"
+        },
+
+        availabilityStatus: "AVAILABLE",
+
+        approvalStatus: "APPROVED",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+
+    {
+        _id: cameraItemId,
+
+        ownerId: ownerId,
+
+        name: "Digital Camera",
+        description: "Digital camera for school projects.",
+        category: "Camera",
+
+        photos: [
+            "camera1.jpg",
+            "camera2.jpg"
+        ],
+
+        condition: "GOOD",
+
+        rentalDetails: {
+            pricePerDay: 300,
+            securityDeposit: 500,
+            minimumRentalDays: 1,
+            maximumRentalDays: 5
+        },
+
+        location: {
+            campus: "QCU",
+            building: "Academic Building 2",
+            room: "Room 203"
+        },
+
+        availabilityStatus: "AVAILABLE",
+
+        approvalStatus: "APPROVED",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+
+    {
+        _id: projectorItemId,
+
+        ownerId: ownerId,
+
+        name: "Projector",
+        description: "Portable projector for presentations.",
+        category: "Electronics",
+
+        photos: [
+            "projector1.jpg"
+        ],
+
+        condition: "EXCELLENT",
+
+        rentalDetails: {
+            pricePerDay: 400,
+            securityDeposit: 800,
+            minimumRentalDays: 1,
+            maximumRentalDays: 3
+        },
+
+        location: {
+            campus: "QCU",
+            building: "Academic Building 1",
+            room: "Room 402"
+        },
+
+        availabilityStatus: "AVAILABLE",
+
+        approvalStatus: "APPROVED",
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+    }
+]);
+
+
+// ======================================================
+// 5. BOOKINGS
+// ======================================================
+
+const bookingId = ObjectId();
 
 db.bookings.insertOne({
-  _id: bookingId,
-  itemId: itemId,
-  borrowerId: borrowerId,
-  ownerId: ownerId,
-  status: "CONFIRMED",
-  startDate: new Date(),
-  endDate: new Date(),
-  createdAt: new Date(),
-  updatedAt: new Date()
+    _id: bookingId,
+
+    itemId: laptopItemId,
+
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+
+    startDate: new Date("2026-11-15"),
+    endDate: new Date("2026-11-17"),
+
+    quantity: 1,
+
+    pricePerDay: 500,
+    totalAmount: 1000,
+
+    status: "PENDING",
+
+    purpose: "School project",
+
+    pickupLocation: {
+        campus: "QCU",
+        building: "Academic Building 1",
+        room: "Room 401"
+    },
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 6. PAYMENTS
+// ======================================================
+
+const paymentId = ObjectId();
 
 db.payments.insertOne({
-  _id: paymentId,
-  bookingId: bookingId,
-  payerId: borrowerId,
-  amount: 50,
-  method: "GCASH",
-  status: "PAID",
-  paidAt: new Date()
+    _id: paymentId,
+
+    bookingId: bookingId,
+
+    payerId: borrowerId,
+
+    amount: 1000,
+
+    paymentMethod: "GCASH",
+
+    paymentProvider: "PAYMONGO",
+
+    transactionReference: "PMNG-TEST-001",
+
+    status: "PENDING",
+
+    paidAt: null,
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 7. HANDOVERS
+// ======================================================
+
+const handoverId = ObjectId();
 
 db.handovers.insertOne({
-  _id: handoverId,
-  bookingId: bookingId,
-  itemId: itemId,
-  ownerId: ownerId,
-  borrowerId: borrowerId,
-  status: "COMPLETED",
-  handedOverAt: new Date()
+    _id: handoverId,
+
+    bookingId: bookingId,
+
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+
+    handoverType: "PICKUP",
+
+    pickupLocation: {
+        campus: "QCU",
+        building: "Academic Building 1",
+        room: "Room 401"
+    },
+
+    scheduledAt: new Date("2026-11-15T09:00:00"),
+
+    status: "PENDING",
+
+    ownerConfirmed: false,
+    borrowerConfirmed: false,
+
+    notes: null,
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 8. RENTALS
+// ======================================================
+
+const rentalId = ObjectId();
 
 db.rentals.insertOne({
-  _id: rentalId,
-  bookingId: bookingId,
-  itemId: itemId,
-  ownerId: ownerId,
-  borrowerId: borrowerId,
-  status: "ACTIVE",
-  startedAt: new Date(),
-  dueDate: new Date()
+    _id: rentalId,
+
+    bookingId: bookingId,
+    itemId: laptopItemId,
+
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+
+    startDate: new Date("2026-11-15"),
+    expectedReturnDate: new Date("2026-11-17"),
+
+    actualReturnDate: null,
+
+    status: "ACTIVE",
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 9. RETURNS
+// ======================================================
 
 db.returns.insertOne({
-  _id: returnId,
-  rentalId: rentalId,
-  bookingId: bookingId,
-  itemId: itemId,
-  borrowerId: borrowerId,
-  status: "COMPLETED",
-  conditionOnReturn: "GOOD",
-  returnedAt: new Date()
+    _id: ObjectId(),
+
+    rentalId: rentalId,
+    bookingId: bookingId,
+
+    returnedBy: borrowerId,
+
+    returnDate: null,
+
+    conditionBefore: "GOOD",
+    conditionAfter: null,
+
+    damageReported: false,
+    damageDescription: null,
+
+    lateReturn: false,
+    lateFee: 0,
+
+    status: "PENDING",
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 10. DISPUTES
+// ======================================================
 
 db.disputes.insertOne({
-  _id: disputeId,
-  bookingId: bookingId,
-  itemId: itemId,
-  raisedBy: borrowerId,
-  againstUserId: ownerId,
-  reason: "Sample dispute",
-  description: "Sample dispute for testing",
-  status: "OPEN",
-  createdAt: new Date()
+    _id: ObjectId(),
+
+    bookingId: bookingId,
+
+    reportedBy: borrowerId,
+
+    againstUserId: ownerId,
+
+    reason: "ITEM_NOT_AS_DESCRIBED",
+
+    description: "The item condition did not match the listing.",
+
+    evidence: [
+        "evidence1.jpg"
+    ],
+
+    status: "OPEN",
+
+    resolvedBy: null,
+    resolution: null,
+    resolvedAt: null,
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 11. NO-SHOW INCIDENTS
+// ======================================================
 
 db.noShowIncidents.insertOne({
-  _id: noShowId,
-  bookingId: bookingId,
-  userId: borrowerId,
-  reason: "Borrower did not appear for scheduled handover",
-  status: "RECORDED",
-  createdAt: new Date()
+    _id: ObjectId(),
+
+    bookingId: bookingId,
+
+    reportedBy: ownerId,
+
+    reportedUserId: borrowerId,
+
+    reason: "Borrower did not arrive for pickup.",
+
+    status: "PENDING",
+
+    reviewedBy: null,
+    reviewedAt: null,
+
+    createdAt: new Date()
 });
+
+
+// ======================================================
+// 12. RATINGS
+// ======================================================
 
 db.ratings.insertOne({
-  _id: ratingId,
-  bookingId: bookingId,
-  reviewerId: borrowerId,
-  reviewedUserId: ownerId,
-  rating: 5,
-  comment: "Good transaction",
-  createdAt: new Date()
+    _id: ObjectId(),
+
+    bookingId: bookingId,
+
+    reviewerId: borrowerId,
+    reviewedUserId: ownerId,
+
+    rating: 5,
+
+    comment: "Smooth transaction and good item condition.",
+
+    createdAt: new Date()
 });
+
+
+// ======================================================
+// 13. ACCOUNT RESTRICTIONS
+// ======================================================
 
 db.accountRestrictions.insertOne({
-  _id: restrictionId,
-  userId: borrowerId,
-  type: "WARNING",
-  reason: "Sample restriction",
-  status: "ACTIVE",
-  createdAt: new Date(),
-  createdBy: adminId
+    _id: ObjectId(),
+
+    userId: borrowerId,
+
+    restrictionType: "WARNING",
+
+    reason: "Test warning",
+
+    status: "ACTIVE",
+
+    startDate: new Date(),
+    endDate: null,
+
+    createdBy: adminId,
+
+    createdAt: new Date(),
+    updatedAt: new Date()
 });
+
+
+// ======================================================
+// 14. AUDIT LOGS
+// ======================================================
 
 db.auditLogs.insertOne({
-  _id: auditLogId,
-  userId: adminId,
-  action: "SEED_DATABASE",
-  targetCollection: "UniShare",
-  targetId: ownerId,
-  description: "Initial UniShare database seed",
-  createdAt: new Date()
+    _id: ObjectId(),
+
+    userId: adminId,
+
+    action: "CREATE_TEST_DATA",
+
+    entityType: "DATABASE",
+
+    entityId: null,
+
+    details: {
+        description: "Initial UniShare database seed."
+    },
+
+    ipAddress: "127.0.0.1",
+
+    createdAt: new Date()
 });
 
+
+// ======================================================
+// 15. INDEXES
+// ======================================================
+
+// USERS
 db.users.createIndex(
-  { schoolEmail: 1 },
-  { unique: true }
+    { schoolEmail: 1 },
+    { unique: true }
 );
 
-db.items.createIndex(
-  { ownerId: 1 }
+db.users.createIndex(
+    { studentNumber: 1 },
+    { unique: true, sparse: true }
 );
 
-db.bookings.createIndex(
-  { borrowerId: 1 }
-);
+db.users.createIndex({
+    role: 1,
+    status: 1,
+    verificationStatus: 1
+});
 
-db.bookings.createIndex(
-  { itemId: 1 }
-);
 
-db.bookings.createIndex(
-  { ownerId: 1 }
-);
+// VERIFICATION
+db.verificationApplications.createIndex({
+    userId: 1
+});
 
-db.payments.createIndex(
-  { bookingId: 1 }
-);
+db.verificationApplications.createIndex({
+    status: 1
+});
 
-db.handovers.createIndex(
-  { bookingId: 1 }
-);
 
-db.rentals.createIndex(
-  { bookingId: 1 }
-);
+// ITEMS
+db.items.createIndex({
+    ownerId: 1
+});
 
-db.returns.createIndex(
-  { rentalId: 1 }
-);
+db.items.createIndex({
+    category: 1
+});
 
-db.disputes.createIndex(
-  { bookingId: 1 }
-);
+db.items.createIndex({
+    availabilityStatus: 1
+});
 
-db.ratings.createIndex(
-  { bookingId: 1 }
-);
+db.items.createIndex({
+    approvalStatus: 1
+});
 
-db.accountRestrictions.createIndex(
-  { userId: 1 }
-);
+db.items.createIndex({
+    name: "text",
+    description: "text"
+});
 
-db.auditLogs.createIndex(
-  { userId: 1 }
-);
 
-print("UniShare database initialized successfully.");
+// BOOKINGS
+db.bookings.createIndex({
+    borrowerId: 1
+});
+
+db.bookings.createIndex({
+    ownerId: 1
+});
+
+db.bookings.createIndex({
+    itemId: 1
+});
+
+db.bookings.createIndex({
+    status: 1
+});
+
+db.bookings.createIndex({
+    startDate: 1,
+    endDate: 1
+});
+
+
+// PAYMENTS
+db.payments.createIndex({
+    bookingId: 1
+});
+
+db.payments.createIndex({
+    payerId: 1
+});
+
+db.payments.createIndex({
+    transactionReference: 1
+});
+
+
+// HANDOVERS
+db.handovers.createIndex({
+    bookingId: 1
+});
+
+
+// RENTALS
+db.rentals.createIndex({
+    bookingId: 1
+});
+
+db.rentals.createIndex({
+    borrowerId: 1
+});
+
+db.rentals.createIndex({
+    ownerId: 1
+});
+
+
+// RETURNS
+db.returns.createIndex({
+    rentalId: 1
+});
+
+
+// DISPUTES
+db.disputes.createIndex({
+    bookingId: 1
+});
+
+db.disputes.createIndex({
+    status: 1
+});
+
+
+// RATINGS
+db.ratings.createIndex({
+    reviewedUserId: 1
+});
+
+
+// AUDIT
+db.auditLogs.createIndex({
+    userId: 1
+});
+
+db.auditLogs.createIndex({
+    entityType: 1,
+    entityId: 1
+});
+
+db.auditLogs.createIndex({
+    createdAt: -1
+});
+
+
