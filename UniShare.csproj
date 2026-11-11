@@ -120,7 +120,8 @@
     <Compile Include="Controllers\ListingsController.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Controllers\MyListingsController.cs" />
-    <Compile Include="Controllers\SalesReportController.cs" />
+    <Compile Include="Controllers\MyRentalsController.cs" />
+    <Compile Include="Controllers\ReportsAnalyticsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -131,6 +132,7 @@
     <Compile Include="Models\ItemDetailsViewModel.cs" />
     <Compile Include="Models\ListingCreatedViewModel.cs" />
     <Compile Include="Models\ListingsviewModels.cs" />
+    <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Models\SampleItemData.cs" />
   </ItemGroup>
@@ -141,6 +143,8 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\img\placeholder.png" />
     <Content Include="Content\items.css" />
+    <Content Include="Content\MyRentals.css" />
+    <Content Include="Content\ReportsAnalytics.css" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
@@ -180,6 +184,8 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Content Include="Scripts\MyRentals.js" />
+    <Content Include="Scripts\ReportsAnalytics.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -211,7 +217,6 @@
     <Content Include="Views\Dashboard\Index.cshtml" />
     <Content Include="Views\Messages\Index.cshtml" />
     <Content Include="Views\MyListings\Index.cshtml" />
-    <Content Include="Views\SalesReport\Index.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
@@ -225,6 +230,8 @@
     <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
     <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
     <Content Include="Views\Shared\_AvailabilityModal.cshtml" />
+    <Content Include="Views\MyRentals\Index.cshtml" />
+    <Content Include="Views\ReportsAnalytics\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
