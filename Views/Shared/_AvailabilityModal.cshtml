@@ -5,6 +5,7 @@
 <div class="ua-overlay" id="avail-modal" aria-hidden="true"
      data-item-id="@Model.ItemId"
      data-item-name="@Model.Name"
+     data-request-url="@Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId })"
      data-booked="@string.Join(",", Model.BookedDates.Select(d => d.ToString("yyyy-MM-dd")))">
     <div class="ua-dialog-wrap">
         <div class="ua-dialog" role="dialog" aria-modal="true" aria-labelledby="av-title">

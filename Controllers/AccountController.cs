@@ -34,7 +34,7 @@ namespace UniShare.Controllers
                 Response.Cookies.Add(new HttpCookie(FormsAuthentication.FormsCookieName, FormsAuthentication.Encrypt(ticket))
                 { HttpOnly = true, Secure = Request.IsSecureConnection, SameSite = SameSiteMode.Lax });
                 if (!String.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
-                if (user.Role == "ADMIN") return RedirectToAction("StudentVerification", "Admin");
+                if (user.Role == "ADMIN") return RedirectToAction("Index", "AdminDashboard");
                 if (user.VerificationStatus == "APPROVED") return RedirectToAction("Index", "Dashboard");
                 return RedirectToAction("Status", "Verification");
             }
@@ -148,7 +148,7 @@ namespace UniShare.Controllers
             catch { return new HttpUnauthorizedResult(); }
         }
 
-        [HttpGet] public ActionResult Settings() { return View(); }
+        [HttpGet, Authorize] public ActionResult Settings() { return View(); }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Logout()

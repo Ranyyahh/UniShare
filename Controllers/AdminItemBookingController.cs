@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace UniShare.Controllers
 {
+    [Authorize(Roles = "ADMIN")]
     public class AdminItemBookingController : Controller
     {
         [HttpGet]

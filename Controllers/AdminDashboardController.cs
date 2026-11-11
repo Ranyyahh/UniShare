@@ -6,6 +6,7 @@ using System.Web.Mvc;
 
 namespace UniShare.Controllers
 {
+    [Authorize(Roles = "ADMIN")]
     public class AdminDashboardController : Controller
     {
         public ActionResult Index()

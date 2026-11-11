@@ -4,6 +4,7 @@ using UniShare.Models;
 
 namespace UniShare.Controllers
 {
+    [Authorize(Roles = "ADMIN")]
     public class DisputeManagementController : Controller
     {
         public ActionResult Index()

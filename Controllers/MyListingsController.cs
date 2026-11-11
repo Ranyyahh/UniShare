@@ -10,6 +10,7 @@ using UniShare.Services;
 
 namespace UniShare.Controllers
 {
+    [Authorize]
     public class MyListingsController : Controller
     {
         private static readonly object _lock = new object();

@@ -4,6 +4,7 @@ using UniShare.Models;
 
 namespace UniShare.Controllers
 {
+    [Authorize]
     public class MessagesController : Controller
     {
         public ActionResult Index()

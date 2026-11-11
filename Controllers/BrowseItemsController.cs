@@ -44,6 +44,7 @@ namespace UniShare.Controllers
         }
 
         [HttpGet]
+        [VerifiedStudent]
         public ActionResult RequestToRent(int id)
         {
             var item = SampleItemData.Get(id);
@@ -54,6 +55,7 @@ namespace UniShare.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [VerifiedStudent]
         public ActionResult RequestToRent(int id, DateTime handoverDate, string handoverTime, int duration, string notes)
         {
             var item = SampleItemData.Get(id);
@@ -71,6 +73,7 @@ namespace UniShare.Controllers
 
         // Compatibility endpoint for clients using the earlier single-step request.
         [HttpPost, ValidateAntiForgeryToken]
+        [VerifiedStudent]
         public ActionResult RequestRental(int id)
         {
             var item = SampleItemData.Get(id);

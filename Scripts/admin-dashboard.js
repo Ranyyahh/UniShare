@@ -37,32 +37,6 @@
             document.getElementById("cancelledTransactions").textContent = number(data.cancelledTransactions);
         }
 
-        function showToast(message) {
-            var toast = document.getElementById("dashboardToast");
-            toast.textContent = message;
-            toast.classList.add("visible");
-
-            window.setTimeout(function () {
-                toast.classList.remove("visible");
-            }, 2500);
-        }
-
-        var buttons = document.querySelectorAll("[data-placeholder]");
-
-        for (var i = 0; i < buttons.length; i++) {
-            buttons[i].addEventListener("click", function () {
-                showToast(this.getAttribute("data-placeholder") + " is ready for backend integration.");
-            });
-        }
-
-        /*
-         * Backend placeholder:
-         *
-         * fetch("/AdminDashboard/GetDashboardMetrics")
-         *     .then(function (response) { return response.json(); })
-         *     .then(updateDashboard);
-         */
-
         updateDashboard(dashboardData);
     });
 }());

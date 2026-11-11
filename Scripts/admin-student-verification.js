@@ -8,8 +8,8 @@
         var endpoint = page.dataset.endpoint;
         if (!endpoint) return;
 
-        var approveUrl = "/AdminStudentVerification/Approve";
-        var rejectUrl = "/AdminStudentVerification/Reject";
+        var approveUrl = page.dataset.approveUrl;
+        var rejectUrl = page.dataset.rejectUrl;
 
         var searchInput = document.getElementById("asvSearchInput");
         var statusSelect = document.getElementById("asvStatusSelect");

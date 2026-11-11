@@ -5,6 +5,7 @@ using UniShare.Models;
 
 namespace UniShare.Controllers
 {
+    [Authorize(Roles = "ADMIN")]
     public class TransactionPaymentRecordsController : Controller
     {
         // GET: TransactionPaymentRecords

@@ -3,6 +3,7 @@ using System.Web.Mvc;
 
 namespace UniShare.Controllers
 {
+    [Authorize]
     public class DashboardController : Controller
     {
         public ActionResult Index()

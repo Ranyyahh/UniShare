@@ -100,7 +100,7 @@
                     <div class="col-sm-6">
                         @if (ViewBag.IsStudentVerified == true)
                         {
-                            <button type="button" id="d-request" class="btn btn-brand w-100 py-2" @(Model.IsAvailable ? "" : "disabled")>Request to Rent <i class="bi bi-arrow-right ms-1"></i></button>
+                            <a id="d-rent-form" class="btn btn-brand w-100 py-2 @(Model.IsAvailable ? "" : "disabled")" href="@(Model.IsAvailable ? Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId }) : "#")" aria-disabled="@(!Model.IsAvailable)">Request to Rent <i class="bi bi-arrow-right ms-1"></i></a>
                         }
                         else if (ViewBag.IsAuthenticated == true)
                         {
@@ -108,9 +108,8 @@
                         }
                         else
                         {
-                            <a class="btn btn-outline-soft w-100 py-2" href="@Url.Action("Login", "Account", new { returnUrl = Request.RawUrl })">Sign in to request a rental</a>
+                        <a id="d-rent-form" class="btn btn-outline-soft w-100 py-2" href="@Url.Action("Login", "Account", new { returnUrl = Request.RawUrl })">Sign in to request a rental</a>
                         }
-                        <a id="d-rent-form" class="btn btn-brand w-100 py-2 @(Model.IsAvailable ? "" : "disabled")" href="@(Model.IsAvailable ? Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId }) : "#")" aria-disabled="@(!Model.IsAvailable)">Request to Rent <i class="bi bi-arrow-right ms-1"></i></a>
                     </div>
                 </div>
             </div>
@@ -127,7 +126,7 @@
                         <div class="fw-bold">@Model.Lender.Name</div>
                         <div class="small text-secondary">@Model.Lender.College &middot; @Model.Lender.Program</div>
                     </div>
-                    <button type="button" id="d-msg" class="btn btn-link btn-sm text-decoration-none fw-semibold"><i class="bi bi-chat-left-text me-1"></i>Message</button>
+                    <a id="d-msg" class="btn btn-link btn-sm text-decoration-none fw-semibold" href="@Url.Action("Index", "Messages")"><i class="bi bi-chat-left-text me-1"></i>Message</a>
                 </div>
                 <div class="d-flex flex-wrap gap-3 small mt-3 pt-3 border-top">
                     <span><i class="bi bi-star-fill" style="color:#f5a524"></i> <strong>@Model.Lender.Rating.ToString("0.0")</strong> (@Model.Lender.ReviewCount reviews)</span>
@@ -176,10 +175,5 @@
             });
         });
 
-        // Message lender (placeholder until chat exists)
-        var msg = document.getElementById("d-msg");
-        if (msg) msg.addEventListener("click", function () {
-            UniShareAvail.toast("Opening chat with @Model.Lender.Name...");
-        });
     </script>
 }

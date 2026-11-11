@@ -86,6 +86,7 @@ namespace UniShare.Controllers
         }
     }
 
+    [Authorize]
     public class MyRentalsController : Controller
     {
         // GET: /MyRentals or /MyRentals/Index

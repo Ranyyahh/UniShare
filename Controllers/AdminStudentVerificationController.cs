@@ -5,6 +5,7 @@ using System.Web.Mvc;
 
 namespace UniShare.Controllers
 {
+    [Authorize(Roles = "ADMIN")]
     public class AdminStudentVerificationController : Controller
     {
         [HttpGet]

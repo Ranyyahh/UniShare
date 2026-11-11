@@ -103,8 +103,8 @@
 
     /* ---- request ---- */
     function submitRequest() {
-        toast("Rental request sent for " + cfg.itemName + " on " + fmtShort(cal.sel) + ".");
-        // TODO: POST { itemId: cfg.itemId, date: cal.sel } to a controller action, e.g. /Items/RequestRental
+        if (!cfg.requestUrl || !cal.sel) return;
+        window.location.assign(cfg.requestUrl);
     }
 
     $("av-confirm").addEventListener("click", function () { hideModal(); submitRequest(); });

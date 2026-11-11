@@ -212,6 +212,7 @@ namespace UniShare.Controllers
         }
     }
 
+    [Authorize]
     public class ReportsAnalyticsController : Controller
     {
         private const string DateFormat = "yyyy-MM-dd";
