@@ -1,0 +1,615 @@
+db.system.js.drop();
+
+db.system.js.insertMany([
+
+    // --------------------------------------------------
+    // CREATE BOOKING
+    // --------------------------------------------------
+
+    {
+        _id: "createBooking",
+
+        value: function (
+            itemId,
+            borrowerId,
+            startDate,
+            endDate
+        ) {
+
+            const item = db.items.findOne({
+                _id: itemId,
+                approvalStatus: "APPROVED",
+                availabilityStatus: "AVAILABLE"
+            });
+
+            if (!item) {
+                return {
+                    success: false,
+                    message: "Item is not available."
+                };
+            }
+
+            const borrower = db.users.findOne({
+                _id: borrowerId,
+                role: "STUDENT",
+                status: "ACTIVE",
+                verificationStatus: "APPROVED"
+            });
+
+            if (!borrower) {
+                return {
+                    success: false,
+                    message: "Borrower is not approved or active."
+                };
+            }
+
+            const overlappingBooking = db.bookings.findOne({
+                itemId: itemId,
+
+                status: {
+                    $in: [
+                        "PENDING",
+                        "CONFIRMED",
+                        "PAID",
+                        "ACTIVE"
+                    ]
+                },
+
+                startDate: {
+                    $lt: new Date(endDate)
+                },
+
+                endDate: {
+                    $gt: new Date(startDate)
+                }
+            });
+
+            if (overlappingBooking) {
+                return {
+                    success: false,
+                    message: "Item is already booked during this period."
+                };
+            }
+
+            if (item.ownerId.equals(borrowerId)) {
+                return {
+                    success: false,
+                    message: "Owner cannot book their own item."
+                };
+            }
+
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            const millisecondsPerDay =
+                1000 * 60 * 60 * 24;
+
+            const rentalDays =
+                Math.ceil(
+                    (end - start) / millisecondsPerDay
+                );
+
+            const days =
+                rentalDays > 0 ? rentalDays : 1;
+
+            const totalAmount =
+                item.rentalDetails.pricePerDay * days;
+
+            const booking = {
+                _id: ObjectId(),
+
+                itemId: itemId,
+
+                ownerId: item.ownerId,
+                borrowerId: borrowerId,
+
+                startDate: start,
+                endDate: end,
+
+                quantity: 1,
+
+                pricePerDay:
+                    item.rentalDetails.pricePerDay,
+
+                totalAmount: totalAmount,
+
+                status: "PENDING",
+
+                purpose: null,
+
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            db.bookings.insertOne(booking);
+
+            db.auditLogs.insertOne({
+                _id: ObjectId(),
+
+                userId: borrowerId,
+
+                action: "CREATE_BOOKING",
+
+                entityType: "BOOKING",
+
+                entityId: booking._id,
+
+                details: {
+                    itemId: itemId,
+                    totalAmount: totalAmount
+                },
+
+                createdAt: new Date()
+            });
+
+            return {
+                success: true,
+                message: "Booking created successfully.",
+                bookingId: booking._id,
+                totalAmount: totalAmount
+            };
+        }
+    },
+
+
+    // --------------------------------------------------
+    // CONFIRM PAYMENT
+    // --------------------------------------------------
+
+    {
+        _id: "confirmPayment",
+
+        value: function (
+            paymentId,
+            transactionReference
+        ) {
+
+            const payment =
+                db.payments.findOne({
+                    _id: paymentId
+                });
+
+            if (!payment) {
+                return {
+                    success: false,
+                    message: "Payment not found."
+                };
+            }
+
+            if (payment.status === "PAID") {
+                return {
+                    success: false,
+                    message: "Payment already confirmed."
+                };
+            }
+
+            db.payments.updateOne(
+                {
+                    _id: paymentId
+                },
+                {
+                    $set: {
+                        status: "PAID",
+
+                        transactionReference:
+                            transactionReference,
+
+                        paidAt: new Date(),
+
+                        updatedAt: new Date()
+                    }
+                }
+            );
+
+            db.bookings.updateOne(
+                {
+                    _id: payment.bookingId,
+
+                    status: {
+                        $in: [
+                            "PENDING",
+                            "CONFIRMED"
+                        ]
+                    }
+                },
+                {
+                    $set: {
+                        status: "PAID",
+
+                        updatedAt: new Date()
+                    }
+                }
+            );
+
+            db.auditLogs.insertOne({
+                _id: ObjectId(),
+
+                userId: payment.payerId,
+
+                action: "PAYMENT_CONFIRMED",
+
+                entityType: "PAYMENT",
+
+                entityId: paymentId,
+
+                details: {
+                    transactionReference:
+                        transactionReference
+                },
+
+                createdAt: new Date()
+            });
+
+            return {
+                success: true,
+                message: "Payment confirmed successfully."
+            };
+        }
+    },
+
+
+    // --------------------------------------------------
+    // CANCEL BOOKING
+    // --------------------------------------------------
+
+    {
+        _id: "cancelBooking",
+
+        value: function (
+            bookingId,
+            userId,
+            reason
+        ) {
+
+            const booking =
+                db.bookings.findOne({
+                    _id: bookingId
+                });
+
+            if (!booking) {
+                return {
+                    success: false,
+                    message: "Booking not found."
+                };
+            }
+
+            if (
+                !booking.borrowerId.equals(userId) &&
+                !booking.ownerId.equals(userId)
+            ) {
+                return {
+                    success: false,
+                    message: "Unauthorized cancellation."
+                };
+            }
+
+            if (
+                [
+                    "COMPLETED",
+                    "CANCELLED"
+                ].includes(booking.status)
+            ) {
+                return {
+                    success: false,
+                    message:
+                        "Booking cannot be cancelled."
+                };
+            }
+
+            db.bookings.updateOne(
+                {
+                    _id: bookingId
+                },
+                {
+                    $set: {
+                        status: "CANCELLED",
+
+                        cancellationReason:
+                            reason,
+
+                        cancelledAt:
+                            new Date(),
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.items.updateOne(
+                {
+                    _id: booking.itemId
+                },
+                {
+                    $set: {
+                        availabilityStatus:
+                            "AVAILABLE",
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.auditLogs.insertOne({
+                _id: ObjectId(),
+
+                userId: userId,
+
+                action: "CANCEL_BOOKING",
+
+                entityType: "BOOKING",
+
+                entityId: bookingId,
+
+                details: {
+                    reason: reason
+                },
+
+                createdAt: new Date()
+            });
+
+            return {
+                success: true,
+                message: "Booking cancelled successfully."
+            };
+        }
+    },
+
+
+    // --------------------------------------------------
+    // COMPLETE BOOKING
+    // --------------------------------------------------
+
+    {
+        _id: "completeBooking",
+
+        value: function (bookingId, userId) {
+
+            const booking =
+                db.bookings.findOne({
+                    _id: bookingId
+                });
+
+            if (!booking) {
+                return {
+                    success: false,
+                    message: "Booking not found."
+                };
+            }
+
+            if (
+                !booking.ownerId.equals(userId) &&
+                !booking.borrowerId.equals(userId)
+            ) {
+                return {
+                    success: false,
+                    message: "Unauthorized."
+                };
+            }
+
+            if (
+                booking.status !== "ACTIVE" &&
+                booking.status !== "READY_FOR_RETURN"
+            ) {
+                return {
+                    success: false,
+                    message:
+                        "Booking is not ready for completion."
+                };
+            }
+
+            db.bookings.updateOne(
+                {
+                    _id: bookingId
+                },
+                {
+                    $set: {
+                        status: "COMPLETED",
+
+                        completedAt:
+                            new Date(),
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.items.updateOne(
+                {
+                    _id: booking.itemId
+                },
+                {
+                    $set: {
+                        availabilityStatus:
+                            "AVAILABLE",
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.rentals.updateOne(
+                {
+                    bookingId: bookingId
+                },
+                {
+                    $set: {
+                        status: "COMPLETED",
+
+                        actualReturnDate:
+                            new Date(),
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.auditLogs.insertOne({
+                _id: ObjectId(),
+
+                userId: userId,
+
+                action: "COMPLETE_BOOKING",
+
+                entityType: "BOOKING",
+
+                entityId: bookingId,
+
+                createdAt: new Date()
+            });
+
+            return {
+                success: true,
+                message: "Booking completed successfully."
+            };
+        }
+    },
+
+
+    // --------------------------------------------------
+    // APPROVE STUDENT
+    // --------------------------------------------------
+
+    {
+        _id: "approveStudent",
+
+        value: function (
+            applicationId,
+            adminUserId
+        ) {
+
+            const application =
+                db.verificationApplications.findOne({
+                    _id: applicationId,
+
+                    status: "PENDING"
+                });
+
+            if (!application) {
+                return {
+                    success: false,
+                    message:
+                        "Verification application not found."
+                };
+            }
+
+            const admin =
+                db.users.findOne({
+                    _id: adminUserId,
+                    role: "ADMIN",
+                    status: "ACTIVE"
+                });
+
+            if (!admin) {
+                return {
+                    success: false,
+                    message: "Unauthorized."
+                };
+            }
+
+            db.users.updateOne(
+                {
+                    _id: application.userId
+                },
+                {
+                    $set: {
+                        status: "ACTIVE",
+
+                        verificationStatus:
+                            "APPROVED",
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.verificationApplications.updateOne(
+                {
+                    _id: applicationId
+                },
+                {
+                    $set: {
+                        status: "APPROVED",
+
+                        reviewedBy:
+                            adminUserId,
+
+                        reviewedAt:
+                            new Date(),
+
+                        updatedAt:
+                            new Date()
+                    }
+                }
+            );
+
+            db.auditLogs.insertOne({
+                _id: ObjectId(),
+
+                userId:
+                    adminUserId,
+
+                action:
+                    "APPROVE_STUDENT",
+
+                entityType:
+                    "USER",
+
+                entityId:
+                    application.userId,
+
+                createdAt:
+                    new Date()
+            });
+
+            return {
+                success: true,
+                message:
+                    "Student approved successfully."
+            };
+        }
+    }
+
+]);
+
+
+// ======================================================
+// 17. LOAD STORED FUNCTIONS
+// ======================================================
+
+// IMPORTANT:
+// system.js functions can be loaded using:
+
+// db.loadServerScripts();
+
+
+// ======================================================
+// 18. TEST QUERIES
+// ======================================================
+
+print("=======================================");
+print("UNISHARE DATABASE CREATED");
+print("=======================================");
+
+print("Users:");
+print(db.users.countDocuments());
+
+print("Items:");
+print(db.items.countDocuments());
+
+print("Bookings:");
+print(db.bookings.countDocuments());
+
+print("Payments:");
+print(db.payments.countDocuments());
+
+print("=======================================");
+print("Collections:");
+print(db.getCollectionNames());
+
+print("=======================================");

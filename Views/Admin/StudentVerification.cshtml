@@ -1,3 +1,35 @@
-@{ ViewBag.Title = "Student Verification"; }
-<h1>Student Verification</h1>
-<p>Pending, approved, and rejected student verification records will appear here.</p>
+@model IEnumerable<UniShare.Models.VerificationReviewViewModel>
+@{ ViewBag.Title = "Student Verification"; Layout = "~/Views/Shared/_Layout.cshtml"; }
+<main class="container verification-admin">
+    <h1>Student Verification</h1>
+    <p>Review student ID and registration documents. Only approved students can use rental features.</p>
+    @if (ViewBag.DatabaseUnavailable == true) { <div class="alert alert-danger" role="alert">Verification records are unavailable. Check the MongoDB connection.</div> }
+    @if (TempData["ReviewError"] != null) { <div class="alert alert-danger" role="alert">@TempData["ReviewError"]</div> }
+    <nav class="verification-filters" aria-label="Filter applications">
+        @foreach (var status in new[] { "PENDING", "APPROVED", "REJECTED", "RETURNED_FOR_CORRECTION", "ALL" })
+        { <a class="btn btn-default" href="@Url.Action("StudentVerification", new { status = status })">@status.Replace("_", " ")</a> }
+    </nav>
+    @if (!Model.Any()) { <p class="alert alert-info">No applications found for this status.</p> }
+    @foreach (var item in Model)
+    {
+        <section class="verification-application panel panel-default">
+            <div class="panel-heading"><strong>@item.StudentName</strong> <span class="label label-info">@item.Status.Replace("_", " ")</span><span class="pull-right">@item.SubmittedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span></div>
+            <div class="panel-body">
+                <p><strong>Email:</strong> @item.SchoolEmail &nbsp; <strong>Student ID:</strong> @item.StudentIdNumber &nbsp; <strong>Program:</strong> @item.Program &nbsp; <strong>Year:</strong> @item.YearLevel</p>
+                <p><a class="btn btn-default" target="_blank" rel="noopener" href="@Url.Action("Document", "Verification", new { id = item.Id, kind = "id" })">View school ID</a>
+                   <a class="btn btn-default" target="_blank" rel="noopener" href="@Url.Action("Document", "Verification", new { id = item.Id, kind = "photo" })">View 1×1 photo</a>
+                   <a class="btn btn-default" target="_blank" rel="noopener" href="@Url.Action("Document", "Verification", new { id = item.Id, kind = "form" })">View registration form</a></p>
+                @using (Html.BeginForm("ReviewVerification", "Admin", FormMethod.Post, new { @class = "verification-review-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <label for="notes-@item.Id">Review notes / correction request</label>
+                    <textarea id="notes-@item.Id" name="reviewNotes" class="form-control" rows="2" maxlength="1000">@item.ReviewNotes</textarea>
+                    <button class="btn btn-success" name="decision" value="APPROVED" type="submit">Approve</button>
+                    <button class="btn btn-warning" name="decision" value="RETURNED_FOR_CORRECTION" type="submit">Return for correction</button>
+                    <button class="btn btn-danger" name="decision" value="REJECTED" type="submit">Reject</button>
+                }
+            </div>
+        </section>
+    }
+</main>
