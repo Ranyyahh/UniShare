@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -6,20 +6,30 @@
     <title>@ViewBag.Title - UniShare</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    @RenderSection("Styles", required: false)
 </head>
 <body>
-    @Html.Partial("_Header")
+        @Html.Partial("_Header")
     <main class="site-main" id="main-content">
         @RenderBody()
     </main>
     @Html.Partial("_Footer")
 
-    @* Messages + Notifications pop-up windows (opened from the navbar icons) *@
-    @Html.Partial("_HeaderModals")
+    <div class="account-modal" data-account-modal data-profile-url="@Url.Action("Profile", "Account")" aria-hidden="true" hidden>
+        <div class="account-modal__backdrop" data-account-close></div>
+        <section class="account-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="account-modal-title" tabindex="-1" data-account-dialog>
+            <header class="account-modal__header">
+                <div><span class="account-modal__eyebrow">PROFILE</span><h2 id="account-modal-title">My Account</h2></div>
+                <button class="account-modal__close" type="button" aria-label="Close My Account" data-account-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            </header>
+            <div class="account-modal__body" data-account-profile aria-live="polite">
+                <div class="account-profile-loading"><span class="account-avatar account-avatar--large" aria-hidden="true">?</span><span>Loading profile…</span></div>
+            </div>
+        </section>
+    </div>
 
     @Scripts.Render("~/bundles/jquery")
-    @{ string popupsUrl = Url.Content("~/Scripts/unishare-popups.js") + "?v=" + System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Scripts/unishare-popups.js")).Ticks; }
-    <script src="@popupsUrl"></script>
+    <script src="@Url.Content("~/Scripts/account-menu.js")"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

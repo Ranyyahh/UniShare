@@ -112,19 +112,33 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\BorrowedItemsController.cs" />
     <Compile Include="Controllers\BrowseItemsController.cs" />
+    <Compile Include="Controllers\ChatroomController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\ItemsController.cs" />
+    <Compile Include="Controllers\ListingsController.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Controllers\MyListingsController.cs" />
     <Compile Include="Controllers\MyRentalsController.cs" />
     <Compile Include="Controllers\NotificationsController.cs" />
+    <Compile Include="Controllers\ReportsAnalyticsController.cs" />
     <Compile Include="Controllers\SalesReportController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Models.cs" />
+    <Compile Include="Models\BrowseItemsViewModel.cs" />
+    <Compile Include="Models\CreateListingViewModel.cs" />
+    <Compile Include="Models\DashboardViewModels.cs" />
+    <Compile Include="Models\EditListingViewModel.cs" />
+    <Compile Include="Models\ItemDetailsViewModel.cs" />
+    <Compile Include="Models\ListingCreatedViewModel.cs" />
+    <Compile Include="Models\ListingsviewModels.cs" />
+    <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
+    <Compile Include="Models\SampleItemData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +151,16 @@
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\Site.css" />
+    <Content Include="Content\MyRentals.css" />
+    <Content Include="Content\ReportsAnalytics.css" />
+    <Content Include="Content\auth.css" />
+    <Content Include="Content\chatroom.css" />
+    <Content Include="Content\items.css" />
+    <Content Include="Content\img\placeholder.png" />
+    <Content Include="Content\images\casio-fx991ex.jpg" />
+    <Content Include="Content\images\engineering-mechanics-statics.jpg" />
+    <Content Include="Content\images\molten-gg7x-basketball.jpg" />
+    <Content Include="Content\images\rotring-isograph-pen-set.jpg" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\bootstrap-grid.css.map" />
@@ -154,6 +178,12 @@
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\borrowed-items.js" />
+    <Content Include="Scripts\MyRentals.js" />
+    <Content Include="Scripts\ReportsAnalytics.js" />
+    <Content Include="Scripts\account-menu.js" />
+    <Content Include="Scripts\auth-forms.js" />
+    <Content Include="Scripts\availability.js" />
+    <Content Include="Scripts\chatroom.js" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />
@@ -167,22 +197,42 @@
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Scripts\unishare-popups.js" />
     <Content Include="Web.config" />
-    <Content Include="Views\Account\Profile.cshtml" />
+    <Content Include="Views\Account\Login.cshtml" />
+    <Content Include="Views\Account\Register.cshtml" />
+    <Content Include="Views\Account\Settings.cshtml" />
+    <Content Include="Views\Admin\DisputeReports.cshtml" />
+    <Content Include="Views\Admin\Index.cshtml" />
+    <Content Include="Views\Admin\ItemListings.cshtml" />
+    <Content Include="Views\Admin\ReportsAndAnalytics.cshtml" />
+    <Content Include="Views\Admin\StudentVerification.cshtml" />
     <Content Include="Views\BrowseItems\Index.cshtml" />
+    <Content Include="Views\BrowseItems\ItemDetails.cshtml" />
+    <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
+    <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
+    <Content Include="Views\Chatroom\Chatroom.cshtml" />
     <Content Include="Views\Dashboard\Index.cshtml" />
+    <Content Include="Views\Home\About.cshtml" />
+    <Content Include="Views\Home\Contact.cshtml" />
+    <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Home\Register.cshtml" />
     <Content Include="Views\Messages\Index.cshtml" />
-    <Content Include="Views\MyListings\Create.cshtml" />
+    <Content Include="Views\MyListings\CreateListing.cshtml" />
+    <Content Include="Views\MyListings\Created.cshtml" />
+    <Content Include="Views\MyListings\Edit.cshtml" />
+    <Content Include="Views\MyListings\EditListing.cshtml" />
     <Content Include="Views\MyListings\Index.cshtml" />
+    <Content Include="Views\MyListings\ItemListings.cshtml" />
+    <Content Include="Views\MyListings\_DeleteListingModal.cshtml" />
     <Content Include="Views\MyRentals\Index.cshtml" />
+    <Content Include="Views\ReportsAnalytics\Index.cshtml" />
     <Content Include="Views\Notifications\Index.cshtml" />
     <Content Include="Views\SalesReport\Index.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
-    <Content Include="Views\Shared\_Flash.cshtml" />
     <Content Include="Views\Shared\_Footer.cshtml" />
     <Content Include="Views\Shared\_Header.cshtml" />
-    <Content Include="Views\Shared\_HeaderModals.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\Shared\_StatusBadge.cshtml" />
+    <Content Include="Views\Shared\_AuthLayout.cshtml" />
+    <Content Include="Views\Shared\_AvailabilityModal.cshtml" />
     <Content Include="Views\Web.config" />
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Scripts\bootstrap.bundle.js.map" />
@@ -201,7 +251,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Content\images\items\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

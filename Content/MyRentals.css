@@ -1,0 +1,3361 @@
+﻿/* ==========================================================================
+   UniShare - MyRentals Stylesheet
+   Scoped strictly to .my-rentals-page (all modals live inside it)
+   ========================================================================== */
+/* Page Container */
+.my-rentals-page {
+    width: 100%;
+    margin: 0 auto;
+    color: var(--text-primary, #0f172a);
+    font-family: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   A. Page Header
+   -------------------------------------------------------------------------- */
+.my-rentals-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.my-rentals-header__title-group {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Refresh button */
+.my-rentals-btn-refresh {
+    flex: 0 0 auto;
+    height: 40px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #1e293b);
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+    .my-rentals-btn-refresh svg {
+        width: 16px;
+        height: 16px;
+        color: #64748b;
+        transition: transform 300ms ease, color 150ms ease;
+    }
+
+    .my-rentals-btn-refresh:hover,
+    .my-rentals-btn-refresh:focus {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: var(--brand, #4f46e5);
+    }
+
+        .my-rentals-btn-refresh:hover svg,
+        .my-rentals-btn-refresh:focus svg {
+            color: var(--brand, #4f46e5);
+            transform: rotate(60deg);
+        }
+
+    .my-rentals-btn-refresh:active {
+        transform: scale(0.98);
+    }
+
+    .my-rentals-btn-refresh.is-loading {
+        cursor: progress;
+        pointer-events: none;
+    }
+
+        .my-rentals-btn-refresh.is-loading svg {
+            color: var(--brand, #4f46e5);
+            animation: myRentalsSpin 700ms linear infinite;
+        }
+
+@keyframes myRentalsSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.my-rentals-header__title {
+    margin: 0 0 6px 0;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary, #0f172a);
+    line-height: 1.2;
+}
+
+.my-rentals-header__description {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary, #475569);
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   B. Summary Cards
+   -------------------------------------------------------------------------- */
+.my-rentals-summary {
+    /* Same card design tokens as the Reports & Analytics overview cards */
+    --rp-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 8px rgba(15, 23, 42, 0.04);
+    --rp-shadow-hover: 0 6px 18px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.05);
+    --rp-ease: cubic-bezier(0.22, 0.8, 0.28, 1);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@keyframes myRentalsCardRise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.my-rentals-card {
+    /* Display-only information cards: not interactive, so no pointer cursor or button styling */
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 104px;
+    margin: 0;
+    overflow: hidden;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    background: #ffffff;
+    background: linear-gradient(135deg, #ffffff 55%, color-mix(in srgb, var(--card-accent, #cbd5e1) 7%, #ffffff) 100%);
+    border: 1px solid var(--border, #e2e8f0);
+    border-top: 3px solid var(--card-accent, #cbd5e1);
+    border-radius: 12px;
+    box-shadow: var(--rp-shadow);
+    transition: transform 220ms var(--rp-ease), box-shadow 220ms var(--rp-ease);
+    animation: myRentalsCardRise 480ms var(--rp-ease) backwards; /* backwards: hover lift keeps working */
+}
+
+    .my-rentals-card:nth-child(2) {
+        animation-delay: 60ms;
+    }
+
+    .my-rentals-card:nth-child(3) {
+        animation-delay: 120ms;
+    }
+
+    .my-rentals-card:nth-child(4) {
+        animation-delay: 180ms;
+    }
+
+    .my-rentals-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--rp-shadow-hover);
+    }
+
+        .my-rentals-card:hover .my-rentals-card__icon {
+            transform: scale(1.08) rotate(-4deg);
+        }
+
+.my-rentals-card__content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.my-rentals-card__metric {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 8px;
+    row-gap: 0;
+}
+
+.my-rentals-card__hint {
+    font-size: 12px;
+    font-weight: 400;
+    color: #64748b;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.my-rentals-card__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary, #64748b);
+    line-height: 1.2;
+}
+
+.my-rentals-card__value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.my-rentals-card__icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    transition: transform 260ms var(--rp-ease);
+}
+
+    .my-rentals-card__icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+/* Card Accent Themes */
+.my-rentals-card--total {
+    --card-accent: #4f46e5;
+}
+
+.my-rentals-card--pending {
+    --card-accent: #d97706;
+}
+
+.my-rentals-card--active {
+    --card-accent: #7c3aed;
+}
+
+.my-rentals-card--attention {
+    --card-accent: #dc2626;
+}
+
+.my-rentals-card--pending .my-rentals-card__icon {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.my-rentals-card--total .my-rentals-card__icon {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.my-rentals-card--active .my-rentals-card__icon {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.my-rentals-card--attention .my-rentals-card__icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.my-rentals-card--completed .my-rentals-card__icon {
+    background: #d1fae5;
+    color: #059669;
+}
+
+/* --------------------------------------------------------------------------
+   C. Search & Filter Controls
+   -------------------------------------------------------------------------- */
+.my-rentals-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.my-rentals-controls__search-wrapper {
+    position: relative;
+    flex: 1 1 420px;
+    min-width: 0;
+}
+
+.my-rentals-controls__search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: #94a3b8;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+}
+
+    .my-rentals-controls__search-icon svg {
+        width: 17px;
+        height: 17px;
+    }
+
+.my-rentals-search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 34px 0 38px;
+    font-size: 13px;
+    color: var(--text-primary, #0f172a);
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 8px;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+    .my-rentals-search-input:hover {
+        border-color: #94a3b8;
+    }
+
+    .my-rentals-search-input:focus {
+        outline: none;
+        border-color: var(--brand, #4f46e5);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .my-rentals-search-input::placeholder {
+        color: #94a3b8;
+    }
+
+.my-rentals-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 18px;
+    line-height: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+    .my-rentals-search-clear:hover {
+        color: #475569;
+        background: #f1f5f9;
+    }
+
+.my-rentals-controls__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+/* Filter Button */
+.my-rentals-btn-filter {
+    height: 40px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #1e293b);
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+    .my-rentals-btn-filter svg {
+        width: 16px;
+        height: 16px;
+        color: #64748b;
+    }
+
+    .my-rentals-btn-filter:hover,
+    .my-rentals-btn-filter:focus {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: var(--brand, #4f46e5);
+    }
+
+        .my-rentals-btn-filter:hover svg,
+        .my-rentals-btn-filter:focus svg {
+            color: var(--brand, #4f46e5);
+        }
+
+    .my-rentals-btn-filter:active {
+        transform: scale(0.98);
+    }
+
+.my-rentals-filter-badge {
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    background: var(--brand, #4f46e5);
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* Booking Date Dropdown */
+.my-rentals-date-select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.my-rentals-date-select {
+    height: 40px;
+    padding: 0 32px 0 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #1e293b);
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 8px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+    .my-rentals-date-select:hover {
+        border-color: #94a3b8;
+    }
+
+    .my-rentals-date-select:focus {
+        outline: none;
+        border-color: var(--brand, #4f46e5);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+.my-rentals-select-chevron {
+    position: absolute;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    color: #64748b;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   D. Rentals Table Section
+   -------------------------------------------------------------------------- */
+.my-rentals-table-section {
+    background: #ffffff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.my-rentals-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.my-rentals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+    margin: 0;
+}
+
+    .my-rentals-table thead th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border, #e2e8f0);
+        white-space: nowrap;
+    }
+
+    .my-rentals-table tbody tr {
+        transition: background 120ms ease;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+        .my-rentals-table tbody tr:last-child {
+            border-bottom: 0;
+        }
+
+        .my-rentals-table tbody tr:hover,
+        .my-rentals-table tbody tr:focus-within {
+            background: #f8fafc;
+        }
+
+        .my-rentals-table tbody tr:active {
+            background: #f1f5f9;
+        }
+
+    .my-rentals-table tbody td:first-child {
+        box-shadow: inset 0 0 0 0 var(--brand, #4f46e5);
+        transition: box-shadow 140ms ease;
+    }
+
+    .my-rentals-table tbody tr:hover td:first-child,
+    .my-rentals-table tbody tr:focus-within td:first-child {
+        box-shadow: inset 3px 0 0 0 var(--brand, #4f46e5);
+    }
+
+    .my-rentals-table td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        color: var(--text-primary, #1e293b);
+    }
+
+/* Cell Specific Styles */
+.my-rentals-page .request-id-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    background: #f1f5f9;
+    border-radius: 6px;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.my-rentals-page .item-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.my-rentals-page .item-name {
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+    line-height: 1.3;
+}
+
+.my-rentals-page .item-category {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.my-rentals-page .borrower-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.my-rentals-page .borrower-avatar {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #4338ca;
+    font-size: 11px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+
+.my-rentals-page .borrower-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.my-rentals-page .borrower-name {
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.my-rentals-page .borrower-program {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.my-rentals-page .request-date-text {
+    font-size: 12px;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.my-rentals-page .schedule-text {
+    font-size: 12px;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.my-rentals-page .duration-text {
+    font-size: 13px;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.my-rentals-page .fee-text {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* Status Badges */
+.my-rentals-page .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+    .my-rentals-page .status-badge.sm {
+        padding: 2px 7px;
+        font-size: 11px;
+        margin-left: auto;
+    }
+
+.my-rentals-page .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Status Variants */
+.my-rentals-page .status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+    .my-rentals-page .status-pending .status-dot {
+        background: #f59e0b;
+    }
+
+.my-rentals-page .status-accepted {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+    .my-rentals-page .status-accepted .status-dot {
+        background: #6366f1;
+    }
+
+.my-rentals-page .status-ongoing {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+    .my-rentals-page .status-ongoing .status-dot {
+        background: #8b5cf6;
+    }
+
+.my-rentals-page .status-overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+    .my-rentals-page .status-overdue .status-dot {
+        background: #ef4444;
+    }
+
+.my-rentals-page .status-returned {
+    background: #ccfbf1;
+    color: #115e59;
+}
+
+    .my-rentals-page .status-returned .status-dot {
+        background: #14b8a6;
+    }
+
+.my-rentals-page .status-disputed {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+    .my-rentals-page .status-disputed .status-dot {
+        background: #f97316;
+    }
+
+.my-rentals-page .status-declined {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+    .my-rentals-page .status-declined .status-dot {
+        background: #94a3b8;
+    }
+
+.my-rentals-page .status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+    .my-rentals-page .status-completed .status-dot {
+        background: #10b981;
+    }
+
+/* Action Button */
+.my-rentals-btn-view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand, #4f46e5);
+    background: #ffffff;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 140ms ease;
+}
+
+    .my-rentals-btn-view:hover,
+    .my-rentals-btn-view:focus {
+        background: var(--brand, #4f46e5);
+        color: #ffffff;
+        border-color: var(--brand, #4f46e5);
+    }
+
+    .my-rentals-btn-view:active {
+        transform: scale(0.97);
+    }
+
+/* Empty State */
+.my-rentals-empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    background: #ffffff;
+}
+
+.my-rentals-empty-state__icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 14px;
+    color: #94a3b8;
+}
+
+    .my-rentals-empty-state__icon svg {
+        width: 48px;
+        height: 48px;
+    }
+
+.my-rentals-empty-state__title {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.my-rentals-empty-state__text {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: #64748b;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.my-rentals-empty-state__actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+   E. Pagination
+   -------------------------------------------------------------------------- */
+.my-rentals-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border, #e2e8f0);
+    font-size: 13px;
+    color: #475569;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.my-rentals-pagination__info strong {
+    color: #0f172a;
+}
+
+.my-rentals-pagination__controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.my-rentals-pagination__page-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.my-rentals-pagination__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 140ms ease;
+}
+
+    .my-rentals-pagination__btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .my-rentals-pagination__btn:hover:not(:disabled),
+    .my-rentals-pagination__btn:focus:not(:disabled) {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+
+    .my-rentals-pagination__btn:active:not(:disabled) {
+        transform: scale(0.97);
+    }
+
+    .my-rentals-pagination__btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f8fafc;
+    }
+
+/* --------------------------------------------------------------------------
+   5. Filter Modal
+   -------------------------------------------------------------------------- */
+.my-rentals-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    /* Hidden by default; .is-open fades it in and out */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 200ms ease, visibility 0s linear 200ms;
+}
+
+    .my-rentals-modal-overlay.is-open {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 200ms ease, visibility 0s linear 0s;
+    }
+
+.my-rentals-modal {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 14px;
+    box-shadow: 0 24px 40px -12px rgba(15, 23, 42, 0.22), 0 8px 16px -8px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease;
+}
+
+.my-rentals-modal-overlay.is-open .my-rentals-modal {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.my-rentals-modal--details {
+    max-width: 520px;
+}
+
+.my-rentals-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.my-rentals-modal__title {
+    margin: 0 0 4px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+}
+
+.my-rentals-modal__description {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary, #64748b);
+}
+
+.my-rentals-modal__close-btn {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 24px;
+    line-height: 1;
+    border-radius: 6px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+    margin-top: -2px;
+    margin-right: -6px;
+}
+
+    .my-rentals-modal__close-btn:hover,
+    .my-rentals-modal__close-btn:focus {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .my-rentals-modal__close-btn:active {
+        transform: scale(0.94);
+    }
+
+.my-rentals-modal__body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Details modal */
+.my-rentals-details-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -8px;
+}
+
+.my-rentals-details-field {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding: 0 8px 16px;
+    min-width: 0;
+}
+
+.my-rentals-details-field--full {
+    flex-basis: 100%;
+    max-width: 100%;
+}
+
+.my-rentals-details-field dt {
+    margin: 0 0 5px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.my-rentals-details-field dd {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-primary, #1e293b);
+    word-wrap: break-word;
+}
+
+.my-rentals-page .details-primary {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+    line-height: 1.35;
+}
+
+.my-rentals-page .details-secondary {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.my-rentals-page .details-fee {
+    font-weight: 700;
+}
+
+.my-rentals-modal__status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.my-rentals-modal__section-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+}
+
+.my-rentals-modal__count-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    color: #4338ca;
+    background: #e0e7ff;
+}
+
+.my-rentals-modal__checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.my-rentals-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+    margin: 0;
+    user-select: none;
+}
+
+    .my-rentals-checkbox-label:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .my-rentals-checkbox-label input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.my-rentals-page .checkbox-custom {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border: 1.5px solid #94a3b8;
+    border-radius: 4px;
+    background: #ffffff;
+    display: grid;
+    place-items: center;
+    transition: all 140ms ease;
+}
+
+.my-rentals-checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+    background: var(--brand, #4f46e5);
+    border-color: var(--brand, #4f46e5);
+}
+
+    .my-rentals-checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+        content: "";
+        width: 5px;
+        height: 9px;
+        border: solid #ffffff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        margin-top: -2px;
+    }
+
+.my-rentals-checkbox-label input[type="checkbox"]:indeterminate + .checkbox-custom {
+    background: var(--brand, #4f46e5);
+    border-color: var(--brand, #4f46e5);
+}
+
+    .my-rentals-checkbox-label input[type="checkbox"]:indeterminate + .checkbox-custom::after {
+        content: "";
+        width: 9px;
+        height: 2px;
+        background: #ffffff;
+        border-radius: 1px;
+    }
+
+.my-rentals-select-all {
+    margin-bottom: 8px;
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.my-rentals-checkbox-label input[type="checkbox"]:focus + .checkbox-custom {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.my-rentals-page .checkbox-text-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+}
+
+.my-rentals-page .checkbox-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.my-rentals-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border, #e2e8f0);
+}
+
+/* Button Component Utilities */
+.my-rentals-btn {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 140ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-rentals-btn-secondary {
+    background: #ffffff;
+    border-color: var(--border, #cbd5e1);
+    color: #334155;
+}
+
+    .my-rentals-btn-secondary:hover,
+    .my-rentals-btn-secondary:focus {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+
+.my-rentals-btn:active {
+    transform: scale(0.98);
+}
+
+.my-rentals-btn-primary {
+    background: var(--brand, #4f46e5);
+    border-color: var(--brand, #4f46e5);
+    color: #ffffff;
+}
+
+    .my-rentals-btn-primary:hover,
+    .my-rentals-btn-primary:focus {
+        background: var(--brand-hover, #4338ca);
+        border-color: var(--brand-hover, #4338ca);
+        color: #ffffff;
+    }
+
+/* --------------------------------------------------------------------------
+   Focus states (keyboard). Kept as separate rules: browsers without
+   :focus-visible ignore them and keep their default focus outline.
+   -------------------------------------------------------------------------- */
+.my-rentals-btn-refresh:focus-visible,
+.my-rentals-btn-filter:focus-visible,
+.my-rentals-btn-view:focus-visible,
+.my-rentals-pagination__btn:focus-visible,
+.my-rentals-btn:focus-visible,
+.my-rentals-modal__close-btn:focus-visible,
+.my-rentals-search-clear:focus-visible {
+    outline: 2px solid var(--brand, #4f46e5);
+    outline-offset: 2px;
+}
+
+.my-rentals-checkbox-label:focus-within {
+    border-color: var(--brand, #4f46e5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .my-rentals-page *,
+    .my-rentals-modal-overlay,
+    .my-rentals-modal-overlay * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+    .my-rentals-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .my-rentals-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .my-rentals-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .my-rentals-controls__search-wrapper {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .my-rentals-controls__actions {
+        justify-content: space-between;
+    }
+
+    .my-rentals-btn-refresh span {
+        display: none;
+    }
+
+    .my-rentals-btn-refresh {
+        width: 40px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .my-rentals-pagination {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .my-rentals-details-field {
+        flex-basis: 100%;
+        max-width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Status-Specific Rental Modals (rm-* namespace)
+   ========================================================================== */
+
+/* Large and small modal width variants */
+.my-rentals-modal--lg {
+    max-width: 580px;
+}
+
+.my-rentals-modal--sm {
+    max-width: 460px;
+}
+
+    /* Modal body max-height so tall modals scroll */
+    .my-rentals-modal--lg .my-rentals-modal__body,
+    .my-rentals-modal--sm .my-rentals-modal__body {
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+    }
+
+/* --------------------------------------------------------------------------
+   Modal Header Accent Variants
+   -------------------------------------------------------------------------- */
+.rm-header--warning {
+    border-bottom-color: #fde68a;
+    background: #fffbeb;
+}
+
+.rm-header--overdue {
+    border-bottom-color: #fca5a5;
+    background: #fff1f1;
+}
+
+/* Modal Status Badges (shown in header) */
+.rm-modal-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+
+.rm-modal-status-badge--warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.rm-modal-status-badge--overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.rm-modal-status-badge--ongoing {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.rm-modal-status-badge--returned {
+    background: #ccfbf1;
+    color: #115e59;
+}
+
+.rm-modal-status-badge--accepted {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.rm-modal-status-badge--declined {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.rm-modal-status-badge--disputed {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.rm-modal-status-badge--completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* --------------------------------------------------------------------------
+   Item Card (shared across modals)
+   -------------------------------------------------------------------------- */
+.rm-item-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    margin-bottom: 14px;
+}
+
+.rm-item-thumb {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #94a3b8;
+    display: grid;
+    place-items: center;
+}
+
+    .rm-item-thumb svg {
+        width: 28px;
+        height: 28px;
+    }
+
+.rm-item-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rm-item-category {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+
+.rm-item-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.rm-item-location {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.rm-item-rate {
+    flex: 0 0 auto;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.rm-fee-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.rm-fee-value--hr {
+    font-size: 18px;
+}
+
+.rm-fee-label {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   Borrower Row (shared)
+   -------------------------------------------------------------------------- */
+.rm-borrower-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.rm-borrower-avatar {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #4338ca;
+    font-size: 12px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+
+.rm-borrower-info {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.rm-borrower-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.rm-borrower-program {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.rm-verified-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #059669;
+    background: #d1fae5;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Section Label
+   -------------------------------------------------------------------------- */
+.rm-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin: 0 0 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Detail Grid (3-col)
+   -------------------------------------------------------------------------- */
+.rm-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rm-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.rm-detail-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    color: #94a3b8;
+    margin-top: 1px;
+}
+
+.rm-detail-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.rm-detail-value {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* --------------------------------------------------------------------------
+   Location Row
+   -------------------------------------------------------------------------- */
+.rm-location-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Return / Fee Row
+   -------------------------------------------------------------------------- */
+.rm-return-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.rm-return-fee {
+    margin-left: auto;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.rm-fee-large {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.rm-fee-large--overdue {
+    color: #dc2626;
+}
+
+/* --------------------------------------------------------------------------
+   Note Box
+   -------------------------------------------------------------------------- */
+.rm-note-box {
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   Footer split (decline left, accept right)
+   -------------------------------------------------------------------------- */
+.rm-footer-split {
+    justify-content: space-between !important;
+}
+
+/* --------------------------------------------------------------------------
+   Button Variants
+   -------------------------------------------------------------------------- */
+.rm-btn-accept {
+    background: var(--brand, #4f46e5);
+    border-color: var(--brand, #4f46e5);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .rm-btn-accept:hover,
+    .rm-btn-accept:focus {
+        background: #4338ca;
+        border-color: #4338ca;
+        color: #ffffff;
+    }
+
+.rm-btn-decline {
+    background: #ffffff;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .rm-btn-decline:hover,
+    .rm-btn-decline:focus {
+        background: #fff1f2;
+        border-color: #ef4444;
+        color: #b91c1c;
+    }
+
+.rm-btn-decline-confirm {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .rm-btn-decline-confirm:hover,
+    .rm-btn-decline-confirm:focus {
+        background: #b91c1c;
+        border-color: #b91c1c;
+        color: #ffffff;
+    }
+
+.rm-btn-report {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .rm-btn-report:hover,
+    .rm-btn-report:focus {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #1e293b;
+    }
+
+.rm-btn-report-dispute {
+    background: #ffffff;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .rm-btn-report-dispute:hover,
+    .rm-btn-report-dispute:focus {
+        background: #fff1f2;
+        border-color: #ef4444;
+        color: #b91c1c;
+    }
+
+/* --------------------------------------------------------------------------
+   Confirm Modal (Accept) — compact dialog
+   -------------------------------------------------------------------------- */
+.rm-confirm-body {
+    padding: 24px 24px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.rm-confirm-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin-bottom: 14px;
+}
+
+    .rm-confirm-icon svg {
+        width: 26px;
+        height: 26px;
+    }
+
+.rm-confirm-icon--accept {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.rm-confirm-title {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rm-confirm-text {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #475569;
+    max-width: 340px;
+}
+
+.rm-confirm-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.rm-confirm-summary-thumb {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 6px;
+    background: #e2e8f0;
+    color: #94a3b8;
+    display: grid;
+    place-items: center;
+}
+
+    .rm-confirm-summary-thumb svg {
+        width: 20px;
+        height: 20px;
+    }
+
+.rm-confirm-summary-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rm-confirm-summary-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+.rm-confirm-summary-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rm-confirm-summary-borrower {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.rm-confirm-detail-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.rm-confirm-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #334155;
+    text-align: left;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 6px;
+}
+
+    .rm-confirm-detail-row .rm-detail-label {
+        flex: 1;
+        font-size: 12px;
+        font-weight: 500;
+        color: #64748b;
+        text-transform: none;
+        letter-spacing: 0;
+        margin: 0;
+    }
+
+.rm-confirm-detail-val {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.rm-fee-accent {
+    color: var(--brand, #4f46e5);
+    font-weight: 700;
+}
+
+.rm-confirm-detail-row--fee .rm-confirm-detail-val {
+    font-size: 14px;
+}
+
+.rm-confirm-notice {
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+    max-width: 320px;
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   Decline Modal
+   -------------------------------------------------------------------------- */
+.rm-decline-summary {
+    display: flex;
+    gap: 20px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.rm-decline-summary-value {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.rm-decline-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+
+.rm-radio-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+    margin: 0;
+    user-select: none;
+}
+
+    .rm-radio-label:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .rm-radio-label input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+        .rm-radio-label input[type="radio"]:checked ~ .rm-radio-custom {
+            border-color: var(--brand, #4f46e5);
+            background: var(--brand, #4f46e5);
+        }
+
+            .rm-radio-label input[type="radio"]:checked ~ .rm-radio-custom::after {
+                content: "";
+                width: 6px;
+                height: 6px;
+                background: #ffffff;
+                border-radius: 50%;
+            }
+
+        .rm-radio-label input[type="radio"]:checked ~ .rm-radio-text strong {
+            color: var(--brand, #4f46e5);
+        }
+
+        .rm-radio-label input[type="radio"]:checked + .rm-radio-custom {
+            border-color: var(--brand, #4f46e5);
+            background: var(--brand, #4f46e5);
+        }
+
+            .rm-radio-label input[type="radio"]:checked + .rm-radio-custom::after {
+                content: "";
+                width: 6px;
+                height: 6px;
+                background: #ffffff;
+                border-radius: 50%;
+            }
+
+.rm-radio-custom {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border: 1.5px solid #94a3b8;
+    border-radius: 50%;
+    background: #ffffff;
+    display: grid;
+    place-items: center;
+    transition: all 140ms ease;
+    margin-top: 1px;
+}
+
+.rm-radio-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+    .rm-radio-text strong {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .rm-radio-text span {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+.rm-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #1e293b;
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 72px;
+    font-family: inherit;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    box-sizing: border-box;
+}
+
+    .rm-textarea:focus {
+        outline: none;
+        border-color: var(--brand, #4f46e5);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .rm-textarea::placeholder {
+        color: #94a3b8;
+    }
+
+/* --------------------------------------------------------------------------
+   Warning / Info notices
+   -------------------------------------------------------------------------- */
+.rm-warning-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #9a3412;
+    line-height: 1.5;
+}
+
+.rm-warning-notice--danger {
+    background: #fff1f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+.rm-notice-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    color: #f97316;
+    margin-top: 1px;
+}
+
+.rm-warning-notice--danger .rm-notice-icon {
+    color: #ef4444;
+}
+
+/* --------------------------------------------------------------------------
+   Countdown / Progress (Ongoing modal)
+   -------------------------------------------------------------------------- */
+.rm-countdown-section {
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    margin-top: 4px;
+}
+
+.rm-countdown-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.rm-countdown-time {
+    font-size: 36px;
+    font-weight: 800;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.rm-countdown-right {
+    text-align: right;
+    font-size: 12px;
+    color: #475569;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Progress Bar (shared)
+   -------------------------------------------------------------------------- */
+.rm-progress-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rm-progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.rm-progress-bar__fill {
+    height: 100%;
+    background: var(--brand, #4f46e5);
+    border-radius: 9999px;
+    transition: width 1s linear;
+}
+
+.rm-progress-bar__fill--overdue {
+    background: #ef4444;
+}
+
+.rm-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   Overdue Section
+   -------------------------------------------------------------------------- */
+.rm-overdue-section {
+    padding: 14px;
+    background: #fff1f1;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    margin-top: 4px;
+}
+
+.rm-overdue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.rm-overdue-pill {
+    font-size: 10px;
+    font-weight: 700;
+    color: #991b1b;
+    background: #fee2e2;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.rm-overdue-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.rm-overdue-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.rm-overdue-time {
+    font-size: 30px;
+    font-weight: 800;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #dc2626;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.rm-overdue-fee {
+    font-size: 24px;
+    font-weight: 800;
+    color: #dc2626;
+    letter-spacing: -0.02em;
+}
+
+.rm-overdue-sub {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.rm-progress-bar-wrap--overdue .rm-progress-labels {
+    color: #991b1b;
+}
+
+.rm-protection-notice {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Return Confirmation Notice Box
+   -------------------------------------------------------------------------- */
+.rm-return-confirmation-box {
+    padding: 12px 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    margin-top: 4px;
+}
+
+.rm-return-confirmation-box__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3a8a;
+    margin-bottom: 6px;
+}
+
+    .rm-return-confirmation-box__header .rm-notice-icon {
+        color: #3b82f6;
+    }
+
+.rm-return-confirmation-box__title {
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e3a8a;
+}
+
+.rm-return-confirmation-box__text {
+    margin: 0;
+    font-size: 12px;
+    color: #1e40af;
+    line-height: 1.55;
+}
+
+/* --------------------------------------------------------------------------
+   Dispute Category Tiles
+   -------------------------------------------------------------------------- */
+.rm-dispute-section {
+    margin-top: 4px;
+}
+
+.rm-dispute-hint {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0 0 10px;
+}
+
+.rm-dispute-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.rm-dispute-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 12px;
+    min-width: 76px;
+    background: #ffffff;
+    border: 1.5px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    transition: all 140ms ease;
+}
+
+    .rm-dispute-tile:hover {
+        border-color: var(--brand, #4f46e5);
+        background: #eef2ff;
+        color: var(--brand, #4f46e5);
+    }
+
+    .rm-dispute-tile.is-selected {
+        border-color: var(--brand, #4f46e5);
+        background: #eef2ff;
+        color: var(--brand, #4f46e5);
+    }
+
+    .rm-dispute-tile svg {
+        color: inherit;
+    }
+
+/* --------------------------------------------------------------------------
+   Evidence Upload
+   -------------------------------------------------------------------------- */
+.rm-evidence-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    margin-top: 14px;
+}
+
+.rm-evidence-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.rm-image-previews {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    min-height: 0;
+}
+
+.rm-image-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border, #e2e8f0);
+}
+
+    .rm-image-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.rm-image-preview-name {
+    font-size: 10px;
+    color: #64748b;
+    text-align: center;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rm-image-preview-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    background: rgba(15, 23, 42, 0.7);
+    color: #ffffff;
+    border: 0;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+}
+
+    .rm-image-preview-remove:hover {
+        background: #dc2626;
+    }
+
+.rm-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 140ms ease;
+    margin-bottom: 10px;
+}
+
+    .rm-upload-btn:hover,
+    .rm-upload-btn:focus {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #1e293b;
+    }
+
+    .rm-upload-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+/* --------------------------------------------------------------------------
+   Field error
+   -------------------------------------------------------------------------- */
+.rm-field-error {
+    display: block;
+    font-size: 11px;
+    color: #dc2626;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Batch 1 additions: request-id chip, item image, decline header, notices
+   -------------------------------------------------------------------------- */
+.rm-request-id {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: #4338ca;
+    background: #eef2ff;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
+.rm-item-thumb {
+    overflow: hidden;
+}
+
+    .rm-item-thumb img,
+    .rm-confirm-summary-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.rm-confirm-summary-thumb {
+    overflow: hidden;
+}
+
+.rm-section-label--spaced {
+    margin-top: 14px;
+}
+
+.rm-detail-label--spaced {
+    margin-top: 4px;
+}
+
+/* Decline modal: warning accent */
+.rm-modal--warning {
+    border-top: 4px solid #f59e0b;
+}
+
+.rm-header--warning {
+    align-items: flex-start;
+    gap: 12px;
+}
+
+    .rm-header--warning .my-rentals-modal__header-copy {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+.rm-decline-icon {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fef3c7;
+    color: #d97706;
+    display: grid;
+    place-items: center;
+}
+
+    .rm-decline-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+.rm-decline-summary {
+    flex-wrap: wrap;
+}
+
+    .rm-decline-summary > div {
+        min-width: 0;
+    }
+
+/* Accept modal: explanation of the result (positive tint) */
+.rm-confirm-result {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #065f46;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+}
+
+    .rm-confirm-result .rm-notice-icon {
+        color: #059669;
+    }
+
+/* Radio options: keep the hidden native input inside its label, show keyboard focus */
+.rm-radio-label {
+    position: relative;
+}
+
+    .rm-radio-label input[type="radio"]:focus + .rm-radio-custom {
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+    }
+
+    .rm-radio-label input[type="radio"]:checked ~ .rm-radio-text strong {
+        color: var(--brand, #4f46e5);
+    }
+
+.rm-radio-label--invalid {
+    border-color: #fca5a5;
+}
+
+.rm-btn-accept:active,
+.rm-btn-decline:active,
+.rm-btn-decline-confirm:active,
+.rm-btn-report:active,
+.rm-btn-report-dispute:active {
+    transform: scale(0.98);
+}
+
+.rm-btn-accept,
+.rm-btn-decline,
+.rm-btn-decline-confirm,
+.rm-btn-report,
+.rm-btn-report-dispute {
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+    .rm-btn-accept:focus-visible,
+    .rm-btn-decline:focus-visible,
+    .rm-btn-decline-confirm:focus-visible,
+    .rm-btn-report:focus-visible,
+    .rm-btn-report-dispute:focus-visible {
+        outline: 2px solid var(--brand, #4f46e5);
+        outline-offset: 2px;
+    }
+
+/* Ongoing countdown: finished state */
+.rm-countdown-time.is-complete {
+    color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive overrides for modals
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+    .my-rentals-modal--lg,
+    .my-rentals-modal--sm {
+        max-width: 100%;
+    }
+
+    .my-rentals-modal__footer {
+        flex-wrap: wrap;
+    }
+
+    .rm-item-card {
+        flex-wrap: wrap;
+    }
+
+    .rm-item-rate {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .rm-return-row {
+        flex-wrap: wrap;
+    }
+
+    .rm-countdown-row {
+        flex-wrap: wrap;
+    }
+
+    .rm-countdown-right {
+        text-align: left;
+    }
+
+    .rm-detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rm-overdue-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .rm-countdown-time {
+        font-size: 28px;
+    }
+
+    .rm-overdue-time {
+        font-size: 24px;
+    }
+}
+
+/* ==========================================================================
+   Overdue / Return / Dispute modals + shared modal refinements
+   ========================================================================== */
+
+/* --- Section separation: label with a hairline, used by every status modal --- */
+.my-rentals-modal__body .rm-section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .my-rentals-modal__body .rm-section-label::after {
+        content: "";
+        flex: 1 1 auto;
+        height: 1px;
+        background: var(--border, #e2e8f0);
+    }
+
+.my-rentals-modal__body .rm-section-label--flush::after,
+.my-rentals-modal__body .rm-overdue-header .rm-section-label::after {
+    display: none;
+}
+
+.rm-section-label--flush {
+    margin: 0;
+}
+
+.my-rentals-modal__header {
+    background: #ffffff;
+}
+
+.my-rentals-modal__footer {
+    flex-wrap: wrap;
+}
+
+/* --- Cards and rows: same radius and a faint shadow so sections read as separate blocks --- */
+.rm-item-card,
+.rm-borrower-row,
+.rm-return-row,
+.rm-decline-summary,
+.rm-note-box {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* --- Buttons: one hover / active / disabled behaviour for every modal button --- */
+.my-rentals-modal .my-rentals-btn {
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+    .my-rentals-modal .my-rentals-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+    }
+
+    .my-rentals-modal .my-rentals-btn:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
+        box-shadow: none;
+    }
+
+    .my-rentals-modal .my-rentals-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+.my-rentals-modal .rm-btn-accept:hover:not(:disabled),
+.my-rentals-modal .my-rentals-btn-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.32);
+}
+
+.my-rentals-modal .rm-btn-decline-confirm:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* --- Selected option feedback for the Decline reasons --- */
+.rm-radio-label.is-checked {
+    background: #eef2ff;
+    border-color: var(--brand, #4f46e5);
+}
+
+/* --- Footer with a left button and a right group (Return modal) --- */
+.rm-footer-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Overdue modal
+   -------------------------------------------------------------------------- */
+.rm-modal--overdue {
+    border-top: 4px solid #ef4444;
+}
+
+.rm-overdue-section {
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.08);
+}
+
+.rm-overdue-pill {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.rm-overdue-bar {
+    display: flex;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: #fee2e2;
+}
+
+.rm-overdue-bar__rental {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--brand, #4f46e5);
+    transition: width 600ms ease;
+}
+
+.rm-overdue-bar__late {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: #ef4444;
+    transition: width 600ms ease;
+}
+
+.rm-breakdown-list {
+    margin: 14px 0 0;
+    padding: 4px 12px;
+    background: #ffffff;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+}
+
+.rm-breakdown-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px dashed #fee2e2;
+    font-size: 12px;
+}
+
+    .rm-breakdown-row dt {
+        margin: 0;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .rm-breakdown-row dd {
+        margin: 0;
+        font-weight: 600;
+        color: #1e293b;
+        text-align: right;
+    }
+
+.rm-breakdown-row--total {
+    border-bottom: 0;
+    border-top: 1px solid #fecaca;
+}
+
+    .rm-breakdown-row--total dt {
+        font-weight: 700;
+        color: #991b1b;
+    }
+
+    .rm-breakdown-row--total dd {
+        font-size: 14px;
+        font-weight: 800;
+        color: #dc2626;
+    }
+
+.rm-breakdown-note {
+    margin: 10px 0 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #991b1b;
+}
+
+/* --------------------------------------------------------------------------
+   Return modal
+   -------------------------------------------------------------------------- */
+.rm-late-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: -6px 0 16px;
+    background: #fff1f1;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+}
+
+.rm-return-confirmation-box {
+    padding: 14px 16px;
+    border-left: 4px solid #3b82f6;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
+}
+
+.rm-return-confirmation-box__title {
+    font-size: 13px;
+}
+
+.rm-return-confirmation-box__text strong {
+    color: #1e3a8a;
+}
+
+/* --------------------------------------------------------------------------
+   Dispute modal
+   -------------------------------------------------------------------------- */
+.rm-item-card--compact .rm-item-thumb {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+}
+
+.rm-dispute-categories {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.rm-dispute-tile {
+    position: relative;
+    min-width: 0;
+    margin: 0;
+    padding: 12px 6px;
+    text-align: center;
+    line-height: 1.25;
+    user-select: none;
+}
+
+    .rm-dispute-tile:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .rm-dispute-tile.is-selected {
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+        .rm-dispute-tile.is-selected::after {
+            content: "\2713";
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--brand, #4f46e5);
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 14px;
+        }
+
+    .rm-dispute-tile:focus-within {
+        border-color: var(--brand, #4f46e5);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+    }
+
+.rm-dispute-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rm-textarea.is-invalid {
+    border-color: #f87171;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+}
+
+.rm-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rm-upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    padding: 14px;
+    color: #475569;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+    .rm-upload-zone:hover:not(:disabled),
+    .rm-upload-zone:focus:not(:disabled) {
+        color: var(--brand, #4f46e5);
+        background: #eef2ff;
+        border-color: var(--brand, #4f46e5);
+        outline: none;
+    }
+
+    .rm-upload-zone:focus-visible {
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+    }
+
+    .rm-upload-zone:disabled,
+    .rm-upload-zone.is-full {
+        color: #94a3b8;
+        background: #f1f5f9;
+        border-style: solid;
+        cursor: not-allowed;
+    }
+
+.rm-upload-zone__title {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.rm-upload-zone__sub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.rm-image-previews:empty {
+    display: none;
+}
+
+.rm-image-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 104px;
+}
+
+    .rm-image-preview .rm-image-preview-item {
+        width: 104px;
+        height: 80px;
+    }
+
+    .rm-image-preview .rm-image-preview-name {
+        max-width: 104px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #334155;
+        text-align: left;
+    }
+
+.rm-image-preview-size {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.rm-image-preview-remove {
+    transition: background 140ms ease, transform 140ms ease;
+}
+
+    .rm-image-preview-remove:hover {
+        transform: scale(1.1);
+    }
+
+.rm-evidence-header {
+    margin-bottom: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Smaller screens
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+    .rm-dispute-categories {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rm-footer-split {
+        justify-content: flex-end !important;
+    }
+
+    .rm-footer-group {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+        .rm-footer-group .my-rentals-btn {
+            flex: 1 1 auto;
+        }
+
+    .rm-late-row {
+        flex-wrap: wrap;
+    }
+
+    .rm-breakdown-row {
+        flex-wrap: wrap;
+    }
+}
+
+/* ==========================================================================
+   Accepted / Declined / Disputed / Completed modals
+   (they reuse the item card, borrower card and rental details styles above)
+   ========================================================================== */
+
+/* Header accents: a subtle tint that matches the status badge */
+.rm-header--declined {
+    border-bottom-color: #e2e8f0;
+    background: #f8fafc;
+}
+
+.rm-header--disputed {
+    border-bottom-color: #fed7aa;
+    background: #fff7ed;
+}
+
+.rm-header--completed {
+    border-bottom-color: #a7f3d0;
+    background: #ecfdf5;
+}
+
+.rm-detail-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 16px;
+}
+
+/* Plain label / value list (decline details, transaction details) */
+.rm-info-list {
+    margin: 0 0 4px;
+    padding: 2px 14px;
+    background: #ffffff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+}
+
+.rm-info-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 9px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12px;
+}
+
+    .rm-info-row:last-child {
+        border-bottom: 0;
+    }
+
+    .rm-info-row dt {
+        margin: 0;
+        flex: 0 0 auto;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .rm-info-row dd {
+        margin: 0;
+        min-width: 0;
+        font-weight: 600;
+        color: #1e293b;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+.rm-info-row--total {
+    border-top: 1px solid var(--border, #e2e8f0);
+}
+
+    .rm-info-row--total dt {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .rm-info-row--total dd {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+/* Information notice (blue, like the return confirmation box) */
+.rm-info-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #1e40af;
+}
+
+    .rm-info-notice .rm-notice-icon {
+        color: #3b82f6;
+    }
+
+.rm-info-notice--review {
+    margin-top: 14px;
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+}
+
+    .rm-info-notice--review .rm-notice-icon {
+        color: #f97316;
+    }
+
+/* --- Two-Party Handover Verification --- */
+.rm-verify-section {
+    margin-top: 6px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.rm-verify-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.rm-verify-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.rm-verify-title__icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    color: #4f46e5;
+}
+
+.rm-verify-progress {
+    flex: 0 0 auto;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #3730a3;
+    background: #e0e7ff;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+    .rm-verify-progress.is-partial {
+        color: #92400e;
+        background: #fef3c7;
+    }
+
+.rm-verify-sub {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.rm-verify-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rm-verify-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 160ms ease, background 160ms ease;
+}
+
+    .rm-verify-card.is-confirmed {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+
+.rm-verify-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.rm-verify-role {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.rm-verify-chip {
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+    .rm-verify-chip.is-awaiting {
+        color: #b45309;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+    }
+
+    .rm-verify-chip.is-confirmed {
+        color: #047857;
+        background: #d1fae5;
+        border: 1px solid #a7f3d0;
+    }
+
+.rm-verify-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rm-verify-msg {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #64748b;
+}
+
+.rm-verify-foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+    .rm-verify-foot::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        flex: 0 0 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .rm-verify-foot.is-awaiting {
+        color: #d97706;
+    }
+
+    .rm-verify-foot.is-confirmed {
+        color: #059669;
+    }
+
+/* --- Disputed: submitted report --- */
+.rm-dispute-card {
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+}
+
+.rm-dispute-card__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.rm-dispute-chip {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #9a3412;
+    background: #ffedd5;
+    border-radius: 9999px;
+}
+
+.rm-evidence-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.rm-evidence-thumb {
+    display: block;
+    width: 120px;
+    height: 90px;
+    overflow: hidden;
+    background: #f1f5f9;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    transition: box-shadow 140ms ease, transform 140ms ease;
+}
+
+    .rm-evidence-thumb:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+    }
+
+    .rm-evidence-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.rm-evidence-empty {
+    margin: 0;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* --------------------------------------------------------------------------
+   Minor modal polish (spacing, separation, button feedback)
+   -------------------------------------------------------------------------- */
+.my-rentals-modal--lg .my-rentals-modal__header {
+    padding-bottom: 14px;
+}
+
+.my-rentals-modal--lg .rm-detail-grid + .rm-location-row,
+.my-rentals-modal--lg .rm-location-row + .rm-return-row {
+    margin-top: 0;
+}
+
+.rm-section-label + .rm-info-list,
+.rm-section-label + .rm-dispute-card {
+    margin-top: -2px;
+}
+
+.rm-info-list + .rm-section-label,
+.rm-dispute-card + .rm-section-label {
+    margin-top: 16px;
+}
+
+.my-rentals-btn {
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.rm-btn-accept:hover:not(:disabled),
+.my-rentals-btn-primary:hover:not(:disabled) {
+    box-shadow: 0 3px 8px rgba(79, 70, 229, 0.28);
+    transform: translateY(-1px);
+}
+
+.my-rentals-btn-secondary:hover:not(:disabled) {
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.my-rentals-btn:disabled,
+.my-rentals-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    .rm-verify-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rm-verify-header {
+        flex-wrap: wrap;
+    }
+
+    .rm-info-row {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+        .rm-info-row dd {
+            text-align: left;
+        }
+
+    .rm-detail-grid--2 {
+        grid-template-columns: 1fr;
+    }
+}

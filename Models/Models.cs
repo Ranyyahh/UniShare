@@ -127,15 +127,6 @@ namespace UniShare.Models
         public string Password { get; set; }
     }
 
-    public class DashboardViewModel
-    {
-        public int ActiveListings { get; set; }
-        public int ActiveRentals { get; set; }
-        public int BorrowedCount { get; set; }
-        public decimal Earnings { get; set; }
-        public List<NotificationItem> Recent { get; set; }
-    }
-
     public class SalesReportViewModel
     {
         public List<SaleRecord> Sales { get; set; }

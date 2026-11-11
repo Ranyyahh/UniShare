@@ -1,4 +1,4 @@
-using System.Linq;
+using System;
 using System.Web.Mvc;
 using UniShare.Models;
 
@@ -6,36 +6,62 @@ namespace UniShare.Controllers
 {
     public class BrowseItemsController : Controller
     {
-        // /BrowseItems?q=calc&category=Books
-        public ActionResult Index(string q, string category)
+        // /BrowseItems  ->  Views/BrowseItems/Index.cshtml
+        // (If your controller already has an Index action, keep yours.)
+        public ActionResult Index()
         {
-            var items = SampleData.Items.AsEnumerable();
-            if (!string.IsNullOrWhiteSpace(q))
-                items = items.Where(i => i.Name.IndexOf(q, System.StringComparison.OrdinalIgnoreCase) >= 0);
-            if (!string.IsNullOrWhiteSpace(category))
-                items = items.Where(i => i.Category == category);
-
-            ViewBag.Query = q;
-            ViewBag.Category = category;
-            return View(items.ToList());
+            return View(new BrowseItemsViewModel());
         }
 
-        // /BrowseItems/Details/3
-        public ActionResult Details(int id)
+        // /BrowseItems/ItemDetails?id=1  ->  Views/BrowseItems/ItemDetails.cshtml
+        public ActionResult ItemDetails(int id)
         {
-            var item = SampleData.Items.FirstOrDefault(i => i.Id == id);
+            var item = SampleItemData.Get(id);   // TODO: load from your database
             if (item == null) return HttpNotFound();
             return View(item);
         }
 
-        // POST /BrowseItems/RequestRental/3
+        // Compatibility alias for the earlier /BrowseItems/Details route.
+        public ActionResult Details(int id)
+        {
+            return RedirectToAction("ItemDetails", new { id = id });
+        }
+
+        [HttpGet]
+        public ActionResult RequestToRent(int id)
+        {
+            var item = SampleItemData.Get(id);
+            if (item == null) return HttpNotFound();
+            if (!item.IsAvailable) return RedirectToAction("ItemDetails", new { id = id });
+            return View(item);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult RequestToRent(int id, DateTime handoverDate, string handoverTime, int duration, string notes)
+        {
+            var item = SampleItemData.Get(id);
+            if (item == null) return HttpNotFound();
+            if (!item.IsAvailable) return RedirectToAction("ItemDetails", new { id = id });
+            if (duration < 1 || duration > 24) duration = 2;
+            if (string.IsNullOrWhiteSpace(handoverTime)) handoverTime = "09:00 AM";
+            ViewBag.HandoverDate = handoverDate;
+            ViewBag.HandoverTime = handoverTime;
+            ViewBag.Duration = duration;
+            ViewBag.Notes = notes;
+            ViewBag.Total = item.HourlyRate * duration;
+            return View("RequestSubmitted", item);
+        }
+
+        // Compatibility endpoint for clients using the earlier single-step request.
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult RequestRental(int id)
         {
-            var item = SampleData.Items.FirstOrDefault(i => i.Id == id);
+            var item = SampleItemData.Get(id);
             if (item == null) return HttpNotFound();
-            TempData["Success"] = "Rental request sent to " + item.Owner + " for " + item.Name + ".";
-            return RedirectToAction("Details", new { id = id });
+            if (!item.IsAvailable) return RedirectToAction("ItemDetails", new { id = id });
+            TempData["Success"] = "Rental request sent to " + item.Lender.Name + " for " + item.Name + ".";
+            return RedirectToAction("ItemDetails", new { id = id });
         }
     }
 }

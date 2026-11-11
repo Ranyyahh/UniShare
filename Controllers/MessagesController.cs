@@ -1,21 +1,17 @@
-using System.Linq;
 using System.Web.Mvc;
+using System.Linq;
 using UniShare.Models;
 
 namespace UniShare.Controllers
 {
     public class MessagesController : Controller
     {
-        // /Messages or /Messages?id=2
-        public ActionResult Index(int? id)
+        public ActionResult Index()
         {
-            var convo = SampleData.Conversations.FirstOrDefault(c => c.Id == (id ?? SampleData.Conversations[0].Id));
-            if (convo != null) convo.Unread = false;
-            ViewBag.Active = convo;
-            return View(SampleData.Conversations);
+            return View("~/Views/Chatroom/Chatroom.cshtml");
         }
 
-        // POST /Messages/Send
+        // Preserve the earlier message-send endpoint for existing clients.
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Send(int id, string text)
         {
@@ -23,7 +19,12 @@ namespace UniShare.Controllers
             if (convo == null) return HttpNotFound();
             if (!string.IsNullOrWhiteSpace(text))
             {
-                convo.Messages.Add(new ChatMessage { Mine = true, Text = text.Trim(), Time = System.DateTime.Now.ToString("h:mm tt") });
+                convo.Messages.Add(new ChatMessage
+                {
+                    Mine = true,
+                    Text = text.Trim(),
+                    Time = System.DateTime.Now.ToString("h:mm tt")
+                });
                 convo.LastMessage = text.Trim();
                 convo.Time = "Just now";
             }
