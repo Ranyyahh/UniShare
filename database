@@ -45,7 +45,7 @@ db.users.insertMany([
         role: "STUDENT",
         status: "ACTIVE",
         verificationStatus: "APPROVED",
-
+            
         createdAt: new Date(),
         updatedAt: new Date()
     },
