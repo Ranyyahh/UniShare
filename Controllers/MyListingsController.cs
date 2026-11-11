@@ -6,6 +6,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using UniShare.Models;
+using UniShare.Services;
 
 namespace UniShare.Controllers
 {
@@ -64,6 +65,7 @@ namespace UniShare.Controllers
 
         // POST: MyListings/ToggleAvailability/5  (pause / resume)
         [HttpPost, ValidateAntiForgeryToken]
+        [VerifiedStudent]
         public ActionResult ToggleAvailability(int id)
         {
             lock (_lock)
@@ -79,6 +81,7 @@ namespace UniShare.Controllers
 
         // POST: MyListings/Delete   (id comes from the delete dialog's hidden field)
         [HttpPost, ValidateAntiForgeryToken]
+        [VerifiedStudent]
         public ActionResult Delete(int id)
         {
             lock (_lock)
@@ -102,6 +105,7 @@ namespace UniShare.Controllers
 
         // GET: MyListings/Create
         [HttpGet]
+        [VerifiedStudent]
         public ActionResult Create()
         {
             var model = new CreateListingViewModel
@@ -114,6 +118,7 @@ namespace UniShare.Controllers
 
         // GET: MyListings/CreateListing
         [HttpGet]
+        [VerifiedStudent]
         public ActionResult CreateListing()
         {
             return RedirectToAction("Create");
@@ -121,6 +126,7 @@ namespace UniShare.Controllers
 
         // POST: MyListings/Create
         [HttpPost, ValidateAntiForgeryToken]
+        [VerifiedStudent]
         public ActionResult Create(CreateListingViewModel model)
         {
             ValidatePhotos(GetUploadedFiles(model), 0, 5);
@@ -283,6 +289,7 @@ namespace UniShare.Controllers
 
         // GET: MyListings/Edit/5
         [HttpGet]
+        [VerifiedStudent]
         public ActionResult Edit(int id)
         {
             var model = LoadEditModel(id);
@@ -295,6 +302,7 @@ namespace UniShare.Controllers
 
         // POST: MyListings/Edit/5
         [HttpPost, ValidateAntiForgeryToken]
+        [VerifiedStudent]
         public ActionResult Edit(int id, EditListingViewModel model)
         {
             model.Id = id;

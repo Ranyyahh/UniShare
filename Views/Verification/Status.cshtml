@@ -1,0 +1,39 @@
+@model UniShare.Models.VerificationReviewViewModel
+@{ ViewBag.Title = "Verification Status"; Layout = "~/Views/Shared/_AuthLayout.cshtml"; var status = Model == null ? "UNKNOWN" : Model.Status; }
+<main class="auth-card login-card verification-status" aria-labelledby="page-title">
+    <div class="portal-badge"><span class="status-dot"></span> STUDENT VERIFICATION</div>
+    <h1 id="page-title">Your verification status</h1>
+    <p class="brand-caption">Your documents are reviewed by the UniShare administration team.</p>
+    @if (status == "APPROVED")
+    { 
+        <div class="status-panel approved" role="status"><strong>Approved</strong><p>Your student account is fully verified. Peer-to-peer rental and listing features are unlocked!</p></div>
+        <a class="primary-button status-link" href="@Url.Action("Index", "Dashboard")">Go to Dashboard</a>
+        <div style="margin-top: 10px;"><a class="text-link" href="@Url.Action("Index", "BrowseItems")">Browse Available Items &rarr;</a></div>
+    }
+    else if (status == "PENDING")
+    { 
+        <div class="status-panel pending" role="status"><strong>Pending review</strong><p>Your school ID and registration form have been submitted. Rental and listing features unlock as soon as an administrator verifies your student status.</p></div>
+        <a class="primary-button status-link" href="@Url.Action("Index", "Dashboard")">Go to Dashboard (View only)</a>
+    }
+    else if (status == "REJECTED")
+    { 
+        <div class="status-panel rejected" role="status"><strong>Application not approved</strong><p>@(String.IsNullOrWhiteSpace(Model.ReviewNotes) ? "Please review your student credentials and try submitting updated documents." : Model.ReviewNotes)</p></div>
+        <a class="primary-button status-link" href="@Url.Action("Apply")">Submit new application</a>
+    }
+    else if (status == "RETURNED_FOR_CORRECTION")
+    { 
+        <div class="status-panel pending" role="status"><strong>Updates requested</strong><p>@(String.IsNullOrWhiteSpace(Model.ReviewNotes) ? "Please review and re-upload your registration form or school ID." : Model.ReviewNotes)</p></div>
+        <a class="primary-button status-link" href="@Url.Action("Apply")">Correct and resubmit documents</a>
+    }
+    else if (status == "UNAVAILABLE")
+    { 
+        <div class="status-panel rejected" role="alert"><strong>Status temporarily unavailable</strong><p>We could not reach the database. Refresh this page in a moment.</p></div> 
+    }
+    else
+    { 
+        <div class="status-panel pending" role="status"><strong>No application found</strong><p>Submit your current QCU school ID and registration form (COR) to unlock peer rentals.</p></div>
+        <a class="primary-button status-link" href="@Url.Action("Apply")">Submit student documents</a>
+    }
+    @if (Model != null && Model.SubmittedAt != DateTime.MinValue) { <p class="status-date" style="margin-top: 16px;">Submitted on @Model.SubmittedAt.ToLocalTime().ToString("MMMM d, yyyy")</p> }
+    <div class="form-footer" style="margin-top: 20px;"><a class="text-link" href="@Url.Action("Index", "Home")">&larr; Return to UniShare</a></div>
+</main>

@@ -1,4 +1,19 @@
-@{ ViewBag.Title = "Login"; }
-<h1>Login</h1>
-<p>Login page placeholder. Authentication is not implemented yet.</p>
-@if (ViewBag.Message != null) { <p role="status">@ViewBag.Message</p> }
+@model UniShare.Models.LoginViewModel
+@{ ViewBag.Title = "Login"; Layout = "~/Views/Shared/_AuthLayout.cshtml"; }
+<main class="auth-card login-card" aria-labelledby="page-title">
+    <div class="portal-badge"><span class="status-dot"></span> QCU STUDENT PORTAL</div>
+    <div class="brand-lockup"><span class="brand-name">UniShare</span></div>
+    <p class="brand-caption">Sign in with your school account to continue.</p>
+    <div class="form-heading"><h1 id="page-title">Welcome back</h1></div>
+    @if (Request.QueryString["registered"] == "true") { <p class="auth-notice" role="status"><span><strong>Account created</strong><small>Sign in to check your verification status.</small></span></p> }
+    @using (Html.BeginForm("Login", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { @class = "auth-form login-form" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+        <div class="field-group"><label for="SchoolEmail">School email</label><div class="input-wrap">@Html.TextBoxFor(x => x.SchoolEmail, new { type = "email", autocomplete = "username", placeholder = "name@unishare.qcu.edu.ph" })</div>@Html.ValidationMessageFor(x => x.SchoolEmail, "", new { @class = "field-error is-visible" })</div>
+        <div class="field-group"><label for="Password">Password</label><div class="input-wrap">@Html.PasswordFor(x => x.Password, new { autocomplete = "current-password", placeholder = "Enter your password" })</div>@Html.ValidationMessageFor(x => x.Password, "", new { @class = "field-error is-visible" })</div>
+        <label class="remember-row">@Html.CheckBoxFor(x => x.RememberMe) Remember me</label>
+        <button class="primary-button" type="submit">Sign in</button>
+        <div class="form-footer"><span>New to UniShare? <a class="text-link" href="@Url.Action("Register", "Account")">Create an account</a></span></div>
+    }
+</main>

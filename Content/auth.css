@@ -78,6 +78,28 @@ body.auth-page {
 .auth-notice strong, .auth-notice small { display: block; }
 .auth-notice strong { font-size: 7px; line-height: 1.3; }
 .auth-notice small { font-size: 6.5px; color: #6c6d99; line-height: 1.3; }
+.register-card { padding: 22px 24px; }
+.register-subtitle { margin: 6px 0 16px; color: #70718f; font-size: 8px; }
+.register-form { gap: 8px; }
+.register-form .field-row { display: flex; gap: 10px; }
+.register-form .field-row > .field-group { flex: 1; }
+.register-form select, .register-form input[type="file"], .verification-status input[type="file"] { width: 100%; min-height: 31px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; background: var(--input-bg); color: var(--ink); font: 400 8px var(--font-body); }
+.verification-status h1 { margin: 0; font: 700 14px var(--font-display); }
+.status-panel { margin: 14px 0; padding: 12px; border-radius: 9px; font-size: 8px; line-height: 1.5; }
+.status-panel p { margin: 4px 0 0; }
+.status-panel.approved { background: #ecfdf5; color: #126b4b; }
+.status-panel.pending { background: #fffbeb; color: #795516; }
+.status-panel.rejected { background: #fef2f2; color: #8d2636; }
+.status-date { color: var(--muted); font-size: 7px; }
+.status-link { display: flex; justify-content: center; align-items: center; color: #fff; text-decoration: none; padding: 10px; }
+.remember-row { display: flex; align-items: center; gap: 5px; font-size: 7px; }
+.remember-row input { margin: 0; }
+.verification-admin { padding-top: 24px; padding-bottom: 40px; }
+.verification-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.verification-application { margin-bottom: 16px; }
+.verification-review-form { display: grid; gap: 8px; }
+.verification-review-form textarea { max-width: 680px; }
+@media (max-width: 560px) { .auth-shell { width: min(100%, 460px); } .register-form .field-row { flex-direction: column; gap: 8px; } }
 .version-tag { margin-left: auto; padding: 3px 5px; background: white; border-radius: 4px; font-size: 6.5px; color: #6566aa; }
 .form-footer { margin: 11px 0 0; text-align: center; color: #747595; font-size: 7.5px; }
 .toast-message { position: fixed; left: 50%; bottom: 18px; z-index: 2; max-width: calc(100vw - 32px); padding: 10px 15px; border-radius: 99px; background: #26205f; color: #fff; box-shadow: 0 6px 20px rgba(25, 20, 70, .2); font-size: 12px; opacity: 0; transform: translate(-50%, 8px); pointer-events: none; transition: .2s ease; }
