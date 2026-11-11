@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Web.Mvc;
+using UniShare.Models;
 
 namespace UniShare.Controllers
 {
@@ -113,6 +114,22 @@ namespace UniShare.Controllers
             };
 
             return View(model);
+        }
+
+        // Preserve the earlier pending-request cancellation endpoint.
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Cancel(int id)
+        {
+            var rental = SampleData.MyRentals.FirstOrDefault(r => r.Id == id);
+            if (rental == null) return HttpNotFound();
+            if (rental.Status != "Pending")
+            {
+                TempData["Error"] = "Only pending requests can be cancelled.";
+                return RedirectToAction("Index");
+            }
+            SampleData.MyRentals.Remove(rental);
+            TempData["Success"] = "Request cancelled.";
+            return RedirectToAction("Index");
         }
 
         private List<RentalRecordDto> GetMockRentals()

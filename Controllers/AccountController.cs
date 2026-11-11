@@ -1,5 +1,6 @@
 using System.Web.Mvc;
 using System.Web.Security;
+using UniShare.Models;
 
 namespace UniShare.Controllers
 {
@@ -10,10 +11,15 @@ namespace UniShare.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Login(FormCollection form)
+        public ActionResult Login(LoginForm form)
         {
-            ViewBag.Message = "Login submission is not implemented yet.";
-            return View();
+            if (!ModelState.IsValid) return View(form);
+            if (!form.Email.EndsWith("@qcu.edu.ph", System.StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Email", "Please use your QCU email (@qcu.edu.ph).");
+                return View(form);
+            }
+            return RedirectToAction("Index", "Dashboard");
         }
 
         [HttpGet]

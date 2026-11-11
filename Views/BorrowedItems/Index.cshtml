@@ -1,3 +1,283 @@
-@{ ViewBag.Title = "Borrowed Items"; }
-<h1>Borrowed Items</h1>
-<p>Review items you have borrowed and their current status here.</p>
+@model List<UniShare.Models.BorrowedItem>
+@{
+    ViewBag.Title = "Borrowed Items";
+    string initial = (ViewBag.Status as string) ?? "Pending";
+
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    Func<DateTime?, string> fmt = d => d.HasValue ? d.Value.ToString("MMM d", inv) : null;
+
+    var payload = new
+    {
+        categories = UniShare.Models.SampleData.BorrowedCategories,
+        lateRate = UniShare.Models.SampleData.LateFeeMultiplier,
+        graceMinutes = UniShare.Models.SampleData.LateGraceMinutes,
+        items = Model.Select(b => new
+        {
+            id = b.Id,
+            name = b.ItemName,
+            category = b.Category,
+            lender = b.Lender,
+            initials = b.LenderInitials,
+            program = b.LenderProgram,
+            price = b.PricePerHour,
+            hours = b.Hours,
+            total = b.TotalPaid.ToString("N2", inv),
+            period = b.PeriodLabel,
+            pickup = b.PickupPoint,
+            payment = b.PaymentMethod,
+            txn = b.TransactionId,
+            about = b.About,
+            status = b.Status,
+            handover = b.HandoverConfirmed,
+            rating = b.Rating,
+            review = b.Review,
+            dispute = b.DisputeReason,
+            theme = b.Theme,
+            steps = new { requested = fmt(b.RequestedOn), approved = fmt(b.ApprovedOn), handover = fmt(b.HandoverOn), completed = fmt(b.CompletedOn) },
+            remaining = (b.Status == "Ongoing" && b.HandoverConfirmed && b.HandoverAt.HasValue)
+                ? (long?)Math.Round((b.HandoverAt.Value.AddHours(b.Hours) - DateTime.Now).TotalSeconds)
+                : null
+        }).ToList()
+    };
+    string json = System.Web.Helpers.Json.Encode(payload).Replace("<", "\\u003c");
+    string scriptUrl = Url.Content("~/Scripts/borrowed-items.js") + "?v=" +
+        System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Scripts/borrowed-items.js")).Ticks;
+}
+
+<div class="bi-page" data-initial="@initial" data-messages-url="@Url.Action("Index", "Messages")">
+
+    <div class="us-page-head" style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h1>Borrowed Items</h1>
+            <p>Track the gadgets, textbooks, and equipment you borrowed from other students. Confirm handovers and leave reviews once a rental is done.</p>
+        </div>
+        <button type="button" class="us-btn us-btn--outline" data-act="history" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="8" y1="13" x2="16" y2="13"></line>
+                <line x1="8" y1="17" x2="16" y2="17"></line>
+                <line x1="8" y1="9" x2="10" y2="9"></line>
+                <circle cx="18" cy="16" r="4" stroke-width="1.5"></circle>
+                <path d="M18 14v2h1.5" stroke-width="1.5"></path>
+            </svg>
+            History
+        </button>
+    </div>
+
+    <div class="bi-toolbar">
+        <div class="bi-tabs" role="tablist" aria-label="Filter by status">
+            <span class="bi-tabs__thumb" aria-hidden="true"></span>
+            <button type="button" class="bi-tab" role="tab" data-status="Pending" aria-selected="true">Pending <span>0</span></button>
+            <button type="button" class="bi-tab" role="tab" data-status="Ongoing" aria-selected="false">Ongoing <span>0</span></button>
+            <button type="button" class="bi-tab" role="tab" data-status="Completed" aria-selected="false">Completed <span>0</span></button>
+            <button type="button" class="bi-tab" role="tab" data-status="Disputed" aria-selected="false">Disputed <span>0</span></button>
+        </div>
+
+        <div class="bi-filters">
+            <label class="bi-search">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" /><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                <input id="bi-search" type="search" placeholder="Search by item name, lender, or transaction ID..." autocomplete="off" aria-label="Search borrowed items" />
+            </label>
+
+            <div class="bi-select">
+                <button type="button" class="bi-select__btn" id="bi-cat-btn" aria-haspopup="listbox" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" /></svg>
+                    <span id="bi-cat-label">All Categories</span>
+                    <svg class="bi-select__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+                </button>
+                <ul class="bi-select__menu" id="bi-cat-menu" role="listbox" hidden></ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="bi-images" hidden>
+        <img data-item="1" src="@Url.Content("~/Content/images/casio-fx991ex.jpg")" alt="Casio fx-991EX ClassWiz Calculator" />
+        <img data-item="2" src="@Url.Content("~/Content/images/engineering-mechanics-statics.jpg")" alt="Engineering Mechanics (Statics)" />
+        <img data-item="3" src="@Url.Content("~/Content/images/rotring-isograph-pen-set.jpg")" alt="Rotring Isograph Junior Pen Set" />
+        <img data-item="4" src="@Url.Content("~/Content/images/molten-gg7x-basketball.jpg")" alt="Molten GG7X Official Basketball" />
+        <img data-item="5" src="@Url.Content("~/Content/img/placeholder.png")" alt="Casio Calculator Hard Slide-on Case" />
+        <img data-item="6" src="@Url.Content("~/Content/img/placeholder.png")" alt="Arduino Uno R3 Starter Kit" />
+    </div>
+
+    <p class="bi-result" id="bi-result" aria-live="polite"></p>
+
+    <div class="bi-grid" id="bi-grid"></div>
+    <div class="us-empty" id="bi-empty" hidden>No borrowed items match your search or filters.</div>
+
+    @* ===== Rental Details modal ===== *@
+    <dialog class="bi-dialog" id="bi-detail" aria-labelledby="bi-detail-title">
+        <header class="bi-dialog__head">
+            <h2 id="bi-detail-title">Rental Details</h2>
+            <button type="button" class="bi-x" data-close aria-label="Close">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            </button>
+        </header>
+        <div id="bi-detail-body"></div>
+    </dialog>
+    @* ===== Transaction History modal ===== *@
+    <dialog class="bi-dialog" id="bi-history" aria-labelledby="bi-history-title">
+        <header class="bi-dialog__head">
+            <h2 id="bi-history-title">Transaction History</h2>
+            <button type="button" class="bi-x" data-close aria-label="Close">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            </button>
+        </header>
+        <div class="bi-dialog__pad">
+            <div class="us-table-wrap">
+                <table class="us-table history-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Item</th>
+                            <th>Lender</th>
+                            <th class="us-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bi-history-body">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </dialog>
+
+    @* ===== Confirm handover (Borrower) ===== *@
+    <dialog class="bi-dialog bi-dialog--sm" id="bi-confirm" aria-labelledby="bi-confirm-title">
+        <form id="bi-confirm-form">
+            <header class="bi-dialog__head">
+                <h2 id="bi-confirm-title">Confirm handover?</h2>
+                <button type="button" class="bi-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
+            </header>
+            <div class="bi-dialog__pad">
+                <p>Confirm that you received <strong id="bi-confirm-item"></strong> from <strong id="bi-confirm-lender"></strong>. The rental timer starts after confirmation.</p>
+                <label class="bi-check"><input type="checkbox" required /> I received the item and it matches the listing.</label>
+                <div class="bi-modal-actions">
+                    <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
+                    <button type="submit" class="us-btn us-btn--primary">Confirm Handover</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+
+    @* ===== Return item ===== *@
+    <dialog class="bi-dialog bi-dialog--sm" id="bi-return" aria-labelledby="bi-return-title">
+        <form id="bi-return-form">
+            <header class="bi-dialog__head">
+                <h2 id="bi-return-title">Return this item?</h2>
+                <button type="button" class="bi-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
+            </header>
+            <div class="bi-dialog__pad">
+                <p>Confirm that you gave <strong id="bi-return-item"></strong> back to <strong id="bi-return-lender"></strong>. The rental will be marked <strong>Completed</strong> and you can rate it.</p>
+                <label class="bi-check"><input type="checkbox" required /> I returned the item in the agreed condition.</label>
+                <div class="bi-modal-actions">
+                    <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
+                    <button type="submit" class="us-btn us-btn--primary">Return Item</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+
+    @* ===== Report a problem ===== *@
+    <dialog class="bi-dialog bi-dialog--sm" id="bi-report" aria-labelledby="bi-report-title">
+        <form id="bi-report-form">
+            <header class="bi-dialog__head">
+                <h2 id="bi-report-title">Report a problem</h2>
+                <button type="button" class="bi-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
+            </header>
+            <div class="bi-dialog__pad">
+                <p>Tell us what went wrong with <strong id="bi-report-item"></strong>. An admin will review your dispute and the rental timer will pause.</p>
+                <label class="bi-field">
+                    Reason
+                    <select name="reason" required>
+                        <option value="">Select a reason</option>
+                        <option>Item not working as described</option>
+                        <option>Item damaged or incomplete</option>
+                        <option>Lender did not show up</option>
+                        <option>Payment issue</option>
+                        <option>Other</option>
+                    </select>
+                </label>
+                <label class="bi-field">
+                    Details
+                    <textarea name="details" rows="3" maxlength="400" placeholder="Describe the problem (optional)"></textarea>
+                </label>
+                <div class="bi-modal-actions">
+                    <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
+                    <button type="submit" class="us-btn us-btn--danger">Submit Dispute</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+
+    @* ===== Rate Item and Owner modal ===== *@
+    <dialog class="bi-dialog bi-dialog--sm" id="bi-rate" aria-labelledby="bi-rate-title">
+        <form id="bi-rate-form">
+            <header class="bi-dialog__head">
+                <h2 id="bi-rate-title">Rate this Rental</h2>
+                <button type="button" class="bi-x" data-close aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                </button>
+            </header>
+            <div class="bi-dialog__pad">
+                <p class="rate-desc">Please rate your experience with <strong id="bi-rate-item"></strong> and the owner, <strong id="bi-rate-lender"></strong>.</p>
+
+                <div class="rate-group">
+                    <label class="rate-group-label">Item Condition</label>
+                    <span class="bi-rate bi-rate--lg" role="radiogroup" aria-label="Item Rating">
+                        <input type="radio" name="itemRating" value="5" id="ir5" required /><label for="ir5" title="5 stars">&#9733;</label>
+                        <input type="radio" name="itemRating" value="4" id="ir4" /><label for="ir4" title="4 stars">&#9733;</label>
+                        <input type="radio" name="itemRating" value="3" id="ir3" /><label for="ir3" title="3 stars">&#9733;</label>
+                        <input type="radio" name="itemRating" value="2" id="ir2" /><label for="ir2" title="2 stars">&#9733;</label>
+                        <input type="radio" name="itemRating" value="1" id="ir1" /><label for="ir1" title="1 star">&#9733;</label>
+                    </span>
+                </div>
+
+                <div class="rate-group">
+                    <label class="rate-group-label">Owner Communication</label>
+                    <span class="bi-rate bi-rate--lg" role="radiogroup" aria-label="Owner Rating">
+                        <input type="radio" name="ownerRating" value="5" id="or5" required /><label for="or5" title="5 stars">&#9733;</label>
+                        <input type="radio" name="ownerRating" value="4" id="or4" /><label for="or4" title="4 stars">&#9733;</label>
+                        <input type="radio" name="ownerRating" value="3" id="or3" /><label for="or3" title="3 stars">&#9733;</label>
+                        <input type="radio" name="ownerRating" value="2" id="or2" /><label for="or2" title="2 stars">&#9733;</label>
+                        <input type="radio" name="ownerRating" value="1" id="or1" /><label for="or1" title="1 star">&#9733;</label>
+                    </span>
+                </div>
+
+                <div class="rate-textarea-wrap">
+                    <label for="rate-review">Review (Optional)</label>
+                    <textarea id="rate-review" name="review" rows="3" maxlength="300" placeholder="Write a short review about the item and the owner..."></textarea>
+                </div>
+
+                <div class="bi-modal-actions">
+                    <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
+                    <button type="submit" class="us-btn us-btn--primary">Submit Rating</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+
+    @* ===== Hover Image Preview ===== *@
+    <div id="bi-hover-preview" class="bi-hover-preview">
+        <img id="bi-hover-img" src="" alt="Preview" />
+    </div>
+
+    <div class="bi-toast" id="bi-toast" popover="manual" role="status" aria-live="polite"></div>
+
+    @* FIX: Re-added the data script tag so JS can read the items *@
+    <script type="application/json" id="bi-data">@Html.Raw(json)</script>
+</div>
+
+@section scripts {
+    <script src="@scriptUrl"></script>
+    <script>
+        if (!window.UniShareBorrowed) {
+            var bi = document.getElementById('bi-grid');
+            if (bi) {
+                bi.className = 'us-empty';
+                bi.textContent = 'The page script (Scripts/borrowed-items.js) did not load. Make sure that file exists in the Scripts folder of your project, rebuild, then press Ctrl+F5.';
+            }
+        }
+    </script>
+}
