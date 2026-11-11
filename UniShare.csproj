@@ -150,6 +150,7 @@
     <Content Include="Content\bootstrap-utilities.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\engineering-mechanics-statics.jpg" />
     <Content Include="Content\Site.css" />
     <Content Include="Content\MyRentals.css" />
     <Content Include="Content\ReportsAnalytics.css" />

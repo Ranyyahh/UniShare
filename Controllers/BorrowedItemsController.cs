@@ -22,7 +22,8 @@ namespace UniShare.Controllers
         {
             var b = SampleData.Borrowed.FirstOrDefault(x => x.Id == id);
             if (b == null) return HttpNotFound();
-            if (b.Status != "Ongoing" || b.HandoverConfirmed) return Json(new { ok = false });
+            if ((b.Status != "Pending" && b.Status != "Ongoing") || b.HandoverConfirmed) return Json(new { ok = false });
+            b.Status = "Ongoing";
             b.HandoverConfirmed = true;
             b.HandoverAt = DateTime.Now;
             b.HandoverOn = DateTime.Today;
@@ -58,7 +59,7 @@ namespace UniShare.Controllers
         {
             var b = SampleData.Borrowed.FirstOrDefault(x => x.Id == id);
             if (b == null) return HttpNotFound();
-            if (b.Status != "Ongoing" || string.IsNullOrWhiteSpace(reason)) return Json(new { ok = false });
+            if ((b.Status != "Pending" && b.Status != "Ongoing") || string.IsNullOrWhiteSpace(reason)) return Json(new { ok = false });
             b.Status = "Disputed";
             b.DisputeReason = string.IsNullOrWhiteSpace(details) ? reason : reason + ": " + details.Trim();
             return Json(new { ok = true });
