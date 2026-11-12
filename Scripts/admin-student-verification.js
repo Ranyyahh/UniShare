@@ -8,8 +8,8 @@
         var endpoint = page.dataset.endpoint;
         if (!endpoint) return;
 
-        var approveUrl = page.dataset.approveUrl;
-        var rejectUrl = page.dataset.rejectUrl;
+        var approveUrl = "/AdminStudentVerification/Approve";
+        var rejectUrl = "/AdminStudentVerification/Reject";
 
         var searchInput = document.getElementById("asvSearchInput");
         var statusSelect = document.getElementById("asvStatusSelect");
@@ -65,9 +65,6 @@
             rejected: { label: "Rejected", className: "asv-pill asv-pill--rejected" }
         };
 
-        // -------------------------------------------------------
-        // HELPERS
-        // -------------------------------------------------------
         function esc(str) {
             return (str || "").toString()
                 .replace(/&/g, "&amp;")
@@ -92,9 +89,6 @@
                 .catch(function (err) { console.error(err); alert("Network error, please try again."); });
         }
 
-        // -------------------------------------------------------
-        // TABLE
-        // -------------------------------------------------------
         function buildRow(s) {
             var status = (s.status || "pending").toLowerCase();
             var cfg = statusConfig[status] || statusConfig.pending;
@@ -173,9 +167,6 @@
             });
         }
 
-        // -------------------------------------------------------
-        // MODAL
-        // -------------------------------------------------------
         function populateDossier(row) {
             if (!row) return;
             var ds = row.dataset;
@@ -269,9 +260,6 @@
             }
         }
 
-        // -------------------------------------------------------
-        // TABS
-        // -------------------------------------------------------
         tabs.forEach(function (tab) {
             tab.addEventListener("click", function () {
                 var target = tab.dataset.asvTab;
@@ -288,9 +276,6 @@
             });
         });
 
-        // -------------------------------------------------------
-        // LIGHTBOX
-        // -------------------------------------------------------
         function openLightbox() {
             var activePanel = page.querySelector(".asv-tab-panel.is-active");
             if (!activePanel || !lightboxBody) return;
@@ -317,9 +302,6 @@
             });
         }
 
-        // -------------------------------------------------------
-        // UTILITY BUTTONS
-        // -------------------------------------------------------
         utilButtons.forEach(function (btn) {
             btn.addEventListener("click", function () {
                 var util = btn.dataset.asvUtil;
@@ -344,9 +326,6 @@
             });
         });
 
-        // -------------------------------------------------------
-        // APPROVE / REJECT  → real POST
-        // -------------------------------------------------------
         if (btnApprove) {
             btnApprove.addEventListener("click", function () {
                 var row = page.querySelector("[data-asv-row].is-selected");
@@ -373,7 +352,7 @@
                 if ((row.dataset.status || "").toLowerCase() !== "pending") return;
 
                 var reason = prompt("Reason for rejection (optional):");
-                if (reason === null) return; // cancelled
+                if (reason === null) return;
 
                 var id = row.dataset.id;
 
@@ -387,9 +366,6 @@
             });
         }
 
-        // -------------------------------------------------------
-        // INITIAL FETCH
-        // -------------------------------------------------------
         fetch(endpoint, { headers: { "Accept": "application/json" } })
             .then(function (res) { return res.json(); })
             .then(function (data) {

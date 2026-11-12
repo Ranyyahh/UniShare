@@ -1,12 +1,12 @@
 ﻿@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewBag.Title = "Student Verification";
+    ViewBag.ShowAdminSidebar = true;
 }
-
 
 <link rel="stylesheet" href="@Url.Content("~/Content/admin-student-verification.css")" />
 
-<div class="asv-page" data-endpoint="@Url.Action("GetStudents", "AdminStudentVerification")" data-approve-url="@Url.Action("Approve", "AdminStudentVerification")" data-reject-url="@Url.Action("Reject", "AdminStudentVerification")">
+<div class="asv-page" data-endpoint="@Url.Action("GetStudents", "AdminStudentVerification")">
     <header class="asv-header">
         <h1 class="asv-header__title">Student Account Verification and Management</h1>
         <p class="asv-header__subtitle">Verify and approve Quezon City University (QCU) student accounts and credentials before granting campus peer rental privileges.</p>

@@ -1,7 +1,5 @@
-﻿using System;
+﻿using System.Web.Mvc;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
 
 namespace UniShare.Controllers
 {
@@ -14,9 +12,7 @@ namespace UniShare.Controllers
             return View();
         }
 
-        // ---------------------------------------------------------------
-        // PLACEHOLDER API — replace this with your real DB query
-        // ---------------------------------------------------------------
+        // Placeholder API — replace with DB query later
         [HttpGet]
         public JsonResult GetStudents()
         {
@@ -108,33 +104,12 @@ namespace UniShare.Controllers
         [HttpPost]
         public JsonResult Approve(string id)
         {
-            // TODO: Update the DB record — e.g.:
-            // using (var db = new UniShareDbContext()) {
-            //     var s = db.StudentVerifications.FirstOrDefault(x => x.StudentNumber == id);
-            //     if (s == null) return Json(new { success = false, message = "Not found" });
-            //     s.Status = "approved";
-            //     s.ReviewedAt = DateTime.Now;
-            //     s.ReviewedBy = User.Identity.Name;
-            //     db.SaveChanges();
-            // }
-
             return Json(new { success = true, id = id, status = "Approved" });
         }
 
         [HttpPost]
         public JsonResult Reject(string id, string reason)
         {
-            // TODO: Update the DB record — e.g.:
-            // using (var db = new UniShareDbContext()) {
-            //     var s = db.StudentVerifications.FirstOrDefault(x => x.StudentNumber == id);
-            //     if (s == null) return Json(new { success = false, message = "Not found" });
-            //     s.Status = "rejected";
-            //     s.RejectReason = reason;
-            //     s.ReviewedAt = DateTime.Now;
-            //     s.ReviewedBy = User.Identity.Name;
-            //     db.SaveChanges();
-            // }
-
             return Json(new { success = true, id = id, reason = reason, status = "Rejected" });
         }
     }
