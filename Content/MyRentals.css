@@ -3345,7 +3345,109 @@
     transform: none;
 }
 
+.my-rentals-incoming-section {
+    margin: 0 0 24px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #dbe3f0;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.my-rentals-incoming-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.my-rentals-incoming-heading h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.my-rentals-incoming-heading p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.my-rentals-incoming-count {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.my-rentals-incoming-table {
+    min-width: 900px;
+}
+
+.my-rentals-incoming-table td {
+    vertical-align: middle;
+}
+
+.my-rentals-incoming-subtext {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.my-rentals-incoming-actions,
+.my-rentals-incoming-actions form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.my-rentals-incoming-actions form {
+    flex-wrap: wrap;
+}
+
+.my-rentals-incoming-actions select,
+.my-rentals-incoming-actions input[type="text"] {
+    min-height: 36px;
+    padding: 7px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+}
+
+.my-rentals-incoming-actions input[type="text"] {
+    width: 145px;
+}
+
+.my-rentals-incoming-all {
+    display: inline-block;
+    margin-top: 14px;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.my-rentals-incoming-all:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 600px) {
+    .my-rentals-incoming-section {
+        padding: 14px;
+    }
+
+    .my-rentals-incoming-heading {
+        align-items: flex-start;
+    }
+
     .rm-verify-grid {
         grid-template-columns: 1fr;
     }

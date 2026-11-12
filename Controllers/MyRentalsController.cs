@@ -85,11 +85,13 @@ namespace UniShare.Controllers
     {
         public RentalSummaryDto Summary { get; set; }
         public List<RentalRecordDto> Rentals { get; set; }
+        public List<RentalRecordDto> IncomingRequests { get; set; }
 
         public MyRentalsViewModel()
         {
             Summary = new RentalSummaryDto();
             Rentals = new List<RentalRecordDto>();
+            IncomingRequests = new List<RentalRecordDto>();
         }
     }
 
@@ -103,7 +105,14 @@ namespace UniShare.Controllers
             ViewBag.Title = "Rentals";
             ObjectId userId;
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
-            var model = new MyRentalsViewModel { Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId)).ToList() };
+            var model = new MyRentalsViewModel
+            {
+                Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId)).ToList(),
+                IncomingRequests = BookingService.ForOwner(userId)
+                    .Where(x => new[] { "PENDING", "REQUESTED" }.Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
+                    .Where(x => x.GetValue("borrowerId", BsonNull.Value).ToString() != userId.ToString())
+                    .Select(MapBooking).ToList()
+            };
 
             // Summary cards are counted from the records, so they always agree with the table
             // (the page script keeps them in sync when a rental changes status).

@@ -139,13 +139,21 @@ namespace UniShare.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
-        public ActionResult RequestToRent(string id, DateTime handoverDate, string handoverTime, int duration, string notes)
+        public ActionResult RequestToRent(string id, string handoverDate, string handoverTime, int duration, string notes)
         {
             ObjectId renterId;
             if (!ObjectId.TryParse(User.Identity.Name, out renterId)) return new HttpStatusCodeResult(401);
+            DateTime selectedDate;
+            if (!DateTime.TryParseExact(handoverDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
+            {
+                ModelState.AddModelError("handoverDate", "Choose a valid handover date.");
+                var invalidDateItem = MarketplaceService.GetItem(id);
+                if (invalidDateItem == null) return HttpNotFound();
+                return View(MarketplaceService.ToDetails(invalidDateItem, MongoDatabase.Users.Find(x => x.Id == invalidDateItem.OwnerId).FirstOrDefault()));
+            }
             try
             {
-                var booking = BookingService.Submit(renterId, id, handoverDate, handoverTime, duration, notes);
+                var booking = BookingService.Submit(renterId, id, selectedDate, handoverTime, duration, notes);
                 return RedirectToAction("RequestSubmitted", new { id = booking["_id"].AsObjectId.ToString() });
             }
             catch (BookingException ex)

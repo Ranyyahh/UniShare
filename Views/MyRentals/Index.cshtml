@@ -126,6 +126,73 @@
         </div>
     </section>
 
+    @if (Model.IncomingRequests != null && Model.IncomingRequests.Count > 0)
+    {
+        <section class="my-rentals-incoming-section" aria-labelledby="incomingRequestsTitle">
+            <div class="my-rentals-incoming-heading">
+                <div>
+                    <h2 id="incomingRequestsTitle">Requests for your listings</h2>
+                    <p>Review incoming requests from borrowers.</p>
+                </div>
+                <span class="my-rentals-incoming-count">@Model.IncomingRequests.Count pending</span>
+            </div>
+            <div class="my-rentals-table-responsive">
+                <table class="my-rentals-table my-rentals-incoming-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Request</th>
+                            <th scope="col">Item</th>
+                            <th scope="col">Borrower</th>
+                            <th scope="col">Handover</th>
+                            <th scope="col">Duration</th>
+                            <th scope="col">Fee</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var request in Model.IncomingRequests)
+                    {
+                        <tr>
+                            <td><span class="request-id-badge">@request.RequestId</span><small class="my-rentals-incoming-subtext">@request.RequestDateFormatted</small></td>
+                            <td><span class="item-name">@request.ItemName</span></td>
+                            <td><span class="borrower-name">@request.BorrowerName</span><small class="my-rentals-incoming-subtext">@request.BorrowerProgram</small></td>
+                            <td>@request.HandoverScheduleFormatted</td>
+                            <td>@request.Duration</td>
+                            <td>@request.RentalFeeFormatted</td>
+                            <td>
+                                <div class="my-rentals-incoming-actions">
+                                    @using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@request.BookingObjectId" />
+                                        <input type="hidden" name="accept" value="true" />
+                                        <button class="my-rentals-btn my-rentals-btn-primary" type="submit">Accept</button>
+                                    }
+                                    @using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@request.BookingObjectId" />
+                                        <input type="hidden" name="accept" value="false" />
+                                        <select name="reason" required aria-label="Reason for declining @request.RequestId">
+                                            <option value="">Decline reason</option>
+                                            <option>Schedule conflict</option>
+                                            <option>Item unavailable</option>
+                                            <option>Other</option>
+                                        </select>
+                                        <input type="text" name="notes" maxlength="300" placeholder="Optional note" aria-label="Optional note for @request.RequestId" />
+                                        <button class="my-rentals-btn my-rentals-btn-secondary" type="submit">Decline</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <a class="my-rentals-incoming-all" href="@Url.Action("Index", "RentalRequests")">Open Rental Requests</a>
+        </section>
+    }
+
     <!-- D. Rentals Table Section -->
     <section class="my-rentals-table-section" aria-label="Rentals Table">
         <div class="my-rentals-table-responsive">
