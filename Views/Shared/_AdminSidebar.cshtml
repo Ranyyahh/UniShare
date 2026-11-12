@@ -1,7 +1,7 @@
 @{
     var activeController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
     var activeAction = (ViewContext.RouteData.Values["action"] as string) ?? "";
-    var isVerification = activeController == "AdminStudentVerification" && activeAction == "Index";
+    var isVerification = activeController == "AdminStudentVerification" || (activeController == "Admin" && activeAction == "StudentVerification");
 }
 <aside class="admin-sidebar" aria-label="Admin navigation">
     <div class="admin-sidebar__brand">

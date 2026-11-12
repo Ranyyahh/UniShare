@@ -16,36 +16,26 @@ namespace UniShare.Controllers
         [HttpGet]
         public ActionResult StudentVerification(string status = "PENDING")
         {
-            try
-            {
-                var filter = String.IsNullOrWhiteSpace(status) || status == "ALL"
-                    ? Builders<VerificationApplicationDocument>.Filter.Empty
-                    : Builders<VerificationApplicationDocument>.Filter.Eq(x => x.Status, status.ToUpperInvariant());
-                var records = MongoDatabase.Verifications.Find(filter).SortByDescending(x => x.SubmittedAt).Limit(250).ToList();
-                var users = MongoDatabase.Users.Find(Builders<UserDocument>.Filter.In(x => x.Id, records.Select(x => x.UserId))).ToList().ToDictionary(x => x.Id);
-                ViewBag.SelectedStatus = status.ToUpperInvariant();
-                return View(records.Select(x => VerificationController.ToViewModel(x, users.ContainsKey(x.UserId) ? users[x.UserId] : null)).ToList());
-            }
-            catch (Exception ex) when (ex is MongoException || ex is InvalidOperationException)
-            { ViewBag.DatabaseUnavailable = true; return View(new System.Collections.Generic.List<VerificationReviewViewModel>()); }
+            return RedirectToAction("Index", "AdminStudentVerification");
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult ReviewVerification(string id, string decision, string reviewNotes)
         {
             ObjectId verificationId;
-            var allowed = new[] { "APPROVED", "REJECTED", "RETURNED_FOR_CORRECTION" };
+            var allowed = new[] { "APPROVED", "REJECTED" };
             if (!ObjectId.TryParse(id, out verificationId) || !allowed.Contains((decision ?? "").ToUpperInvariant())) return new HttpStatusCodeResult(400);
             try
             {
                 if (reviewNotes != null && reviewNotes.Length > 1000) reviewNotes = reviewNotes.Substring(0, 1000);
-                var application = MongoDatabase.Verifications.Find(x => x.Id == verificationId).FirstOrDefault();
+                var application = MongoDatabase.Verifications.Find(x => x.Id == verificationId && x.Status == "PENDING").FirstOrDefault();
                 if (application == null) return HttpNotFound();
                 var now = DateTime.UtcNow;
                 var adminId = ObjectId.Parse(User.Identity.Name);
                 var status = decision.ToUpperInvariant();
-                MongoDatabase.Verifications.UpdateOne(x => x.Id == verificationId,
+                var result = MongoDatabase.Verifications.UpdateOne(x => x.Id == verificationId && x.Status == "PENDING",
                     Builders<VerificationApplicationDocument>.Update.Set(x => x.Status, status).Set(x => x.ReviewNotes, reviewNotes).Set(x => x.ReviewedAt, now).Set(x => x.ReviewedBy, adminId));
+                if (result.ModifiedCount != 1) return new HttpStatusCodeResult(409, "This application is no longer pending review.");
                 MongoDatabase.Users.UpdateOne(x => x.Id == application.UserId,
                     Builders<UserDocument>.Update.Set(x => x.VerificationStatus, status)
                         .Set(x => x.Status, status == "APPROVED" ? "ACTIVE" : "PENDING")
@@ -56,7 +46,7 @@ namespace UniShare.Controllers
                     {
                         Id = ObjectId.GenerateNewId(),
                         UserId = adminId,
-                        Action = status == "APPROVED" ? "APPROVE_STUDENT" : (status == "REJECTED" ? "REJECT_STUDENT" : "RETURN_STUDENT_FOR_CORRECTION"),
+                        Action = status == "APPROVED" ? "APPROVE_STUDENT" : "REJECT_STUDENT",
                         EntityType = "USER",
                         EntityId = application.UserId,
                         Details = new BsonDocument { { "verificationId", verificationId }, { "status", status }, { "notes", reviewNotes ?? "" } },
