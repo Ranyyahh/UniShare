@@ -9,6 +9,7 @@ namespace UniShare.Controllers
         [HttpGet]
         public ActionResult Index()
         {
+            ViewBag.ShowAdminSidebar = true;
             return View();
         }
 

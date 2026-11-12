@@ -72,7 +72,7 @@
 @if (User != null && User.IsInRole("ADMIN"))
 {
     <a class="site-navigation__link" href="@Url.Action("Index", "AdminDashboard")">Admin Dashboard</a>
-    <a class="site-navigation__link" href="@Url.Action("StudentVerification", "Admin")">Admin Verification</a>
+    <a class="site-navigation__link" href="@Url.Action("Index", "AdminStudentVerification")">Admin Verification</a>
 }
                 </div>
                 <div class="site-navigation__actions">
@@ -95,7 +95,7 @@
                                 </a>
                                 @if (User != null && User.IsInRole("ADMIN"))
                                 {
-                                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("StudentVerification", "Admin")">
+                                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Index", "AdminStudentVerification")">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Admin Verification
                                     </a>
                                 }

@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Admin Dashboard";
     ViewBag.ShowAdminSidebar = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -31,7 +31,7 @@
                     </div>
                     <strong id="registeredStudents">1,248</strong>
                     <small class="green-text">● Active enrolled QCUians</small>
-                    <a class="card-link" href="@Url.Action("StudentVerification", "Admin")">View Directory <span>→</span></a>
+                    <a class="card-link" href="@Url.Action("Index", "AdminStudentVerification")">View Directory <span>→</span></a>
                 </article>
 
                 <article class="summary-card yellow-card">
@@ -41,7 +41,7 @@
                     </div>
                     <strong id="pendingAccounts">18</strong>
                     <small class="orange-text">● 18 students · Action Required</small>
-                    <a class="card-link orange-link" href="@Url.Action("StudentVerification", "Admin")">Review Queue <span>→</span></a>
+                    <a class="card-link orange-link" href="@Url.Action("Index", "AdminStudentVerification")">Review Queue <span>→</span></a>
                 </article>
 
                 <article class="summary-card blue-card">
@@ -79,7 +79,7 @@
         <section class="dashboard-section">
             <div class="module-heading">
                 <h2>Pending Student Verifications</h2>
-                <a class="text-link" href="@Url.Action("StudentVerification", "Admin")">View All 18 Queue →</a>
+                <a class="text-link" href="@Url.Action("Index", "AdminStudentVerification")">View All 18 Queue →</a>
             </div>
 
             <div class="verification-grid">
@@ -103,7 +103,7 @@
                         <strong>Attached</strong>
                     </div>
 
-                    <a class="review-button" href="@Url.Action("StudentVerification", "Admin")">Review Submission</a>
+                    <a class="review-button" href="@Url.Action("Index", "AdminStudentVerification")">Review Submission</a>
                 </article>
 
                 <article class="verification-card">
@@ -126,7 +126,7 @@
                         <strong>Attached</strong>
                     </div>
 
-                    <a class="review-button" href="@Url.Action("StudentVerification", "Admin")">Review Submission</a>
+                    <a class="review-button" href="@Url.Action("Index", "AdminStudentVerification")">Review Submission</a>
                 </article>
 
                 <article class="verification-card">
@@ -149,7 +149,7 @@
                         <strong>Attached</strong>
                     </div>
 
-                    <a class="review-button" href="@Url.Action("StudentVerification", "Admin")">Review Submission</a>
+                    <a class="review-button" href="@Url.Action("Index", "AdminStudentVerification")">Review Submission</a>
                 </article>
             </div>
         </section>
