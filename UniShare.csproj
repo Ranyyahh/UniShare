@@ -64,8 +64,14 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="DnsClient"><HintPath>packages\DnsClient.1.6.1\lib\net471\DnsClient.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="Microsoft.Extensions.Logging.Abstractions"><HintPath>packages\Microsoft.Extensions.Logging.Abstractions.2.0.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath><Private>True</Private></Reference>
+    <Reference Include="DnsClient">
+      <HintPath>packages\DnsClient.1.6.1\lib\net471\DnsClient.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>packages\Microsoft.Extensions.Logging.Abstractions.2.0.0\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Web.Infrastructure, Version=2.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Web.Infrastructure.2.0.1\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
       <Private>True</Private>
@@ -82,14 +88,38 @@
       <HintPath>packages\MongoDB.Libmongocrypt.1.12.0\lib\net472\MongoDB.Libmongocrypt.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SharpCompress"><HintPath>packages\SharpCompress.0.30.1\lib\net461\SharpCompress.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="Snappier"><HintPath>packages\Snappier.1.0.0\lib\netstandard2.0\Snappier.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="ZstdSharp"><HintPath>packages\ZstdSharp.Port.0.7.3\lib\net461\ZstdSharp.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="System.Buffers"><HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="System.Memory"><HintPath>packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe"><HintPath>packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="System.Runtime.InteropServices.RuntimeInformation"><HintPath>packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath><Private>True</Private></Reference>
-    <Reference Include="System.Threading.Tasks.Extensions"><HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath><Private>True</Private></Reference>
+    <Reference Include="SharpCompress">
+      <HintPath>packages\SharpCompress.0.30.1\lib\net461\SharpCompress.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Snappier">
+      <HintPath>packages\Snappier.1.0.0\lib\netstandard2.0\Snappier.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ZstdSharp">
+      <HintPath>packages\ZstdSharp.Port.0.7.3\lib\net461\ZstdSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
+      <HintPath>packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="MongoDB.Driver.Core, Version=2.30.0.0, Culture=neutral, PublicKeyToken=94992a530f44e321, processorArchitecture=MSIL">
       <HintPath>packages\MongoDB.Driver.Core.2.30.0\lib\net472\MongoDB.Driver.Core.dll</HintPath>
       <Private>True</Private>
@@ -186,6 +216,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Models.cs" />
+    <Compile Include="Models\ItemCategoryCatalog.cs" />
     <Compile Include="Models\BrowseItemsViewModel.cs" />
     <Compile Include="Models\AuthViewModels.cs" />
     <Compile Include="Models\AuthDocuments.cs" />
@@ -197,6 +228,7 @@
     <Compile Include="Models\ListingsviewModels.cs" />
     <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
     <Compile Include="Services\MongoDatabase.cs" />
+    <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\MarketplaceService.cs" />
     <Compile Include="Services\BookingService.cs" />
     <Compile Include="Services\BorrowedItemsService.cs" />
@@ -241,6 +273,7 @@
     <Content Include="Content\fonts\PlusJakartaSans-Variable.ttf" />
     <Content Include="Scripts\auth-forms.js" />
     <Content Include="Scripts\availability.js" />
+    <Content Include="Scripts\MyRentals.js" />
     <Content Include="Scripts\rental-request.js" />
     <Content Include="Scripts\jquery-3.5.0.js" />
     <Content Include="Scripts\jquery-3.5.0.min.js" />
@@ -272,8 +305,6 @@
     <Content Include="Views\BrowseItems\OwnerProfile.cshtml" />
     <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
     <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
-    <Content Include="Views\MyRentals\Details.cshtml" />
-    <Content Include="Views\MyRentals\History.cshtml" />
     <Content Include="Views\RentalRequests\Index.cshtml" />
     <Content Include="Views\Chatroom\Chatroom.cshtml" />
     <Content Include="Views\Dashboard\Index.cshtml" />
@@ -358,6 +389,7 @@
     <Compile Include="Controllers\Transaction &amp; Payment Records\TransactionPaymentRecords.cs" />
     <Compile Include="Models\DisputeViewModel.cs" />
     <Compile Include="Models\TransactionViewModel.cs" />
+    <Compile Include="Models\MyRentalsViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

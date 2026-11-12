@@ -78,7 +78,7 @@
                                     </div>
                                 </td>
                                 <td>@item.CategoryLabel</td>
-                                <td class="my-listings-price">&#8369;@item.Price.ToString("N2") <small>/ @item.PerHours hr@(item.PerHours == 1 ? "" : "s")</small></td>
+                                <td class="my-listings-price">&#8369;@((item.Price / Math.Max(1, item.PerHours)).ToString("0")) <small>/hr</small></td>
                                 <td>@(item.CreatedAt == default(DateTime) ? "-" : item.CreatedAt.ToLocalTime().ToString("MMM d, yyyy"))</td>
                                 <td><span class="my-listings-status is-@statusClass">@statusLabel</span></td>
                                 <td>

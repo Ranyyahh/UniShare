@@ -29,7 +29,6 @@
         reset: document.getElementById('btnResetFilter'),
         apply: document.getElementById('btnApplyFilter'),
         error: document.getElementById('filterError'),
-        refresh: document.getElementById('btnRefreshReport'),
         exportBtn: document.getElementById('btnExportReport'),
         notice: document.getElementById('reportsNotice'),
         tooltip: document.getElementById('reportsTooltip'),
@@ -37,14 +36,6 @@
         cardRentals: document.getElementById('cardRentals'),
         cardItems: document.getElementById('cardItems'),
         cardBorrowings: document.getElementById('cardBorrowings'),
-        cardPendingRentals: document.getElementById('cardPendingRentals'),
-        cardActiveRentals: document.getElementById('cardActiveRentals'),
-        cardCompletedRentals: document.getElementById('cardCompletedRentals'),
-        cardClosedRentals: document.getElementById('cardClosedRentals'),
-        cardPendingBorrowings: document.getElementById('cardPendingBorrowings'),
-        cardActiveBorrowings: document.getElementById('cardActiveBorrowings'),
-        cardCompletedBorrowings: document.getElementById('cardCompletedBorrowings'),
-        cardClosedBorrowings: document.getElementById('cardClosedBorrowings'),
         revenueSubtitle: document.getElementById('revenueSubtitle'),
         activitySubtitle: document.getElementById('activitySubtitle'),
         statusFootnote: document.getElementById('statusFootnote'),
@@ -728,14 +719,6 @@
         setNumber(el.cardRentals, data.cards.totalRentals, roundInt);
         setNumber(el.cardItems, data.cards.itemsRented, roundInt);
         setNumber(el.cardBorrowings, data.cards.totalBorrowings, roundInt);
-        setNumber(el.cardPendingRentals, data.cards.pendingTransactions, roundInt);
-        setNumber(el.cardActiveRentals, data.cards.activeRentals, roundInt);
-        setNumber(el.cardCompletedRentals, data.cards.completedRentals, roundInt);
-        setNumber(el.cardClosedRentals, data.cards.rejectedOrCancelledTransactions, roundInt);
-        setNumber(el.cardPendingBorrowings, data.cards.pendingBorrowingRequests, roundInt);
-        setNumber(el.cardActiveBorrowings, data.cards.activeBorrowedRentals, roundInt);
-        setNumber(el.cardCompletedBorrowings, data.cards.completedBorrowedRentals, roundInt);
-        setNumber(el.cardClosedBorrowings, data.cards.cancelledOrRejectedBorrowings, roundInt);
 
         el.revenueSubtitle.textContent = 'Completed rentals only, grouped by ' + word;
         el.activitySubtitle.textContent = 'Borrowing transactions per ' + word + ' \u00B7 hover a bar to see the items';
@@ -838,8 +821,6 @@
         for (i = 0; i < boxes.length; i++) {
             boxes[i].className = boxes[i].className.replace(/\s*is-loading/g, '') + (on ? ' is-loading' : '');
         }
-        el.refresh.className = 'reports-btn reports-btn--secondary reports-btn--refresh' + (on ? ' is-loading' : '');
-        el.refresh.setAttribute('aria-busy', on ? 'true' : 'false');
     }
 
     function validateRange(from, to) {
@@ -913,7 +894,7 @@
                 setNotice(null);
             } else {
                 setNotice('The report could not be loaded. Please try again.', true);
-                render(null, 'Something went wrong while loading the report. Use Refresh to try again.');
+                render(null, 'Something went wrong while loading the report. Adjust the dates or apply the filters to try again.');
             }
         };
         xhr.send();
@@ -976,8 +957,6 @@
         el.to.value = defaultTo;
         load({ from: defaultFrom, to: defaultTo });
     });
-
-    el.refresh.addEventListener('click', function () { load(applied); });
 
     el.exportBtn.addEventListener('click', exportReport);
 

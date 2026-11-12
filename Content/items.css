@@ -22,19 +22,19 @@ h1, h2, h3, .page-title {
 }
 
 .browse-container {
-    max-width: 1240px;
-    padding: 2rem 1.5rem 3rem;
+    max-width: 1760px;
+    padding: 2.5rem 2.25rem 3.5rem;
 }
 
 .page-title {
-    font-size: 1.9rem;
+    font-size: 2.35rem;
     font-weight: 800;
     letter-spacing: -.02em;
     margin-bottom: .35rem;
 }
 
 .page-subtitle {
-    font-size: .85rem;
+    font-size: 1rem;
     color: var(--on-variant);
     margin-bottom: 0;
 }
@@ -595,7 +595,7 @@ h1, h2, h3, .page-title {
 
 .item-title {
     font-family: 'Inter', sans-serif;
-    font-size: .8rem;
+    font-size: 1rem;
     font-weight: 700;
     margin: 0 0 .45rem;
 }
@@ -609,9 +609,50 @@ h1, h2, h3, .page-title {
 }
 
 .item-rating {
-    font-size: .68rem;
+    font-size: .85rem;
     color: var(--on-variant);
     margin-bottom: .8rem;
+}
+
+.item-campus {
+    color: #475569;
+    font-size: .85rem;
+    font-weight: 600;
+    margin: 0 0 .45rem;
+}
+
+.item-description-text {
+    overflow-wrap: anywhere;
+    word-break: normal;
+    white-space: pre-wrap;
+    line-height: 1.7;
+}
+
+.owner-profile-page {
+    max-width: 1760px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+}
+
+.owner-profile-hero,
+.owner-listing-card {
+    border: 1px solid #dcdff0;
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(11, 28, 48, .05);
+}
+
+.owner-profile-hero { padding: 2rem; }
+.owner-listing-card { height: 100%; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+.owner-profile-hidden { display: none !important; }
+.owner-listing-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(11, 28, 48, .1); }
+.owner-listing-card img, .owner-listing-placeholder { width: 100%; height: 230px; object-fit: cover; }
+.owner-listing-placeholder { display: grid; place-items: center; background: #eaf0ff; color: #64748b; }
+.owner-profile-tools { display: grid; grid-template-columns: minmax(280px, 1fr) repeat(2, minmax(210px, 260px)); gap: .8rem; margin: 1.25rem 0; }
+.owner-profile-tools input, .owner-profile-tools select { min-height: 48px; font-size: 1rem; }
+@media (max-width: 767px) {
+    .owner-profile-page { padding: 1.25rem .9rem 2.5rem; }
+    .owner-profile-tools { grid-template-columns: 1fr; }
 }
 
     .item-rating .bi-star-fill {

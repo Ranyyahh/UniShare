@@ -20,13 +20,15 @@ namespace UniShare.Controllers
             if (convo == null) return HttpNotFound();
             if (!string.IsNullOrWhiteSpace(text))
             {
+                text = text.Trim();
+                if (text.Length > 500) return new HttpStatusCodeResult(400, "Messages are limited to 500 characters.");
                 convo.Messages.Add(new ChatMessage
                 {
                     Mine = true,
-                    Text = text.Trim(),
+                    Text = text,
                     Time = System.DateTime.Now.ToString("h:mm tt")
                 });
-                convo.LastMessage = text.Trim();
+                convo.LastMessage = text;
                 convo.Time = "Just now";
             }
             return RedirectToAction("Index", new { id = id });

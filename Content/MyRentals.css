@@ -108,36 +108,18 @@
    B. Summary Cards
    -------------------------------------------------------------------------- */
 .my-rentals-summary {
-    /* Same card design tokens as the Reports & Analytics overview cards */
-    --rp-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 8px rgba(15, 23, 42, 0.04);
-    --rp-shadow-hover: 0 6px 18px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.05);
-    --rp-ease: cubic-bezier(0.22, 0.8, 0.28, 1);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 24px;
 }
 
-@keyframes myRentalsCardRise {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 .my-rentals-card {
     /* Display-only information cards: not interactive, so no pointer cursor or button styling */
-    position: relative;
     box-sizing: border-box;
     width: 100%;
-    min-height: 104px;
+    min-height: 92px;
     margin: 0;
-    overflow: hidden;
     cursor: default;
     display: flex;
     align-items: center;
@@ -145,35 +127,17 @@
     gap: 12px;
     padding: 18px 20px;
     background: #ffffff;
-    background: linear-gradient(135deg, #ffffff 55%, color-mix(in srgb, var(--card-accent, #cbd5e1) 7%, #ffffff) 100%);
     border: 1px solid var(--border, #e2e8f0);
     border-top: 3px solid var(--card-accent, #cbd5e1);
-    border-radius: 12px;
-    box-shadow: var(--rp-shadow);
-    transition: transform 220ms var(--rp-ease), box-shadow 220ms var(--rp-ease);
-    animation: myRentalsCardRise 480ms var(--rp-ease) backwards; /* backwards: hover lift keeps working */
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+    transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
-    .my-rentals-card:nth-child(2) {
-        animation-delay: 60ms;
-    }
-
-    .my-rentals-card:nth-child(3) {
-        animation-delay: 120ms;
-    }
-
-    .my-rentals-card:nth-child(4) {
-        animation-delay: 180ms;
-    }
-
     .my-rentals-card:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--rp-shadow-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.07);
     }
-
-        .my-rentals-card:hover .my-rentals-card__icon {
-            transform: scale(1.08) rotate(-4deg);
-        }
 
 .my-rentals-card__content {
     display: flex;
@@ -211,7 +175,6 @@
     color: var(--text-primary, #0f172a);
     line-height: 1.1;
     letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
 }
 
 .my-rentals-card__icon {
@@ -220,8 +183,7 @@
     flex: 0 0 44px;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    transition: transform 260ms var(--rp-ease);
+    border-radius: 10px;
 }
 
     .my-rentals-card__icon svg {
@@ -1145,14 +1107,6 @@
     padding: 14px 20px;
     background: #f8fafc;
     border-top: 1px solid var(--border, #e2e8f0);
-}
-
-.my-rentals-pending-notice {
-    flex: 1 1 auto;
-    margin: 0 auto 0 0;
-    color: #475569;
-    font-size: 13px;
-    line-height: 1.5;
 }
 
 /* Button Component Utilities */
@@ -3345,109 +3299,7 @@
     transform: none;
 }
 
-.my-rentals-incoming-section {
-    margin: 0 0 24px;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #dbe3f0;
-    border-radius: 14px;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
-}
-
-.my-rentals-incoming-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 14px;
-}
-
-.my-rentals-incoming-heading h2 {
-    margin: 0;
-    color: #0f172a;
-    font-size: 18px;
-    font-weight: 700;
-}
-
-.my-rentals-incoming-heading p {
-    margin: 4px 0 0;
-    color: #64748b;
-    font-size: 13px;
-}
-
-.my-rentals-incoming-count {
-    flex: 0 0 auto;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #eef2ff;
-    color: #4338ca;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.my-rentals-incoming-table {
-    min-width: 900px;
-}
-
-.my-rentals-incoming-table td {
-    vertical-align: middle;
-}
-
-.my-rentals-incoming-subtext {
-    display: block;
-    margin-top: 4px;
-    color: #64748b;
-    font-size: 12px;
-}
-
-.my-rentals-incoming-actions,
-.my-rentals-incoming-actions form {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.my-rentals-incoming-actions form {
-    flex-wrap: wrap;
-}
-
-.my-rentals-incoming-actions select,
-.my-rentals-incoming-actions input[type="text"] {
-    min-height: 36px;
-    padding: 7px 9px;
-    border: 1px solid #cbd5e1;
-    border-radius: 7px;
-    background: #fff;
-    color: #334155;
-    font: inherit;
-}
-
-.my-rentals-incoming-actions input[type="text"] {
-    width: 145px;
-}
-
-.my-rentals-incoming-all {
-    display: inline-block;
-    margin-top: 14px;
-    color: #4f46e5;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.my-rentals-incoming-all:hover {
-    text-decoration: underline;
-}
-
 @media (max-width: 600px) {
-    .my-rentals-incoming-section {
-        padding: 14px;
-    }
-
-    .my-rentals-incoming-heading {
-        align-items: flex-start;
-    }
-
     .rm-verify-grid {
         grid-template-columns: 1fr;
     }

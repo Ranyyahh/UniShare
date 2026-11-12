@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Web.Mvc;
 using UniShare.Models;
+using UniShare.Services;
+using MongoDB.Bson;
 
 namespace UniShare.Controllers
 {
@@ -10,14 +12,18 @@ namespace UniShare.Controllers
         // /Notifications
         public ActionResult Index()
         {
-            return View(SampleData.Notifications);
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
+            return View(NotificationService.GetForUser(userId));
         }
 
         // POST /Notifications/MarkAllRead
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult MarkAllRead()
         {
-            foreach (var n in SampleData.Notifications) n.Unread = false;
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
+            NotificationService.MarkAllRead(userId);
             return RedirectToAction("Index");
         }
     }

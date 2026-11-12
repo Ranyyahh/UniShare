@@ -61,10 +61,10 @@ namespace UniShare.Models
         [Required, RegularExpression(@"^([01]\d|2[0-3]):[0-5]\d$", ErrorMessage = "Use HH:mm (24-hour).")]
         public string LatestReturnTime { get; set; }
 
-        [Required, StringLength(80)] public string Campus { get; set; }
-        [Required, StringLength(120)] public string Building { get; set; }
+        [Required, RegularExpression("^(San Bartolome|San Francisco|Batasan)$", ErrorMessage = "Choose a valid campus.")] public string Campus { get; set; }
+        [StringLength(120)] public string Building { get; set; }
         [StringLength(80)] public string Room { get; set; }
-        [Required, StringLength(160)] public string HandoverLocation { get; set; }
+        [StringLength(160)] public string HandoverLocation { get; set; }
 
         // ----- Dropdown / option data (filled by the controller, not posted) -----
         public List<CategoryOptionViewModel> Categories { get; set; } = new List<CategoryOptionViewModel>();

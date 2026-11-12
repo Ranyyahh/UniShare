@@ -27,10 +27,6 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 <span>Export</span>
             </button>
-            <button type="button" id="btnRefreshReport" class="reports-btn reports-btn--secondary reports-btn--refresh" title="Reload the report for the selected dates">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                <span>Refresh</span>
-            </button>
         </div>
     </header>
 
@@ -106,20 +102,9 @@
         </div>
     </section>
 
-    <section class="reports-metrics" aria-label="Personal transaction metrics">
-        <article class="reports-metric"><span>Lender · pending</span><strong id="cardPendingRentals">0</strong></article>
-        <article class="reports-metric"><span>Lender · active</span><strong id="cardActiveRentals">0</strong></article>
-        <article class="reports-metric"><span>Lender · completed</span><strong id="cardCompletedRentals">0</strong></article>
-        <article class="reports-metric"><span>Lender · cancelled / rejected</span><strong id="cardClosedRentals">0</strong></article>
-        <article class="reports-metric"><span>Borrower · pending</span><strong id="cardPendingBorrowings">0</strong></article>
-        <article class="reports-metric"><span>Borrower · active</span><strong id="cardActiveBorrowings">0</strong></article>
-        <article class="reports-metric"><span>Borrower · completed</span><strong id="cardCompletedBorrowings">0</strong></article>
-        <article class="reports-metric"><span>Borrower · cancelled / rejected</span><strong id="cardClosedBorrowings">0</strong></article>
-    </section>
-
     <!-- D. Renting charts -->
     <section class="reports-section" aria-labelledby="rentingHeading">
-        <h2 class="reports-section__title" id="rentingHeading">Renting <span>items you own</span></h2>
+        <h2 class="reports-section__title" id="rentingHeading">Rentals</h2>
 
         <article class="reports-panel reports-panel--featured">
             <header class="reports-panel__header">

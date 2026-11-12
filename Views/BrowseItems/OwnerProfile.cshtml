@@ -1,67 +1,117 @@
 @model UniShare.Models.OwnerProfileViewModel
+@using System.Linq
 @{
     ViewBag.Title = Model.Name + " | Owner Profile";
+    var categories = Model.Listings.Select(x => x.CategoryLabel).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x).ToList();
 }
 
-<main class="container py-5" style="max-width: 1100px">
+@section Styles {
+    <link href="@Url.Content("~/Content/items.css")" rel="stylesheet" />
+}
+
+<main class="owner-profile-page">
     <a class="text-decoration-none" href="@Url.Action("Index", "BrowseItems")">&larr; Browse items</a>
-    <section class="card border-0 shadow-sm mt-4 p-4 p-md-5">
-        <div class="d-flex align-items-center gap-3">
+    <section class="owner-profile-hero mt-3">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
             @if (!string.IsNullOrWhiteSpace(Model.ProfilePhoto))
             {
-                <img src="@Url.Content(Model.ProfilePhoto)" alt="@Model.Name" class="rounded-circle" style="width:76px;height:76px;object-fit:cover" />
+                <img src="@Url.Content(Model.ProfilePhoto)" alt="@Model.Name" class="rounded-circle" style="width:104px;height:104px;object-fit:cover" />
             }
             else
             {
-                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width:76px;height:76px;font-size:1.4rem">@Model.Initials</div>
+                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width:104px;height:104px;font-size:1.8rem">@Model.Initials</div>
             }
-            <div>
-                <h1 class="h3 mb-1">@Model.Name</h1>
-                <div class="text-secondary">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h1 class="h2 mb-0">@Model.Name</h1>
+                    @if (Model.IsVerified) { <span class="badge bg-success">Verified student</span> }
+                </div>
+                <div class="text-secondary mt-2">
                     @Model.Campus
                     @if (!string.IsNullOrWhiteSpace(Model.Program)) { <span> · @Model.Program</span> }
                     @if (!string.IsNullOrWhiteSpace(Model.YearLevel)) { <span> · @Model.YearLevel</span> }
                 </div>
-                <div class="small text-secondary mt-1">
-                    @if (Model.Rating.HasValue) { <span>★ @Model.Rating.Value.ToString("0.0") (@Model.ReviewCount reviews) · </span> }
-                    @Model.CompletedRentals completed rentals
+                <div class="small mt-2">
+                    @if (Model.Rating.HasValue) { <span class="fw-semibold">★ @Model.Rating.Value.ToString("0.0")</span><span class="text-secondary"> (@Model.ReviewCount reviews) · </span> }
+                    <span class="text-secondary">@Model.CompletedRentals completed rentals</span>
                 </div>
             </div>
-            @if (Model.IsVerified)
-            {
-                <span class="badge bg-success ms-auto">Verified student</span>
-            }
         </div>
-        @if (!string.IsNullOrWhiteSpace(Model.Bio))
-        {
-            <p class="mt-4 mb-0">@Model.Bio</p>
-        }
+        @if (!string.IsNullOrWhiteSpace(Model.Bio)) { <p class="mt-4 mb-0" style="overflow-wrap:anywhere;line-height:1.7">@Model.Bio</p> }
     </section>
 
-    <section class="mt-5">
-        <h2 class="h4">Available listings <span class="text-secondary">(@Model.Listings.Count)</span></h2>
+    <section class="mt-5" aria-labelledby="ownerListingsTitle">
+        <div class="d-flex align-items-end justify-content-between gap-3 flex-wrap">
+            <div>
+                <h2 class="h3 mb-1" id="ownerListingsTitle">Available listings</h2>
+                <p class="text-secondary mb-0"><span id="owner-visible-count">@Model.Listings.Count</span> of @Model.Listings.Count items</p>
+            </div>
+        </div>
+
+        <div class="owner-profile-tools">
+            <input id="owner-item-search" type="search" class="form-control" placeholder="Search this owner's items" aria-label="Search this owner's items" />
+            <select id="owner-category-filter" class="form-select" aria-label="Filter by category">
+                <option value="">All categories</option>
+                @foreach (var category in categories) { <option value="@category">@category</option> }
+            </select>
+            <select id="owner-condition-filter" class="form-select" aria-label="Filter by condition">
+                <option value="">All conditions</option>
+                @foreach (var condition in new[] { "Like New", "Good", "Fair", "Heavy Use" }) { <option value="@condition">@condition</option> }
+            </select>
+        </div>
+
         @if (Model.Listings.Count == 0)
         {
-            <p class="text-secondary mt-3">This owner has no available listings right now.</p>
+            <div class="owner-profile-hero text-secondary">This owner has no available listings right now.</div>
         }
         else
         {
-            <div class="row g-3 mt-1">
+            <div class="row g-4" id="owner-listings-grid">
                 @foreach (var item in Model.Listings)
                 {
-                    <div class="col-sm-6 col-lg-4">
-                        <a class="card h-100 text-decoration-none text-reset overflow-hidden" href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })">
-                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Title" style="height:190px;object-fit:cover" /> }
-                            else { <div class="d-flex flex-column align-items-center justify-content-center bg-light text-secondary" style="height:190px"><i class="bi bi-camera"></i><span>No photo uploaded</span></div> }
-                            <div class="card-body">
+                    <div class="col-sm-6 col-xl-4 owner-listing-result" data-title="@item.Title" data-category="@item.CategoryLabel" data-condition="@item.Condition">
+                        <a class="owner-listing-card d-block text-decoration-none text-reset" href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })">
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Title" loading="lazy" /> }
+                            else { <div class="owner-listing-placeholder">No photo uploaded</div> }
+                            <div class="p-4">
                                 <div class="small text-secondary">@item.CategoryLabel · @item.Condition</div>
-                                <h3 class="h6 mt-2">@item.Title</h3>
-                                <div class="fw-semibold">₱@item.Price.ToString("0.##") / @item.PerHours hours</div>
+                                <h3 class="h5 mt-2 mb-3">@item.Title</h3>
+                                <div class="fw-bold text-primary">₱@((item.Price / Math.Max(1, item.PerHours)).ToString("0")) / hr</div>
                             </div>
                         </a>
                     </div>
                 }
             </div>
+            <div class="owner-profile-hero mt-3 text-secondary" id="owner-listings-empty" hidden>No listings match your search and filters.</div>
         }
     </section>
 </main>
+
+@section scripts {
+    <script>
+        (function () {
+            var search = document.getElementById('owner-item-search');
+            var category = document.getElementById('owner-category-filter');
+            var condition = document.getElementById('owner-condition-filter');
+            var cards = Array.prototype.slice.call(document.querySelectorAll('.owner-listing-result'));
+            if (!search || !category || !condition) return;
+            function apply() {
+                var term = search.value.trim().toLowerCase();
+                var visible = 0;
+                cards.forEach(function (card) {
+                    var matches = (card.dataset.title || '').toLowerCase().indexOf(term) !== -1 &&
+                        (!category.value || card.dataset.category === category.value) &&
+                        (!condition.value || card.dataset.condition === condition.value);
+                    card.classList.toggle('owner-profile-hidden', !matches);
+                    if (matches) visible++;
+                });
+                document.getElementById('owner-visible-count').textContent = visible;
+                var empty = document.getElementById('owner-listings-empty');
+                if (empty) empty.hidden = visible > 0;
+            }
+            search.addEventListener('input', apply);
+            category.addEventListener('change', apply);
+            condition.addEventListener('change', apply);
+        })();
+    </script>
+}

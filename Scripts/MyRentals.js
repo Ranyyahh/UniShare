@@ -938,28 +938,11 @@
         }
     }
 
-    // Counts up to the new value (same effect as the Reports & Analytics cards).
     function setSummaryCard(key, value) {
         var el = document.querySelector('[data-summary-value="' + key + '"]');
-        if (!el) { return; }
-        var target = Number(value) || 0;
-        if (el._raf && window.cancelAnimationFrame) { window.cancelAnimationFrame(el._raf); }
-        var current = (typeof el._val === 'number') ? el._val : (parseInt(el.textContent, 10) || 0);
-        var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-        if (reduce || !window.requestAnimationFrame || current === target) {
-            el._val = target;
-            el.textContent = String(target);
-            return;
+        if (el) {
+            el.textContent = String(value);
         }
-        var from = current, start = null;
-        function step(ts) {
-            if (start === null) { start = ts; }
-            var p = Math.min(1, (ts - start) / 700), e = 1 - Math.pow(1 - p, 3);
-            el._val = p === 1 ? target : from + (target - from) * e;
-            el.textContent = String(Math.round(el._val));
-            if (p < 1) { el._raf = window.requestAnimationFrame(step); }
-        }
-        el._raf = window.requestAnimationFrame(step);
     }
 
     // "Nov 09, 2026" and "Nov 09, 2026 • 4:30 PM", the same formats the controller produces
@@ -995,16 +978,13 @@
         setText('pendingFeeBreakdown', rental.RentalFeeFormatted);
         setText('pendingNote', rental.RequestNote);
 
-        setText('pendingModalDescription', 'Your request is waiting for the item owner to review it.');
-        setText('pendingNoteTitle', 'Your note to the owner');
-
         showFlowModal(elements.pendingModal, elements.btnClosePendingDetails);
     }
 
     // --- Accept ---
     function openAcceptModal() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
+        if (!rental || rental.Status !== 'Pending') {
             return;
         }
 
@@ -1025,7 +1005,7 @@
 
     function confirmAccept() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
+        if (!rental || rental.Status !== 'Pending') {
             return;
         }
 
@@ -1067,7 +1047,7 @@
 
     function openDeclineModal() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
+        if (!rental || rental.Status !== 'Pending') {
             return;
         }
 
@@ -1083,7 +1063,7 @@
 
     function confirmDecline() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
+        if (!rental || rental.Status !== 'Pending') {
             return;
         }
 
@@ -1888,18 +1868,14 @@
             e.preventDefault();
             endFlow(true);
         });
-        if (elements.btnPendingAccept) {
-            elements.btnPendingAccept.addEventListener('click', function (e) {
-                e.preventDefault();
-                openAcceptModal();
-            });
-        }
-        if (elements.btnPendingDecline) {
-            elements.btnPendingDecline.addEventListener('click', function (e) {
-                e.preventDefault();
-                openDeclineModal();
-            });
-        }
+        elements.btnPendingAccept.addEventListener('click', function (e) {
+            e.preventDefault();
+            openAcceptModal();
+        });
+        elements.btnPendingDecline.addEventListener('click', function (e) {
+            e.preventDefault();
+            openDeclineModal();
+        });
 
         // Accept
         elements.btnAcceptCancel.addEventListener('click', function (e) {

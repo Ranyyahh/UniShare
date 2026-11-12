@@ -61,7 +61,7 @@ namespace UniShare.Services
                 ? (decimal)details.HourlyRate * unitHours
                 : (decimal)(details.PricePerDay > 0 ? details.PricePerDay : details.DailyRate);
             if (unitHours <= 0) unitHours = 24;
-            var category = item.Category ?? "Other Items";
+            var category = ItemCategoryCatalog.Normalize(item.Category);
             var categoryId = CategoryId(category);
             var status = string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase)
                 ? ListingStatus.Rented
@@ -113,8 +113,8 @@ namespace UniShare.Services
                 ItemCode = "QCU-" + item.Id.ToString().Substring(18).ToUpperInvariant(),
                 Name = item.Name,
                 Title = item.Name,
-                Category = item.Category,
-                CategoryLabel = item.Category,
+                Category = ItemCategoryCatalog.Normalize(item.Category),
+                CategoryLabel = ItemCategoryCatalog.Normalize(item.Category),
                 Subcategory = item.Category,
                 Condition = NormalizeCondition(item.Condition),
                 Campus = location.Campus,

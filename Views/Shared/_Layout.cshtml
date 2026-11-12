@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 @{
     var showAdminSidebar = ViewBag.ShowAdminSidebar != null && (bool)ViewBag.ShowAdminSidebar;
+    var popupNotifications = new System.Collections.Generic.List<UniShare.Models.NotificationItem>();
+    MongoDB.Bson.ObjectId popupUserId;
+    if (User != null && User.Identity != null && User.Identity.IsAuthenticated && MongoDB.Bson.ObjectId.TryParse(User.Identity.Name, out popupUserId))
+    {
+        popupNotifications = UniShare.Services.NotificationService.GetForUser(popupUserId);
+    }
     var popupPayload = new
     {
         conversations = UniShare.Models.SampleData.Conversations.Select(c => new
@@ -14,13 +20,14 @@
             unread = c.Unread,
             messages = c.Messages.Select(m => new { mine = m.Mine, text = m.Text, time = m.Time })
         }),
-        notifications = UniShare.Models.SampleData.Notifications.Select(n => new
+        notifications = popupNotifications.Select(n => new
         {
             id = n.Id,
             title = n.Title,
             body = n.Body,
             time = n.Time,
-            unread = n.Unread
+            unread = n.Unread,
+            url = n.LinkUrl
         })
     };
     var popupJson = System.Web.Helpers.Json.Encode(popupPayload).Replace("<", "\\u003c");
@@ -187,7 +194,11 @@
         </header>
         <div class="pm-dialog__toolbar">
             <p>Latest updates about your rentals and messages.</p>
-            <button id="pm-notes-readall" class="pm-readall" type="button">Mark all as read</button>
+            @using (Html.BeginForm("MarkAllRead", "Notifications", FormMethod.Post, new { id = "pm-notes-readall-form" }))
+            {
+                @Html.AntiForgeryToken()
+                <button id="pm-notes-readall" class="pm-readall" type="submit">Mark all as read</button>
+            }
         </div>
         <ul class="pm-notes-list" id="pm-notes-list"></ul>
     </dialog>

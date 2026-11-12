@@ -119,6 +119,8 @@ namespace UniShare.Models
         public string Body { get; set; }
         public string Time { get; set; }
         public bool Unread { get; set; }
+        public string EventKey { get; set; }
+        public string LinkUrl { get; set; }
     }
 
     public class ListingForm

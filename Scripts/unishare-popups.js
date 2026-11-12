@@ -43,7 +43,7 @@
         if (!notes.length) { list.innerHTML = '<li class="pm-empty">You have no notifications.</li>'; }
         else {
             list.innerHTML = notes.map(function (n) {
-                return '<li class="' + (n.unread ? 'is-unread' : '') + '" data-note="' + n.id + '" tabindex="0">' +
+                return '<li class="' + (n.unread ? 'is-unread' : '') + '" data-note="' + n.id + '" tabindex="0" data-url="' + esc(n.url || '/MyRentals/Index') + '">' +
                        '<div><strong>' + esc(n.title) + '</strong><p>' + esc(n.body) + '</p></div><small>' + esc(n.time) + '</small></li>';
             }).join('');
         }
@@ -55,17 +55,20 @@
         renderNotes();
     }
 
-    $('pm-notes-readall').addEventListener('click', function () {
+    $('pm-notes-readall').addEventListener('click', function (event) {
+        event.preventDefault();
         notes.forEach(function (n) { n.unread = false; });
         renderNotes();
+        var form = $('pm-notes-readall-form');
+        if (form) fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
     });
     $('pm-notes-list').addEventListener('click', function (e) {
         var li = e.target.closest('[data-note]');
-        if (li) { markRead(parseInt(li.getAttribute('data-note'), 10)); }
+        if (li) { markRead(parseInt(li.getAttribute('data-note'), 10)); window.location.href = li.getAttribute('data-url'); }
     });
     $('pm-notes-list').addEventListener('keydown', function (e) {
         var li = e.target.closest('[data-note]');
-        if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); markRead(parseInt(li.getAttribute('data-note'), 10)); }
+        if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); markRead(parseInt(li.getAttribute('data-note'), 10)); window.location.href = li.getAttribute('data-url'); }
     });
 
     function openNotes() { renderNotes(); setTriggerState('.notification-button', true); open(notesDlg); }
@@ -97,7 +100,7 @@
             (c.messages.length ? c.messages.map(function (m) {
                 return '<div class="us-bubble' + (m.mine ? ' is-mine' : '') + '"><p>' + esc(m.text) + '</p><small>' + esc(m.time) + '</small></div>';
             }).join('') : '<p class="pm-empty">Say hello to ' + esc(c.person) + '.</p>') + '</div>' +
-            '<form class="us-chat__form" id="pm-chat-form"><input type="text" name="text" placeholder="Type a message..." autocomplete="off" required />' +
+            '<form class="us-chat__form" id="pm-chat-form"><input type="text" name="text" maxlength="500" placeholder="Type a message..." autocomplete="off" required />' +
             '<button type="submit" class="us-btn us-btn--primary">Send</button></form>';
         var input = panel.querySelector('input[name="text"]');
         input.value = typed;
@@ -142,6 +145,7 @@
         var input = e.target.querySelector('input[name="text"]');
         var text = input.value.trim();
         if (!c || !text) { return; }
+        if (text.length > 500) { text = text.slice(0, 500); }
         c.messages.push({ mine: true, text: text, time: nowLabel() });
         c.last = text;
         c.time = 'Just now';

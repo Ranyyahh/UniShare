@@ -180,7 +180,7 @@ namespace UniShare.Controllers
                 OwnerId = CurrentOwnerId,
                 Name = model.ItemName.Trim(),
                 Description = model.Description.Trim(),
-                Category = selectedCat != null ? selectedCat.Name : "Other Items",
+                Category = selectedCat != null ? selectedCat.Name : "Others",
                 Photos = savedPhotos,
                 Condition = ToStoredCondition(model.Condition),
                 AvailabilityStatus = "AVAILABLE",
@@ -204,9 +204,9 @@ namespace UniShare.Controllers
                 Location = new ItemLocationDocument
                 {
                     Campus = model.Campus.Trim(),
-                    Building = model.Building.Trim(),
-                    Room = string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(),
-                    HandoverLocation = model.HandoverLocation.Trim()
+                    Building = "",
+                    Room = null,
+                    HandoverLocation = model.Campus.Trim()
                 },
                 CreatedAt = now,
                 UpdatedAt = now
@@ -335,7 +335,7 @@ namespace UniShare.Controllers
             var update = Builders<ItemDocument>.Update
                 .Set(x => x.Name, model.ItemName.Trim())
                 .Set(x => x.Description, model.Description.Trim())
-                .Set(x => x.Category, category != null ? category.Name : "Other Items")
+                .Set(x => x.Category, category != null ? category.Name : "Others")
                 .Set(x => x.Condition, ToStoredCondition(model.Condition))
                 .Set(x => x.Photos, newPhotos)
                 .Set(x => x.AvailableDays, model.AvailableDays ?? new List<string>())
@@ -354,9 +354,9 @@ namespace UniShare.Controllers
                 .Set(x => x.Location, new ItemLocationDocument
                 {
                     Campus = model.Campus.Trim(),
-                    Building = model.Building.Trim(),
-                    Room = string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(),
-                    HandoverLocation = model.HandoverLocation.Trim()
+                    Building = "",
+                    Room = null,
+                    HandoverLocation = model.Campus.Trim()
                 })
                 .Set(x => x.UpdatedAt, DateTime.UtcNow);
             if (requiresReview)
@@ -441,6 +441,10 @@ namespace UniShare.Controllers
                 ModelState.AddModelError("AvailableDays", "Select at least one handover day.");
 
             TimeSpan from, to;
+            if (TimeSpan.TryParse(model.EarliestHandoverTime, out from) && from < new TimeSpan(6, 0, 0))
+                ModelState.AddModelError("EarliestHandoverTime", "Earliest handover cannot be before 6:00 AM.");
+            if (TimeSpan.TryParse(model.LatestReturnTime, out to) && to > new TimeSpan(21, 0, 0))
+                ModelState.AddModelError("LatestReturnTime", "Latest return cannot be after 9:00 PM.");
             if (TimeSpan.TryParse(model.EarliestHandoverTime, out from) &&
                 TimeSpan.TryParse(model.LatestReturnTime, out to) && to <= from)
                 ModelState.AddModelError("LatestReturnTime", "Latest return must be after the earliest handover.");
@@ -454,7 +458,8 @@ namespace UniShare.Controllers
             var item = MarketplaceService.ToListing(document);
 
             int catId = item.CategoryId > 0 ? item.CategoryId : 1;
-            var cat = GetCategoryOptions().FirstOrDefault(c => c.Id == catId || c.Name.Equals(item.CategoryLabel, StringComparison.OrdinalIgnoreCase));
+            var canonicalCategory = ItemCategoryCatalog.Normalize(item.CategoryLabel);
+            var cat = GetCategoryOptions().FirstOrDefault(c => c.Name.Equals(canonicalCategory, StringComparison.OrdinalIgnoreCase));
             if (cat != null) catId = cat.Id;
 
             ConditionGrade cond = ConditionGrade.Good;
@@ -549,13 +554,12 @@ namespace UniShare.Controllers
         {
             return new List<CategoryOptionViewModel>
             {
-                new CategoryOptionViewModel { Id = 1, Name = "Electronics",                 Group = "Gadgets" },
-                new CategoryOptionViewModel { Id = 2, Name = "Camera",                      Group = "Cameras" },
-                new CategoryOptionViewModel { Id = 3, Name = "Books & References",          Group = "Books" },
-                new CategoryOptionViewModel { Id = 4, Name = "School Supplies (Drafting)",  Group = "School Supplies" },
-                new CategoryOptionViewModel { Id = 5, Name = "Sports Equipment",            Group = "Sports" },
-                new CategoryOptionViewModel { Id = 6, Name = "Other Items",                 Group = "Other" },
-                new CategoryOptionViewModel { Id = 7, Name = "Electronic Accessories",      Group = "Accessories" }
+                new CategoryOptionViewModel { Id = 1, Name = "Electronics & Gadgets", Group = "Electronics & Gadgets" },
+                new CategoryOptionViewModel { Id = 2, Name = "Books & Learning Materials", Group = "Books & Learning Materials" },
+                new CategoryOptionViewModel { Id = 3, Name = "School Supplies", Group = "School Supplies" },
+                new CategoryOptionViewModel { Id = 4, Name = "Clothing & Uniforms", Group = "Clothing & Uniforms" },
+                new CategoryOptionViewModel { Id = 5, Name = "Sports & Recreation", Group = "Sports & Recreation" },
+                new CategoryOptionViewModel { Id = 6, Name = "Others", Group = "Others" }
             };
         }
 

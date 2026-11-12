@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Web.Mvc;
 using MongoDB.Bson;
+using UniShare.Models;
 using UniShare.Services;
 
 namespace UniShare.Controllers
