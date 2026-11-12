@@ -21,7 +21,7 @@ namespace UniShare.Services
         {
             ObjectId objectId;
             if (!ObjectId.TryParse(id, out objectId)) return null;
-            return MongoDatabase.Items.Find(x => x.Id == objectId && x.ApprovalStatus == "APPROVED").FirstOrDefault();
+            return MongoDatabase.Items.Find(x => x.Id == objectId && x.ApprovalStatus == "APPROVED" && x.AvailabilityStatus == "AVAILABLE").FirstOrDefault();
         }
 
         public static List<ListingItemViewModel> GetOwnerListings(ObjectId ownerId)
@@ -50,23 +50,6 @@ namespace UniShare.Services
             var filter = Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) &
                 Builders<BsonDocument>.Filter.In("status", new[] { "COMPLETED", "COMPLETE" });
             return (int)MongoDatabase.Rentals.CountDocuments(filter);
-        }
-
-        public static List<DateTime> GetBookedDates(ObjectId itemId)
-        {
-            var documents = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId)).ToList();
-            var dates = new HashSet<DateTime>();
-            foreach (var booking in documents)
-            {
-                var status = booking.GetValue("status", "").ToString().ToUpperInvariant();
-                if (status == "CANCELLED" || status == "CANCELED" || status == "DECLINED" || status == "EXPIRED" || status == "REJECTED") continue;
-                var start = ReadDate(booking, "startDate");
-                var end = ReadDate(booking, "endDate");
-                if (start == null) continue;
-                if (end == null || end.Value < start.Value) end = start;
-                for (var day = start.Value.Date; day <= end.Value.Date && day <= start.Value.Date.AddDays(365); day = day.AddDays(1)) dates.Add(day);
-            }
-            return dates.OrderBy(x => x).ToList();
         }
 
         public static ListingItemViewModel ToListing(ItemDocument item)
@@ -106,7 +89,10 @@ namespace UniShare.Services
                 AvailableDays = item.AvailableDays ?? new List<string>(),
                 ReplacementValue = (decimal)details.ReplacementValue,
                 SecurityDeposit = (decimal)details.SecurityDeposit,
-                Accessories = item.Accessories
+                Accessories = item.Accessories,
+                ApprovalStatus = string.IsNullOrWhiteSpace(item.ApprovalStatus) ? "PENDING" : item.ApprovalStatus,
+                RejectionReason = item.ApprovalRejectionReason,
+                CreatedAt = item.CreatedAt
             };
         }
 
@@ -149,7 +135,6 @@ namespace UniShare.Services
                 Rating = rating.Item1,
                 ReviewCount = rating.Item2,
                 AvailableDays = item.AvailableDays ?? new List<string>(),
-                BookedDates = GetBookedDates(item.Id),
                 Lender = new LenderViewModel
                 {
                     Name = ownerName,

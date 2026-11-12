@@ -995,13 +995,16 @@
         setText('pendingFeeBreakdown', rental.RentalFeeFormatted);
         setText('pendingNote', rental.RequestNote);
 
+        setText('pendingModalDescription', 'Your request is waiting for the item owner to review it.');
+        setText('pendingNoteTitle', 'Your note to the owner');
+
         showFlowModal(elements.pendingModal, elements.btnClosePendingDetails);
     }
 
     // --- Accept ---
     function openAcceptModal() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1022,7 +1025,7 @@
 
     function confirmAccept() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1064,7 +1067,7 @@
 
     function openDeclineModal() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1080,7 +1083,7 @@
 
     function confirmDecline() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1885,14 +1888,18 @@
             e.preventDefault();
             endFlow(true);
         });
-        elements.btnPendingAccept.addEventListener('click', function (e) {
-            e.preventDefault();
-            openAcceptModal();
-        });
-        elements.btnPendingDecline.addEventListener('click', function (e) {
-            e.preventDefault();
-            openDeclineModal();
-        });
+        if (elements.btnPendingAccept) {
+            elements.btnPendingAccept.addEventListener('click', function (e) {
+                e.preventDefault();
+                openAcceptModal();
+            });
+        }
+        if (elements.btnPendingDecline) {
+            elements.btnPendingDecline.addEventListener('click', function (e) {
+                e.preventDefault();
+                openDeclineModal();
+            });
+        }
 
         // Accept
         elements.btnAcceptCancel.addEventListener('click', function (e) {

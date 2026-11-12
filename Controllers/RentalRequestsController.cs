@@ -12,7 +12,10 @@ namespace UniShare.Controllers
         {
             ObjectId ownerId;
             if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return new HttpStatusCodeResult(401);
-            return View(BookingService.ForOwner(ownerId).Select(MyRentalsController.MapBooking).ToList());
+            return View(BookingService.ForOwner(ownerId)
+                .Where(x => new[] { "PENDING", "REQUESTED" }.Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
+                .Where(x => x.GetValue("borrowerId", BsonNull.Value).ToString() != ownerId.ToString())
+                .Select(MyRentalsController.MapBooking).ToList());
         }
 
         [HttpPost, ValidateAntiForgeryToken]

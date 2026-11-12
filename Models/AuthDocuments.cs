@@ -82,7 +82,10 @@ namespace UniShare.Models
         [BsonElement("rentalDetails")] public ItemRentalDetailsDocument RentalDetails { get; set; } = new ItemRentalDetailsDocument();
         [BsonElement("location")] public ItemLocationDocument Location { get; set; } = new ItemLocationDocument();
         [BsonElement("availabilityStatus")] public string AvailabilityStatus { get; set; } = "AVAILABLE";
-        [BsonElement("approvalStatus")] public string ApprovalStatus { get; set; } = "APPROVED";
+        [BsonElement("approvalStatus")] public string ApprovalStatus { get; set; } = "PENDING";
+        [BsonIgnoreIfNull] [BsonElement("approvalRejectionReason")] public string ApprovalRejectionReason { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("approvalReviewedAt")] public DateTime? ApprovalReviewedAt { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("approvalReviewedBy")] public ObjectId? ApprovalReviewedBy { get; set; }
         [BsonElement("availableDays")] public List<string> AvailableDays { get; set; } = new List<string>();
         [BsonElement("earliestHandoverTime")] public string EarliestHandoverTime { get; set; }
         [BsonElement("latestReturnTime")] public string LatestReturnTime { get; set; }

@@ -12,6 +12,7 @@ namespace UniShare.Services
     {
         private static readonly string[] NonBlockingStatuses = { "CANCELLED", "CANCELED", "DECLINED", "EXPIRED", "REJECTED" };
         private static readonly string[] AcceptedStatuses = { "ACCEPTED", "ACTIVE", "ONGOING", "OVERDUE" };
+        private static readonly string[] HandoverSlots = { "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM" };
 
         public static BsonDocument Submit(ObjectId renterId, string itemId, DateTime handoverDate, string handoverTime, int durationHours, string notes)
         {
@@ -23,7 +24,7 @@ namespace UniShare.Services
             DateTime time;
             if (!DateTime.TryParseExact(handoverTime, new[] { "hh:mm tt", "h:mm tt" }, System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None, out time)) throw new BookingException("Choose a valid handover time.");
-            var start = handoverDate.Date.Add(time.TimeOfDay);
+            var start = DateTime.SpecifyKind(handoverDate.Date.Add(time.TimeOfDay), DateTimeKind.Local);
             if (start <= DateTime.Now) throw new BookingException("The handover schedule must be in the future.");
 
             var item = MarketplaceService.GetItem(itemId);
@@ -64,6 +65,24 @@ namespace UniShare.Services
                 Builders<BsonDocument>.Update.Set("status", "EXPIRED").Set("expiredAt", now));
         }
 
+        public static List<string> GetUnavailableHandoverSlots(ObjectId itemId, DateTime date, int durationHours)
+        {
+            if (!new[] { 1, 2, 3, 4, 6, 8, 12, 24 }.Contains(durationHours)) throw new BookingException("Choose one of the available rental durations.");
+            ExpirePending();
+            var bookings = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId)).ToList();
+            var unavailable = new List<string>();
+            foreach (var slot in HandoverSlots)
+            {
+                DateTime time;
+                if (!DateTime.TryParseExact(slot, new[] { "hh:mm tt", "h:mm tt" }, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out time)) continue;
+                var start = date.Date.Add(time.TimeOfDay);
+                var end = start.AddHours(durationHours);
+                if (start <= DateTime.Now || bookings.Any(x => BlocksAvailability(x, DateTime.UtcNow) && Overlaps(x, start, end))) unavailable.Add(slot);
+            }
+            return unavailable;
+        }
+
         public static List<BsonDocument> ForRenter(ObjectId id) { ExpirePending(); return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("borrowerId", id)).SortByDescending(x => x["createdAt"]).ToList(); }
         public static List<BsonDocument> ForOwner(ObjectId id) { ExpirePending(); return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("ownerId", id)).SortByDescending(x => x["createdAt"]).ToList(); }
         public static BsonDocument GetForParticipant(string id, ObjectId userId)
@@ -85,6 +104,9 @@ namespace UniShare.Services
             var ownerFilter = Builders<BsonDocument>.Filter.Eq("_id", bookingId) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" });
             booking = MongoDatabase.Bookings.Find(ownerFilter).FirstOrDefault();
             if (booking == null) return false;
+            var borrowerId = booking.GetValue("borrowerId", BsonNull.Value);
+            if ((borrowerId.IsObjectId && borrowerId.AsObjectId == ownerId) ||
+                (borrowerId.IsString && string.Equals(borrowerId.AsString, ownerId.ToString(), StringComparison.OrdinalIgnoreCase))) return false;
             if (!accept && string.IsNullOrWhiteSpace(reason)) return false;
             if (IsExpired(booking, now)) { ExpirePending(); return false; }
             var itemId = booking.GetValue("itemId", BsonNull.Value);
@@ -119,15 +141,23 @@ namespace UniShare.Services
         {
             var f = Builders<BsonDocument>.Filter.Eq("itemId", itemId) & Builders<BsonDocument>.Filter.Nin("status", NonBlockingStatuses);
             if (except.HasValue) f &= Builders<BsonDocument>.Filter.Ne("_id", except.Value);
-            return MongoDatabase.Bookings.Find(f).ToList().Any(x =>
-            {
-                var status = x.GetValue("status", "").ToString().ToUpperInvariant();
-                if (!AcceptedStatuses.Contains(status) && !((status == "PENDING" || status == "REQUESTED") && !IsExpired(x, DateTime.UtcNow))) return false;
-                var otherStart = Date(x, "startDate", Date(x, "handoverDate", DateTime.MinValue));
-                var otherEnd = Date(x, "endDate", otherStart.AddHours(Number(x, "durationHours", 1)));
-                // The current request form disables a whole calendar date if any reservation touches it.
-                return otherStart.Date < end.Date && otherEnd.Date >= start.Date;
-            });
+            var now = DateTime.UtcNow;
+            return MongoDatabase.Bookings.Find(f).ToList().Any(x => BlocksAvailability(x, now) && Overlaps(x, start, end));
+        }
+        private static bool BlocksAvailability(BsonDocument booking, DateTime now)
+        {
+            var status = booking.GetValue("status", "").ToString().Trim().ToUpperInvariant();
+            if (NonBlockingStatuses.Contains(status)) return false;
+            if (AcceptedStatuses.Contains(status)) return true;
+            return (status == "PENDING" || status == "REQUESTED") && !IsExpired(booking, now);
+        }
+        private static bool Overlaps(BsonDocument booking, DateTime start, DateTime end)
+        {
+            var otherStart = Date(booking, "startDate", Date(booking, "handoverDate", DateTime.MinValue)).ToLocalTime();
+            var otherEnd = Date(booking, "endDate", otherStart.AddHours(Number(booking, "durationHours", 1))).ToLocalTime();
+            var localStart = start.Kind == DateTimeKind.Utc ? start.ToLocalTime() : start;
+            var localEnd = end.Kind == DateTimeKind.Utc ? end.ToLocalTime() : end;
+            return otherStart < localEnd && otherEnd > localStart;
         }
         private static bool IsExpired(BsonDocument d, DateTime now) { return Date(d, "expiresAt", Date(d, "createdAt", now).AddHours(24)) <= now; }
         private static DateTime Date(BsonDocument d, string key, DateTime fallback) { var v = d.GetValue(key, BsonNull.Value); return v.IsValidDateTime ? v.ToUniversalTime() : fallback; }

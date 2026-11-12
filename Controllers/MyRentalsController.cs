@@ -36,8 +36,10 @@ namespace UniShare.Controllers
         public decimal RentalFee { get; set; }
         public string RentalFeeFormatted { get; set; }
         public string Status { get; set; } // Pending, Accepted, Declined, Ongoing, Overdue, Returned, Disputed, Completed
+        public bool CanManageRequest { get; set; }
         public string Category { get; set; }
-
+        public string BackAction { get; set; }
+        public string BackController { get; set; }
         // Added for the status-specific modals (mock data, filled by PrepareMockRentals)
         public string OwnerName { get; set; }
         public string OwnerProgram { get; set; }
@@ -101,7 +103,7 @@ namespace UniShare.Controllers
             ViewBag.Title = "Rentals";
             ObjectId userId;
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
-            var model = new MyRentalsViewModel { Rentals = BookingService.ForRenter(userId).Select(MapBooking).ToList() };
+            var model = new MyRentalsViewModel { Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId)).ToList() };
 
             // Summary cards are counted from the records, so they always agree with the table
             // (the page script keeps them in sync when a rental changes status).
@@ -127,7 +129,14 @@ namespace UniShare.Controllers
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
             var booking = BookingService.GetForParticipant(id, userId);
             if (booking == null) return HttpNotFound();
-            return View(MapBooking(booking));
+            var model = MapBooking(booking);
+            var ownerValue = booking.GetValue("ownerId", BsonNull.Value);
+            var isOwner = ownerValue.IsObjectId && ownerValue.AsObjectId == userId;
+            var status = booking.GetValue("status", "").ToString().Trim().ToUpperInvariant();
+            var isPast = new[] { "COMPLETED", "COMPLETE", "RETURNED", "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" }.Contains(status);
+            model.BackAction = isOwner ? (isPast ? "PastTransactions" : "Ongoing") : "Index";
+            model.BackController = isOwner ? "MyListings" : "MyRentals";
+            return View(model);
         }
 
         [HttpGet]
@@ -139,18 +148,12 @@ namespace UniShare.Controllers
             return View(history.Select(MapBooking).ToList());
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Decide(string id, bool accept, string reason, string notes)
+        internal static RentalRecordDto MapBooking(BsonDocument booking)
         {
-            ObjectId bookingId, ownerId;
-            if (!ObjectId.TryParse(id, out bookingId) || !ObjectId.TryParse(User.Identity.Name, out ownerId)) return new HttpStatusCodeResult(400);
-            if (!accept && string.IsNullOrWhiteSpace(reason)) { TempData["Error"] = "Select a reason before declining this request."; return RedirectToAction("Index"); }
-            if (!BookingService.Decide(bookingId, ownerId, accept, reason, notes)) TempData["Error"] = "This request is no longer pending, has expired, or its schedule is no longer available.";
-            else TempData["Success"] = accept ? "Rental request accepted." : "Rental request declined.";
-            return RedirectToAction("Index");
+            return MapBooking(booking, ObjectId.Empty);
         }
 
-        internal static RentalRecordDto MapBooking(BsonDocument booking)
+        private static RentalRecordDto MapBooking(BsonDocument booking, ObjectId viewerId)
         {
             var itemValue = booking.GetValue("itemId", BsonNull.Value);
             var item = itemValue.IsObjectId ? MongoDatabase.Items.Find(x => x.Id == itemValue.AsObjectId).FirstOrDefault() : null;
@@ -167,6 +170,9 @@ namespace UniShare.Controllers
             return new RentalRecordDto
             {
                 BookingObjectId = booking.GetValue("_id", ObjectId.Empty).ToString(),
+                CanManageRequest = !viewerId.Equals(ObjectId.Empty) &&
+                    booking.GetValue("ownerId", BsonNull.Value).IsObjectId && booking["ownerId"].AsObjectId == viewerId &&
+                    booking.GetValue("borrowerId", BsonNull.Value).IsObjectId && booking["borrowerId"].AsObjectId != viewerId,
                 RequestId = booking.GetValue("requestId", booking.GetValue("_id", "").ToString()).ToString(),
                 ItemName = item == null ? booking.GetValue("itemName", "Item").ToString() : item.Name,
                 BorrowerName = fullName, BorrowerInitials = string.Concat(fullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0]))),
@@ -180,6 +186,10 @@ namespace UniShare.Controllers
                 RentalFee = fee, RentalFeeFormatted = "₱" + fee.ToString("N2"), Status = ToDisplayStatus(status),
                 OwnerName = item == null ? "" : (MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault() is UserDocument owner ? (owner.FirstName + " " + owner.LastName).Trim() : ""),
                 RequestNote = booking.GetValue("notes", "").ToString(), Category = item == null ? "" : item.Category,
+                BorrowerHandoverConfirmed = booking.GetValue("borrowerHandoverConfirmed", booking.GetValue("handoverConfirmed", false)).ToBoolean() ||
+                    new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status.Trim().ToUpperInvariant()),
+                OwnerHandoverConfirmed = booking.GetValue("ownerHandoverConfirmed", false).ToBoolean() ||
+                    new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status.Trim().ToUpperInvariant()),
                 DeclineReason = booking.GetValue("declineReason", "").ToString(), DeclineNote = booking.GetValue("declineNotes", "").ToString(),
                 DeclinedAtFormatted = FormatDate(booking, "declinedAt"), AcceptedAtFormatted = FormatDate(booking, "acceptedAt")
             };

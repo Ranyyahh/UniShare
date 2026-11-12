@@ -12,6 +12,13 @@ using UniShare.Services;
 
 namespace UniShare.Controllers
 {
+    public class RentalRecordsPageViewModel
+    {
+        public string Title { get; set; }
+        public string ActiveTab { get; set; }
+        public List<RentalRecordDto> Rentals { get; set; }
+    }
+
     [Authorize]
     public class MyListingsController : Controller
     {
@@ -30,14 +37,41 @@ namespace UniShare.Controllers
         {
             var vm = new ListingsPageViewModel();
             vm.Listings = MarketplaceService.GetOwnerListings(CurrentOwnerId);
-            vm.PendingRequestCount = (int)MongoDatabase.Bookings.CountDocuments(
-                Builders<BsonDocument>.Filter.Eq("ownerId", CurrentOwnerId) &
-                Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" }));
-            vm.ActiveRentalCount = (int)MongoDatabase.Rentals.CountDocuments(
-                Builders<BsonDocument>.Filter.Eq("ownerId", CurrentOwnerId) &
-                Builders<BsonDocument>.Filter.In("status", new[] { "ACTIVE", "ONGOING", "OVERDUE" }));
+            var ownerBookings = BookingService.ForOwner(CurrentOwnerId);
+            vm.PendingRequestCount = ownerBookings.Count(x => new[] { "PENDING", "REQUESTED" }
+                .Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()));
+            vm.ActiveRentalCount = ownerBookings.Count(x => new[] { "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "DISPUTED" }
+                .Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()));
 
             return View("~/Views/MyListings/ItemListings.cshtml", vm);
+        }
+
+        [HttpGet]
+        public ActionResult Details(string id)
+        {
+            var document = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
+            if (document == null) return HttpNotFound();
+            return View("~/Views/MyListings/ListingDetails.cshtml", MarketplaceService.ToListing(document));
+        }
+
+        [HttpGet]
+        public ActionResult Ongoing()
+        {
+            var rentals = BookingService.ForOwner(CurrentOwnerId)
+                .Where(x => new[] { "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "DISPUTED" }
+                    .Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
+                .Select(MyRentalsController.MapBooking).ToList();
+            return View("~/Views/MyListings/RentalRecords.cshtml", new RentalRecordsPageViewModel { Title = "Ongoing Rentals", ActiveTab = "ongoing", Rentals = rentals });
+        }
+
+        [HttpGet]
+        public ActionResult PastTransactions()
+        {
+            var rentals = BookingService.ForOwner(CurrentOwnerId)
+                .Where(x => new[] { "COMPLETED", "COMPLETE", "RETURNED", "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" }
+                    .Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
+                .Select(MyRentalsController.MapBooking).ToList();
+            return View("~/Views/MyListings/RentalRecords.cshtml", new RentalRecordsPageViewModel { Title = "Past Transactions", ActiveTab = "past", Rentals = rentals });
         }
 
         // POST: MyListings/ToggleAvailability/5  (pause / resume)
@@ -113,6 +147,9 @@ namespace UniShare.Controllers
         {
             ValidatePhotos(GetUploadedFiles(model), 0, 5);
             ValidateSchedule(model);
+            var catOptions = GetCategoryOptions();
+            var selectedCat = model.CategoryId.HasValue ? catOptions.FirstOrDefault(c => c.Id == model.CategoryId.Value) : null;
+            if (selectedCat == null) ModelState.AddModelError("CategoryId", "Choose a valid category.");
 
             if (!ModelState.IsValid)
             {
@@ -121,8 +158,6 @@ namespace UniShare.Controllers
             }
 
             var photos = GetUploadedFiles(model);
-            var catOptions = GetCategoryOptions();
-            var selectedCat = catOptions.FirstOrDefault(c => c.Id == model.CategoryId);
             List<string> savedPhotos;
             try
             {
@@ -149,7 +184,7 @@ namespace UniShare.Controllers
                 Photos = savedPhotos,
                 Condition = ToStoredCondition(model.Condition),
                 AvailabilityStatus = "AVAILABLE",
-                ApprovalStatus = "APPROVED",
+                ApprovalStatus = "PENDING",
                 AvailableDays = model.AvailableDays ?? new List<string>(),
                 EarliestHandoverTime = model.EarliestHandoverTime,
                 LatestReturnTime = model.LatestReturnTime,
@@ -258,6 +293,8 @@ namespace UniShare.Controllers
 
             ValidatePhotos(GetUploadedFiles(model), kept.Count, 10);
             ValidateSchedule(model);
+            var validCategory = model.CategoryId.HasValue && GetCategoryOptions().Any(c => c.Id == model.CategoryId.Value);
+            if (!validCategory) ModelState.AddModelError("CategoryId", "Choose a valid category.");
 
             if (!ModelState.IsValid)
             {
@@ -292,6 +329,9 @@ namespace UniShare.Controllers
             var price = model.Price.GetValueOrDefault();
             var unitHours = model.PricingUnitHours > 0 ? model.PricingUnitHours : 4;
             var dailyRate = model.EnableFullDayBundle ? price * 2 : price * 24 / unitHours;
+            var requiresReview = string.Equals(existing.ApprovalStatus, "REJECTED", StringComparison.OrdinalIgnoreCase) ||
+                (string.Equals(existing.ApprovalStatus, "APPROVED", StringComparison.OrdinalIgnoreCase) &&
+                 HasImportantChanges(existing, model, category.Name, newPhotos, price, unitHours, dailyRate));
             var update = Builders<ItemDocument>.Update
                 .Set(x => x.Name, model.ItemName.Trim())
                 .Set(x => x.Description, model.Description.Trim())
@@ -319,6 +359,13 @@ namespace UniShare.Controllers
                     HandoverLocation = model.HandoverLocation.Trim()
                 })
                 .Set(x => x.UpdatedAt, DateTime.UtcNow);
+            if (requiresReview)
+            {
+                update = update.Set(x => x.ApprovalStatus, "PENDING")
+                    .Unset(x => x.ApprovalRejectionReason)
+                    .Unset(x => x.ApprovalReviewedAt)
+                    .Unset(x => x.ApprovalReviewedBy);
+            }
             var result = MongoDatabase.Items.UpdateOne(x => x.Id == existing.Id && x.OwnerId == CurrentOwnerId && x.AvailabilityStatus != "RENTED", update);
             if (result.MatchedCount == 0)
             {
@@ -328,8 +375,37 @@ namespace UniShare.Controllers
             }
             DeletePhotos(existing.Photos.Except(newPhotos));
 
-            TempData["Message"] = "Listing updated.";
+            TempData["Message"] = requiresReview
+                ? "Listing changes submitted for admin review. The listing will remain hidden until approved."
+                : "Listing updated.";
             return RedirectToAction("ItemListings");
+        }
+
+        private static bool HasImportantChanges(ItemDocument existing, EditListingViewModel model, string category,
+            IList<string> photos, decimal price, int unitHours, decimal dailyRate)
+        {
+            var details = existing.RentalDetails ?? new ItemRentalDetailsDocument();
+            var location = existing.Location ?? new ItemLocationDocument();
+            var oldDays = (existing.AvailableDays ?? new List<string>()).OrderBy(x => x, StringComparer.OrdinalIgnoreCase);
+            var newDays = (model.AvailableDays ?? new List<string>()).OrderBy(x => x, StringComparer.OrdinalIgnoreCase);
+            return !string.Equals(existing.Name, model.ItemName.Trim(), StringComparison.Ordinal) ||
+                !string.Equals(existing.Description, model.Description.Trim(), StringComparison.Ordinal) ||
+                !string.Equals(existing.Category, category, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(existing.Condition, ToStoredCondition(model.Condition), StringComparison.OrdinalIgnoreCase) ||
+                !(existing.Photos ?? new List<string>()).SequenceEqual(photos, StringComparer.OrdinalIgnoreCase) ||
+                Math.Abs(details.HourlyRate - (double)(price / unitHours)) > 0.0001 ||
+                Math.Abs(details.DailyRate - (double)dailyRate) > 0.0001 ||
+                Math.Abs(details.SecurityDeposit - (double)model.SecurityDeposit.GetValueOrDefault()) > 0.0001 ||
+                Math.Abs(details.ReplacementValue - (double)model.ReplacementValue.GetValueOrDefault()) > 0.0001 ||
+                details.PricingUnitHours != unitHours || details.EnableFullDayBundle != model.EnableFullDayBundle ||
+                !oldDays.SequenceEqual(newDays, StringComparer.OrdinalIgnoreCase) ||
+                !string.Equals(existing.EarliestHandoverTime, model.EarliestHandoverTime, StringComparison.Ordinal) ||
+                !string.Equals(existing.LatestReturnTime, model.LatestReturnTime, StringComparison.Ordinal) ||
+                !string.Equals(existing.Accessories, model.Accessories, StringComparison.Ordinal) ||
+                !string.Equals(location.Campus, model.Campus.Trim(), StringComparison.Ordinal) ||
+                !string.Equals(location.Building, model.Building.Trim(), StringComparison.Ordinal) ||
+                !string.Equals(location.Room, string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(), StringComparison.Ordinal) ||
+                !string.Equals(location.HandoverLocation, model.HandoverLocation.Trim(), StringComparison.Ordinal);
         }
 
         private static string FormatTimeForDisplay(string value)

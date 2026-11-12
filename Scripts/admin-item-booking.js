@@ -6,6 +6,8 @@
         if (!page) return;
 
         var endpoint = page.dataset.endpoint;
+        var approveUrl = page.dataset.approveUrl;
+        var rejectUrl = page.dataset.rejectUrl;
         if (!endpoint) {
             console.error("Missing data-endpoint on .aib-page");
             return;
@@ -21,6 +23,8 @@
         var tableBody = document.getElementById("aibTableBody");
         var paginationInfoDisplay = page.querySelector("[data-aib-pagination-info]");
         var selectedCountDisplay = page.querySelector("[data-aib-selected-count]");
+        var notice = page.querySelector("[data-aib-notice]");
+        var tokenInput = page.querySelector('input[name="__RequestVerificationToken"]');
 
         // KPI Elements
         var kpiPending = page.querySelector("[data-kpi-pending]");
@@ -49,6 +53,13 @@
         var dossierReturn = page.querySelector("[data-dossier-return]");
         var dossierDays = page.querySelector("[data-dossier-days]");
         var dossierActivePill = page.querySelector("[data-dossier-active-pill]");
+        var dossierImage = page.querySelector("[data-dossier-image]");
+        var dossierLocation = page.querySelector("[data-dossier-location]");
+        var dossierDeposit = page.querySelector("[data-dossier-deposit]");
+        var dossierReplacement = page.querySelector("[data-dossier-replacement]");
+        var dossierAccessories = page.querySelector("[data-dossier-accessories]");
+        var rejectionBox = page.querySelector("[data-aib-rejection-box]");
+        var rejectionReason = document.getElementById("aibRejectionReason");
 
         var btnApprove = page.querySelector('[data-aib-action="approve"]');
         var btnReject = page.querySelector('[data-aib-action="reject"]');
@@ -65,6 +76,11 @@
         };
 
         var daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        function showNotice(message, isError) {
+            if (!notice) return;
+            notice.textContent = message || "";
+            notice.className = "aib-review-notice" + (message ? " is-visible" : "") + (isError ? " is-error" : "");
+        }
 
         // Helper: Escape HTML
         function esc(str) {
@@ -88,17 +104,13 @@
                     : item.category === "Other Items" ? "aib-item-thumb--amber"
                         : "aib-item-thumb--blue";
 
-            var deleteBtn = (status === "approved" && active === "active")
-                ? '<button type="button" class="aib-btn-delete" data-delete-id="' + esc(item.id) + '">Delete</button>'
-                : "";
-
             return '' +
-                '<tr class="clickable-row" data-aib-row data-id="' + esc(item.id) + '" data-name="' + esc(item.name) + '" data-category="' + esc(item.category) + '" data-owner="' + esc(item.owner) + '" data-status="' + status + '" data-active="' + active + '" data-price="' + esc(item.price) + '" data-meta="' + esc(item.meta) + '" data-desc="' + esc(item.desc) + '" data-course="' + esc(item.course) + '" data-condition="' + esc(item.condition) + '" data-handover="' + esc(item.handover) + '" data-return="' + esc(item.returnTime) + '" data-days="' + esc(item.days) + '">' +
+                '<tr class="clickable-row" data-aib-row data-id="' + esc(item.id) + '" data-name="' + esc(item.name) + '" data-category="' + esc(item.category) + '" data-owner="' + esc(item.owner) + '" data-status="' + status + '" data-active="' + active + '" data-price="' + esc(item.price) + '" data-meta="' + esc(item.meta) + '" data-desc="' + esc(item.desc) + '" data-course="' + esc(item.course) + '" data-condition="' + esc(item.condition) + '" data-handover="' + esc(item.handover) + '" data-return="' + esc(item.returnTime) + '" data-days="' + esc(item.days) + '" data-image="' + esc(item.imageUrl || "") + '" data-reason="' + esc(item.rejectionReason || "") + '" data-location="' + esc(item.location || "") + '" data-deposit="' + esc(item.deposit || "") + '" data-replacement="' + esc(item.replacementValue || "") + '" data-accessories="' + esc(item.accessories || "") + '">' +
                 '<td class="aib-td--id">' + esc(item.id) + '</td>' +
                 '<td>' +
                 '<div class="aib-item-cell">' +
                 '<div class="aib-item-thumb ' + thumbClass + '" aria-hidden="true">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+                (item.imageUrl ? '<img src="' + esc(item.imageUrl) + '" alt="" />' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>') +
                 '</div>' +
                 '<div class="aib-item-cell__details">' +
                 '<div class="aib-item-cell__name">' + esc(item.name) + '</div>' +
@@ -113,7 +125,6 @@
                 '<td><span class="' + aConfig.className + '">' + aConfig.label + '</span></td>' +
                 '<td class="aib-td--right">' +
                 '<button type="button" class="aib-btn-open-dossier">Inspect</button>' +
-                deleteBtn +
                 '</td>' +
                 '</tr>';
         }
@@ -230,6 +241,26 @@
             if (dossierCondition) dossierCondition.textContent = ds.condition || "";
             if (dossierHandover) dossierHandover.textContent = ds.handover || "";
             if (dossierReturn) dossierReturn.textContent = ds.return || "";
+            if (dossierLocation) dossierLocation.textContent = ds.location || "Not specified";
+            if (dossierDeposit) dossierDeposit.textContent = ds.deposit || "\u20B10.00";
+            if (dossierReplacement) dossierReplacement.textContent = ds.replacement || "\u20B10.00";
+            if (dossierAccessories) dossierAccessories.textContent = ds.accessories || "None specified";
+            if (dossierImage) {
+                dossierImage.src = ds.image || "";
+                dossierImage.alt = ds.name || "Listing preview";
+                dossierImage.style.display = ds.image ? "block" : "none";
+                var preview = dossierImage.parentNode;
+                var placeholderSvg = preview.querySelector("svg");
+                var placeholderText = preview.querySelector("span");
+                if (placeholderSvg) placeholderSvg.style.display = ds.image ? "none" : "";
+                if (placeholderText) placeholderText.style.display = ds.image ? "none" : "";
+            }
+            var rejectionDisplay = page.querySelector("[data-dossier-rejection]");
+            if (rejectionDisplay) {
+                rejectionDisplay.textContent = ds.reason || "";
+                var rejectionPanel = page.querySelector("[data-dossier-rejection-panel]");
+                if (rejectionPanel) rejectionPanel.style.display = ds.reason ? "" : "none";
+            }
 
             renderDays(ds.days || "");
 
@@ -243,6 +274,9 @@
             }
 
             updateActionButtons(currentStatus);
+            if (rejectionBox) rejectionBox.style.display = "none";
+            if (rejectionReason) rejectionReason.value = "";
+            if (btnReject) btnReject.querySelector("span:last-child").textContent = "Reject Listing";
         }
 
         function openModal(row) {
@@ -287,20 +321,6 @@
                 });
             });
 
-            page.querySelectorAll(".aib-btn-delete").forEach(function (btn) {
-                btn.addEventListener("click", function (e) {
-                    e.stopPropagation();
-                    var id = btn.dataset.deleteId || "";
-                    if (!confirm("Permanently delete listing " + id + "?")) return;
-
-                    // TODO: POST to /AdminItemBooking/Delete
-                    // fetch('/AdminItemBooking/Delete', { method: 'POST', body: ... })
-
-                    var row = btn.closest("[data-aib-row]");
-                    if (row) row.remove();
-                    applyFilters();
-                });
-            });
         }
 
         // Update Helpers
@@ -320,6 +340,23 @@
             }
         }
 
+        function postDecision(url, values) {
+            if (!tokenInput || !tokenInput.value) return Promise.reject(new Error("The security token is missing. Refresh and try again."));
+            var parts = ["__RequestVerificationToken=" + encodeURIComponent(tokenInput.value)];
+            Object.keys(values).forEach(function (key) { parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(values[key])); });
+            return fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Accept": "application/json" },
+                body: parts.join("&"),
+                credentials: "same-origin"
+            }).then(function (response) {
+                return response.json().then(function (data) {
+                    if (!response.ok || !data || !data.success) throw new Error((data && data.message) || "The listing could not be updated.");
+                    return data;
+                });
+            });
+        }
+
         // Approve/Reject
         if (btnApprove) {
             btnApprove.addEventListener("click", function () {
@@ -327,14 +364,19 @@
                 if (!row) return;
                 if ((row.dataset.status || "").toLowerCase() !== "pending") return;
                 if (!confirm("Approve this listing?")) return;
-
-                // TODO: POST to /AdminItemBooking/Approve
-                row.dataset.status = "approved";
-                row.dataset.active = "active";
-                updateRowStatusPill(row, "approved");
-                updateRowActivePill(row, "active");
-                populateDossier(row);
-                applyFilters();
+                btnApprove.disabled = true;
+                postDecision(approveUrl, { id: row.dataset.id })
+                    .then(function (data) {
+                        row.dataset.status = "approved";
+                        row.dataset.active = "active";
+                        updateRowStatusPill(row, "approved");
+                        updateRowActivePill(row, "active");
+                        populateDossier(row);
+                        applyFilters();
+                        showNotice(data.message, false);
+                    })
+                    .catch(function (error) { showNotice(error.message, true); })
+                    .then(function () { btnApprove.disabled = false; });
             });
         }
 
@@ -343,15 +385,33 @@
                 var row = page.querySelector("[data-aib-row].is-selected");
                 if (!row) return;
                 if ((row.dataset.status || "").toLowerCase() !== "pending") return;
-                if (!confirm("Reject this listing?")) return;
-
-                // TODO: POST to /AdminItemBooking/Reject
-                row.dataset.status = "rejected";
-                row.dataset.active = "inactive";
-                updateRowStatusPill(row, "rejected");
-                updateRowActivePill(row, "inactive");
-                populateDossier(row);
-                applyFilters();
+                if (rejectionBox && rejectionBox.style.display === "none") {
+                    rejectionBox.style.display = "";
+                    btnReject.querySelector("span:last-child").textContent = "Confirm Rejection";
+                    if (rejectionReason) rejectionReason.focus();
+                    return;
+                }
+                var reason = rejectionReason ? rejectionReason.value.trim() : "";
+                if (!reason) {
+                    showNotice("Enter a rejection reason before continuing.", true);
+                    if (rejectionReason) rejectionReason.focus();
+                    return;
+                }
+                if (!confirm("Reject this listing and send the reason to its owner?")) return;
+                btnReject.disabled = true;
+                postDecision(rejectUrl, { id: row.dataset.id, reason: reason })
+                    .then(function (data) {
+                        row.dataset.status = "rejected";
+                        row.dataset.active = "inactive";
+                        row.dataset.reason = reason;
+                        updateRowStatusPill(row, "rejected");
+                        updateRowActivePill(row, "inactive");
+                        populateDossier(row);
+                        applyFilters();
+                        showNotice(data.message, false);
+                    })
+                    .catch(function (error) { showNotice(error.message, true); })
+                    .then(function () { btnReject.disabled = false; });
             });
         }
 

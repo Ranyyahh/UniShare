@@ -7,6 +7,7 @@ using System.Web.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using UniShare.Models;
+using UniShare.Services;
 
 namespace UniShare.Controllers
 {
@@ -222,7 +223,7 @@ namespace UniShare.Controllers
 
         private readonly IReportDataSource _source;
 
-        public ReportsAnalyticsController() : this(new MockReportDataSource()) { }   // preview data; swap for the real source when it exists
+        public ReportsAnalyticsController() : this(new MongoReportDataSource()) { }
 
         public ReportsAnalyticsController(IReportDataSource source)
         {
@@ -263,7 +264,13 @@ namespace UniShare.Controllers
             if (!TryReadRange(from, to, out fromDate, out toDate, out error))
                 return JsonError(error);
 
-            return JsonPayload(BuildReport(userKey, fromDate, toDate));
+            try { return JsonPayload(BuildReport(userKey, fromDate, toDate)); }
+            catch
+            {
+                Response.StatusCode = 503;
+                Response.TrySkipIisCustomErrors = true;
+                return JsonPayload(new { error = "Reports are temporarily unavailable. Refresh and try again." });
+            }
         }
 
         // GET: /ReportsAnalytics/Export?from=yyyy-MM-dd&to=yyyy-MM-dd  (CSV download)
@@ -298,13 +305,11 @@ namespace UniShare.Controllers
         // Request helpers
         // ------------------------------------------------------------------------------
 
-        // The signed-in user, or (preview mode only) a fixed sample user so the page can be
-        // viewed without logging in. With a real data source this is always the signed-in
-        // user, and null means "not signed in" (the endpoints then answer 401).
+        // The report key always comes from the authenticated identity. No query-string user IDs are accepted.
         private string ResolveUserKey()
         {
             if (IsSignedIn()) return User.Identity.Name;
-            return _source.IsSampleData ? MockReportDataSource.PreviewUserKey : null;
+            return null;
         }
 
         private bool IsSignedIn()
@@ -361,21 +366,19 @@ namespace UniShare.Controllers
         // Report building
         // ------------------------------------------------------------------------------
 
-        // Status vocabulary: the only one in the project is the MyRentals record comment
-        // (Pending, Accepted, Declined, Ongoing, Overdue, Returned, Disputed, Completed).
-        // Each status maps to at most one bucket, so nothing is counted twice:
-        //   Active    = Ongoing, Overdue   (item is out with the borrower)
-        //   Completed = Completed
-        //   Disputed  = Disputed
-        // Pending / Accepted / Declined / Returned (and any unknown value) have not started,
-        // never started, or are awaiting close-out, so they are NOT counted as transactions.
         private static string BucketOf(string status)
         {
             string s = (status ?? string.Empty).Trim();
             if (s.Equals("Ongoing", StringComparison.OrdinalIgnoreCase) ||
-                s.Equals("Overdue", StringComparison.OrdinalIgnoreCase)) return "Active";
-            if (s.Equals("Completed", StringComparison.OrdinalIgnoreCase)) return "Completed";
+                s.Equals("Overdue", StringComparison.OrdinalIgnoreCase) ||
+                s.Equals("Active", StringComparison.OrdinalIgnoreCase) ||
+                s.Equals("Return Requested", StringComparison.OrdinalIgnoreCase)) return "Active";
+            if (s.Equals("Completed", StringComparison.OrdinalIgnoreCase) || s.Equals("Returned", StringComparison.OrdinalIgnoreCase)) return "Completed";
             if (s.Equals("Disputed", StringComparison.OrdinalIgnoreCase)) return "Disputed";
+            if (s.Equals("Pending", StringComparison.OrdinalIgnoreCase) || s.Equals("Requested", StringComparison.OrdinalIgnoreCase)) return "Pending";
+            if (s.Equals("Accepted", StringComparison.OrdinalIgnoreCase) || s.Equals("Approved", StringComparison.OrdinalIgnoreCase)) return "Accepted";
+            if (s.Equals("Cancelled", StringComparison.OrdinalIgnoreCase) || s.Equals("Canceled", StringComparison.OrdinalIgnoreCase) || s.Equals("Expired", StringComparison.OrdinalIgnoreCase)) return "Cancelled";
+            if (s.Equals("Rejected", StringComparison.OrdinalIgnoreCase) || s.Equals("Declined", StringComparison.OrdinalIgnoreCase)) return "Rejected";
             return null;
         }
 
@@ -467,6 +470,19 @@ namespace UniShare.Controllers
             };
         }
 
+        private static TransactionDetail ToDetail(RentalTransactionRecord r, DateTime date)
+        {
+            return new TransactionDetail
+            {
+                TransactionId = r.TransactionId,
+                ItemName = string.IsNullOrWhiteSpace(r.ItemName) ? "(Unnamed item)" : r.ItemName,
+                Quantity = Math.Max(r.Quantity, 0),
+                Status = r.Status,
+                Amount = r.Amount,
+                Date = date.ToString(DateFormat, CultureInfo.InvariantCulture)
+            };
+        }
+
         private ReportPayload BuildReport(string userKey, DateTime from, DateTime to)
         {
             DateTime toExclusive = to.AddDays(1);
@@ -490,25 +506,34 @@ namespace UniShare.Controllers
 
             // Activity metrics use RequestedAt (when the transaction exists)...
             var rentalsInRange = rentals.Where(r => InRange(r.RequestedAt, from, toExclusive)).ToList();
-            var countedRentals = rentalsInRange.Where(r => BucketOf(r.Status) != null).ToList();
-
-            report.Cards.TotalRentals = countedRentals.Count;
-            report.Cards.ItemsRented = countedRentals.Sum(r => Math.Max(r.Quantity, 0));
+            var activeRentals = rentalsInRange.Where(r => BucketOf(r.Status) == "Active").ToList();
+            var completedRentals = rentalsInRange.Where(r => BucketOf(r.Status) == "Completed").ToList();
+            report.Cards.TotalRentals = rentalsInRange.Count;
+            report.Cards.ItemsRented = activeRentals.Concat(completedRentals).Sum(r => Math.Max(r.Quantity, 0));
+            report.Cards.PendingTransactions = rentalsInRange.Count(r => BucketOf(r.Status) == "Pending" || BucketOf(r.Status) == "Accepted");
+            report.Cards.ActiveRentals = activeRentals.Count;
+            report.Cards.CompletedRentals = completedRentals.Count;
+            report.Cards.RejectedOrCancelledTransactions = rentalsInRange.Count(r => BucketOf(r.Status) == "Rejected" || BucketOf(r.Status) == "Cancelled");
 
             report.RentalStatus = new StatusDistribution
             {
-                Active = countedRentals.Count(r => BucketOf(r.Status) == "Active"),
-                Completed = countedRentals.Count(r => BucketOf(r.Status) == "Completed"),
-                Disputed = countedRentals.Count(r => BucketOf(r.Status) == "Disputed"),
-                NotCounted = rentalsInRange.Count - countedRentals.Count
+                Pending = rentalsInRange.Count(r => BucketOf(r.Status) == "Pending"),
+                Accepted = rentalsInRange.Count(r => BucketOf(r.Status) == "Accepted"),
+                Active = activeRentals.Count,
+                Completed = completedRentals.Count,
+                Disputed = rentalsInRange.Count(r => BucketOf(r.Status) == "Disputed"),
+                Cancelled = rentalsInRange.Count(r => BucketOf(r.Status) == "Cancelled"),
+                Rejected = rentalsInRange.Count(r => BucketOf(r.Status) == "Rejected"),
+                NotCounted = rentalsInRange.Count(r => BucketOf(r.Status) == null)
             };
 
-            report.MostRentedItems = countedRentals
+            report.MostRentedItems = rentalsInRange.Where(r => BucketOf(r.Status) == "Active" || BucketOf(r.Status) == "Completed")
                 .GroupBy(r => string.IsNullOrEmpty(r.ItemId) ? "name:" + (r.ItemName ?? string.Empty) : "id:" + r.ItemId)
                 .Select(g => new TopItem
                 {
                     Name = string.IsNullOrWhiteSpace(g.First().ItemName) ? "(Unnamed item)" : g.First().ItemName,
-                    Quantity = g.Sum(r => Math.Max(r.Quantity, 0))
+                    Quantity = g.Sum(r => Math.Max(r.Quantity, 0)),
+                    Revenue = g.Where(r => BucketOf(r.Status) == "Completed").Sum(r => r.Amount)
                 })
                 .OrderByDescending(t => t.Quantity).ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
                 .Take(TopItemsLimit)
@@ -522,6 +547,14 @@ namespace UniShare.Controllers
                 .ToList();
             report.Cards.TotalRevenue = revenuePoints.Sum(p => p.Value);
             report.RentalRevenue = BuildSeries(from, to, granularity, revenuePoints);
+            report.RentalRequestsReceived = BuildSeries(from, to, granularity,
+                rentalsInRange.Select(r => new KeyValuePair<DateTime, decimal>(r.RequestedAt, 1m)),
+                rentalsInRange.Select(r => new KeyValuePair<DateTime, TransactionDetail>(r.RequestedAt, ToDetail(r, r.RequestedAt))));
+            report.Transactions.AddRange(rentalsInRange.Select(r => new ReportHistoryRow
+            {
+                TransactionId = r.TransactionId, ItemName = r.ItemName, TransactionType = "Rental received",
+                Date = r.RequestedAt.ToString(DateFormat, CultureInfo.InvariantCulture), Amount = r.Amount, Status = r.Status
+            }));
 
             // ---- Borrowing: the user is the BORROWER. Kept entirely separate from renting. ----
             var borrowings = (_source.GetBorrowings(userKey, from, toExclusive) ?? new List<BorrowingTransactionRecord>())
@@ -531,14 +564,25 @@ namespace UniShare.Controllers
                 .ToList();
 
             var borrowingsInRange = borrowings.Where(b => InRange(b.RequestedAt, from, toExclusive)).ToList();
-            var countedBorrowings = borrowingsInRange.Where(b => BucketOf(b.Status) != null).ToList();
-
-            report.Cards.TotalBorrowings = countedBorrowings.Count;
-            report.BorrowingsNotCounted = borrowingsInRange.Count - countedBorrowings.Count;
-            report.BorrowingsWithoutPayment = countedBorrowings.Count(b => !b.AmountPaid.HasValue || !b.PaidAt.HasValue);
+            var activeBorrowings = borrowingsInRange.Where(b => BucketOf(b.Status) == "Active").ToList();
+            var completedBorrowings = borrowingsInRange.Where(b => BucketOf(b.Status) == "Completed").ToList();
+            report.Cards.TotalBorrowings = borrowingsInRange.Count;
+            report.Cards.PendingBorrowingRequests = borrowingsInRange.Count(b => BucketOf(b.Status) == "Pending" || BucketOf(b.Status) == "Accepted");
+            report.Cards.ActiveBorrowedRentals = activeBorrowings.Count;
+            report.Cards.CompletedBorrowedRentals = completedBorrowings.Count;
+            report.Cards.CancelledOrRejectedBorrowings = borrowingsInRange.Count(b => BucketOf(b.Status) == "Cancelled" || BucketOf(b.Status) == "Rejected");
+            report.BorrowingsNotCounted = borrowingsInRange.Count(b => BucketOf(b.Status) == null);
+            report.BorrowingsWithoutPayment = borrowingsInRange.Count(b => !b.AmountPaid.HasValue || !b.PaidAt.HasValue);
             report.BorrowingActivity = BuildSeries(from, to, granularity,
-                countedBorrowings.Select(b => new KeyValuePair<DateTime, decimal>(b.RequestedAt, 1m)),
-                countedBorrowings.Select(b => new KeyValuePair<DateTime, TransactionDetail>(b.RequestedAt, ToDetail(b, b.RequestedAt))));
+                borrowingsInRange.Select(b => new KeyValuePair<DateTime, decimal>(b.RequestedAt, 1m)),
+                borrowingsInRange.Select(b => new KeyValuePair<DateTime, TransactionDetail>(b.RequestedAt, ToDetail(b, b.RequestedAt))));
+            report.RentalRequestsSubmitted = report.BorrowingActivity;
+            report.Transactions.AddRange(borrowingsInRange.Select(b => new ReportHistoryRow
+            {
+                TransactionId = b.TransactionId, ItemName = b.ItemName, TransactionType = "Rental requested",
+                Date = b.RequestedAt.ToString(DateFormat, CultureInfo.InvariantCulture), Amount = b.EstimatedAmount, Status = b.Status
+            }));
+            report.Transactions = report.Transactions.OrderByDescending(t => t.Date, StringComparer.Ordinal).ThenBy(t => t.TransactionId, StringComparer.Ordinal).ToList();
 
             // Expenses: only rows that actually have a recorded payment, dated by PaidAt.
             var paidBorrowings = borrowings
@@ -585,13 +629,18 @@ namespace UniShare.Controllers
             row(new object[] { "Total Revenue (PHP, completed rentals)", Money(r.Cards.TotalRevenue) });
             row(new object[] { "Total Rentals", r.Cards.TotalRentals });
             row(new object[] { "Items Rented (quantity)", r.Cards.ItemsRented });
+            row(new object[] { "Pending Transactions", r.Cards.PendingTransactions });
+            row(new object[] { "Active Rentals", r.Cards.ActiveRentals });
+            row(new object[] { "Completed Rentals", r.Cards.CompletedRentals });
+            row(new object[] { "Rejected or Cancelled Transactions", r.Cards.RejectedOrCancelledTransactions });
             row(new object[] { });
             row(new object[] { "Rental Revenue Over Time", "Period start", "Revenue (PHP)" });
             for (int i = 0; i < r.RentalRevenue.Labels.Count; i++)
                 row(new object[] { "", r.RentalRevenue.Labels[i], Money(r.RentalRevenue.Values[i]) });
             row(new object[] { });
             row(new object[] { "Most Rented Items", "Item", "Quantity rented" });
-            foreach (var item in r.MostRentedItems) row(new object[] { "", item.Name, item.Quantity });
+            row(new object[] { "", "", "", "Completed rental fees (PHP)" });
+            foreach (var item in r.MostRentedItems) row(new object[] { "", item.Name, item.Quantity, Money(item.Revenue) });
             row(new object[] { });
             row(new object[] { "Rental Status Distribution", "Status", "Transactions" });
             row(new object[] { "", "Active", r.RentalStatus.Active });
@@ -602,6 +651,10 @@ namespace UniShare.Controllers
 
             row(new object[] { "BORROWING (items you rent from others)" });
             row(new object[] { "Total Borrowings", r.Cards.TotalBorrowings });
+            row(new object[] { "Pending Rental Requests", r.Cards.PendingBorrowingRequests });
+            row(new object[] { "Active Rentals", r.Cards.ActiveBorrowedRentals });
+            row(new object[] { "Completed Rentals", r.Cards.CompletedBorrowedRentals });
+            row(new object[] { "Cancelled or Rejected Requests", r.Cards.CancelledOrRejectedBorrowings });
             row(new object[] { "Borrowings with no payment recorded", r.BorrowingsWithoutPayment });
             row(new object[] { });
             row(new object[] { "Borrowing Activity", "Period start", "Borrowings" });
@@ -611,6 +664,10 @@ namespace UniShare.Controllers
             row(new object[] { "Borrowing Expenses (recorded payments only)", "Period start", "Amount paid (PHP)" });
             for (int i = 0; i < r.BorrowingExpenses.Labels.Count; i++)
                 row(new object[] { "", r.BorrowingExpenses.Labels[i], Money(r.BorrowingExpenses.Values[i]) });
+            row(new object[] { });
+            row(new object[] { "TRANSACTION HISTORY", "Item", "Role", "Date", "Estimated Amount (PHP)", "Status", "Transaction" });
+            foreach (var transaction in r.Transactions)
+                row(new object[] { "", transaction.ItemName, transaction.TransactionType, transaction.Date, Money(transaction.Amount), transaction.Status, transaction.TransactionId });
 
             return sb.ToString();
         }

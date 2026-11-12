@@ -1,24 +1,40 @@
 @model System.Collections.Generic.List<UniShare.Controllers.RentalRecordDto>
 @{ ViewBag.Title = "Rental Requests"; }
-<main class="container py-4">
-    <h1>Rental Requests</h1>
-    <p>Review incoming requests for your listings.</p>
-    @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
-    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
-    @if (Model == null || Model.Count == 0) { <p>No rental requests yet.</p> }
+<link rel="stylesheet" href="~/Content/RentalRecords.css" />
+<main class="rental-records">
+    <div class="rental-records__inner">
+    <header class="rental-records__header">
+        <p class="rental-records__eyebrow">RENTAL MANAGEMENT</p>
+        <h1>Rental Requests</h1>
+        <p class="rental-records__description">Review and respond to requests for your listings.</p>
+    </header>
+    <nav class="rental-records__nav" aria-label="Listing sections">
+        <div class="rental-records__tabs">
+            <a class="rental-records__tab" href="@Url.Action("ItemListings", "MyListings")">My Items</a>
+            <a class="rental-records__tab is-active" aria-current="page" href="@Url.Action("Index", "RentalRequests")">Rental Requests</a>
+            <a class="rental-records__tab" href="@Url.Action("Ongoing", "MyListings")">Ongoing Rentals</a>
+            <a class="rental-records__tab" href="@Url.Action("PastTransactions", "MyListings")">Past Transactions</a>
+        </div>
+    </nav>
+    @if (TempData["Error"] != null) { <div class="rental-records__notice rental-records__notice--error" role="alert">@TempData["Error"]</div> }
+    @if (TempData["Success"] != null) { <div class="rental-records__notice rental-records__notice--success" role="status">@TempData["Success"]</div> }
+    @if (Model == null || Model.Count == 0) { <section class="rental-records__empty"><span class="rental-records__empty-icon" aria-hidden="true">↻</span><h2>No rental requests yet</h2><p>New requests for your listings will appear here.</p></section> }
     else
     {
-        <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Request</th><th>Item</th><th>Renter</th><th>Schedule</th><th>Fee</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        <section class="rental-records__panel"><div class="rental-records__table-wrap"><table class="rental-records__table rental-records__requests-table"><thead><tr><th>REQUEST</th><th>ITEM</th><th>RENTER</th><th>HANDOVER SCHEDULE</th><th>FEE</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>
         @foreach (var request in Model)
         {
-            <tr><td>@request.RequestId<br /><small>@request.RequestDateFormatted</small></td><td>@request.ItemName</td><td>@request.BorrowerName<br /><small>@request.BorrowerProgram</small></td><td>@request.HandoverScheduleFormatted<br />@request.Duration</td><td>@request.RentalFeeFormatted</td><td>@request.Status</td><td>
+            <tr><td><strong>@request.RequestId</strong><small>@request.RequestDateFormatted</small></td><td><strong>@request.ItemName</strong><small>@request.Category</small></td><td><strong>@request.BorrowerName</strong><small>@request.BorrowerProgram</small></td><td><strong>@request.HandoverScheduleFormatted</strong><small>@request.Duration</small></td><td><strong>@request.RentalFeeFormatted</strong></td><td><span class="rental-records__status">@request.Status</span></td><td class="rental-records__actions">
                 @if (request.Status == "Pending" || request.Status == "Requested")
                 {
-                    using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "d-inline" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="true" /><button class="btn btn-sm btn-success" type="submit">Accept</button> }
-                    using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "d-inline" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="false" /><select name="reason" required class="form-select form-select-sm d-inline-block" style="width:auto"><option value="">Reason</option><option>Schedule conflict</option><option>Item unavailable</option><option>Other</option></select><input type="text" name="notes" maxlength="300" placeholder="Optional note" class="form-control form-control-sm d-inline-block" style="width:130px" /><button class="btn btn-sm btn-outline-danger" type="submit">Decline</button> }
+                    <div class="rental-records__action-layout">
+                        @using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "rental-records__accept-form" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="true" /><button class="rental-records__accept" type="submit">Accept</button> }
+                        @using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "rental-records__decline-form" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="false" /><button class="rental-records__decline" type="submit">Decline</button><select name="reason" required aria-label="Reason for declining this request"><option value="">Decline reason</option><option>Schedule conflict</option><option>Item unavailable</option><option>Other</option></select><input type="text" name="notes" maxlength="300" placeholder="Optional note" aria-label="Optional decline note" /> }
+                    </div>
                 }
             </td></tr>
         }
-        </tbody></table></div>
+        </tbody></table></div></section>
     }
+    </div>
 </main>

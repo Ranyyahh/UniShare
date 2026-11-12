@@ -11,11 +11,12 @@ namespace UniShare.Services
     /// <summary>Database-backed borrower workflows. Booking and rental documents remain in their existing collections.</summary>
     public static class BorrowedItemsService
     {
-        private static readonly string[] DisplayableStatuses = { "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" };
+        private static readonly string[] DisplayableStatuses = { "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED", "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" };
         private static readonly string[] AwaitingHandover = { "ACCEPTED", "APPROVED" };
 
         public static List<BorrowedItem> GetForBorrower(ObjectId borrowerId)
         {
+            BookingService.ExpirePending();
             RefreshOverdue(borrowerId);
             var borrowerFilter = Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId) |
                                  Builders<BsonDocument>.Filter.Eq("renterId", borrowerId) |
@@ -50,21 +51,39 @@ namespace UniShare.Services
             var status = Status(doc);
             var canConfirmLegacyPending = status == "PENDING" && (doc.Contains("approvedAt") || doc.Contains("acceptedAt"));
             if (!AwaitingHandover.Contains(status) && !canConfirmLegacyPending) return false;
-            if (doc.GetValue("handoverConfirmed", false).ToBoolean()) return false;
+            var borrowerAlreadyConfirmed = doc.GetValue("borrowerHandoverConfirmed", doc.GetValue("handoverConfirmed", false)).ToBoolean();
+            if (borrowerAlreadyConfirmed) return false;
             var now = DateTime.UtcNow;
-            var update = Builders<BsonDocument>.Update.Set("status", "ONGOING").Set("handoverConfirmed", true)
-                .Set("handoverConfirmedAt", now).Set("handoverAt", now).Set("updatedAt", now);
+            var ownerConfirmed = doc.GetValue("ownerHandoverConfirmed", false).ToBoolean();
+            var update = Builders<BsonDocument>.Update.Set("borrowerHandoverConfirmed", true).Set("borrowerHandoverConfirmedAt", now).Set("updatedAt", now);
+            if (ownerConfirmed)
+                update = update.Set("status", "ONGOING").Set("handoverConfirmed", true).Set("handoverConfirmedAt", now).Set("handoverAt", now);
             UpdateRecord(doc, isBooking, borrowerId, update);
-            // Keep the established rentals collection in sync for existing dashboard and owner statistics.
-            var bookingId = isBooking ? doc.GetValue("_id", BsonNull.Value) : doc.GetValue("bookingId", BsonNull.Value);
-            if (bookingId.IsObjectId)
-            {
-                var rental = new BsonDocument(doc);
-                rental.Remove("_id"); rental["bookingId"] = bookingId; rental["status"] = "ONGOING";
-                rental["handoverConfirmed"] = true; rental["handoverConfirmedAt"] = now; rental["handoverAt"] = now; rental["updatedAt"] = now;
-                MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
-                    new BsonDocument("$set", rental), new UpdateOptions { IsUpsert = true });
-            }
+            UpdateLinkedRental(doc, borrowerId, update);
+            return true;
+        }
+
+        public static bool ConfirmHandoverByOwner(ObjectId ownerId, string recordId)
+        {
+            ObjectId id;
+            if (!ObjectId.TryParse(recordId, out id)) return false;
+            var ownerFilter = Builders<BsonDocument>.Filter.Eq("ownerId", ownerId);
+            var allowed = Builders<BsonDocument>.Filter.In("status", new[] { "ACCEPTED", "APPROVED", "ONGOING", "ACTIVE" });
+            var doc = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & ownerFilter & allowed).FirstOrDefault();
+            var isBooking = doc != null;
+            if (doc == null) doc = MongoDatabase.Rentals.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & ownerFilter & allowed).FirstOrDefault();
+            if (doc == null || doc.GetValue("ownerHandoverConfirmed", false).ToBoolean()) return false;
+
+            var now = DateTime.UtcNow;
+            var borrowerConfirmed = doc.GetValue("borrowerHandoverConfirmed", doc.GetValue("handoverConfirmed", false)).ToBoolean();
+            var update = Builders<BsonDocument>.Update.Set("ownerHandoverConfirmed", true).Set("ownerHandoverConfirmedAt", now).Set("updatedAt", now);
+            if (borrowerConfirmed)
+                update = update.Set("status", "ONGOING").Set("handoverConfirmed", true).Set("handoverConfirmedAt", now).Set("handoverAt", now);
+            var collection = isBooking ? MongoDatabase.Bookings : MongoDatabase.Rentals;
+            var ownerNotConfirmed = Builders<BsonDocument>.Filter.Eq("ownerHandoverConfirmed", false) | Builders<BsonDocument>.Filter.Exists("ownerHandoverConfirmed", false);
+            var result = collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id) & ownerFilter & allowed & ownerNotConfirmed, update);
+            if (result.ModifiedCount != 1) return false;
+            UpdateLinkedRental(doc, ownerId, update);
             return true;
         }
 
@@ -138,7 +157,7 @@ namespace UniShare.Services
         private static bool IsDisplayable(BsonDocument x)
         {
             var status = Status(x);
-            return DisplayableStatuses.Contains(status) || (status == "PENDING" && (x.Contains("approvedAt") || x.Contains("acceptedAt")));
+            return DisplayableStatuses.Contains(status) || status == "PENDING" || status == "REQUESTED";
         }
         private static void RefreshOverdue(ObjectId borrowerId)
         {
@@ -212,12 +231,19 @@ namespace UniShare.Services
             var end = ReadDate(doc, "endDate") ?? ReadDate(doc, "expectedReturnDate") ?? start.AddHours(ReadHours(doc));
             var actualHandover = ReadDate(doc, "handoverAt") ?? ReadDate(doc, "handoverConfirmedAt");
             var status = Status(doc);
-            var handoverConfirmed = doc.GetValue("handoverConfirmed", false).ToBoolean() || new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status);
-            var displayStatus = (status == "ACCEPTED" || status == "APPROVED" || (status == "PENDING" && (doc.Contains("approvedAt") || doc.Contains("acceptedAt")))) && !handoverConfirmed ? "Pending" :
+            var borrowerHandoverConfirmed = doc.GetValue("borrowerHandoverConfirmed", doc.GetValue("handoverConfirmed", false)).ToBoolean();
+            var ownerHandoverConfirmed = doc.GetValue("ownerHandoverConfirmed", false).ToBoolean();
+            var handoverConfirmed = (borrowerHandoverConfirmed && ownerHandoverConfirmed) ||
+                (!doc.Contains("borrowerHandoverConfirmed") && !doc.Contains("ownerHandoverConfirmed") &&
+                 (doc.GetValue("handoverConfirmed", false).ToBoolean() || new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status)));
+            var legacyAcceptedPending = status == "PENDING" && (doc.Contains("approvedAt") || doc.Contains("acceptedAt"));
+            var displayStatus = status == "PENDING" || status == "REQUESTED" || status == "ACCEPTED" || status == "APPROVED" ?
+                    (handoverConfirmed ? "Ongoing" : "Pending") :
                 status == "ACTIVE" || status == "ONGOING" || status == "OVERDUE" ? "Ongoing" :
-                status == "ACCEPTED" || status == "APPROVED" || status == "PENDING" ? "Ongoing" :
                 status == "COMPLETE" || status == "COMPLETED" || status == "RETURNED" ? "Completed" :
-                status == "RETURN_REQUESTED" || status == "RETURN PENDING" ? "Return Requested" : "Disputed";
+                status == "RETURN_REQUESTED" || status == "RETURN PENDING" ? "Return Requested" :
+                status == "CANCELLED" || status == "CANCELED" || status == "EXPIRED" ? "Cancelled" :
+                status == "DECLINED" ? "Declined" : status == "REJECTED" ? "Rejected" : "Disputed";
             var details = item == null ? null : item.RentalDetails;
             var hours = Math.Max(1, (int)Math.Round((end - start).TotalHours));
             var disputeAt = ReadDate(doc, "disputedAt");
@@ -253,6 +279,8 @@ namespace UniShare.Services
                 PricePerHour = (decimal)price, PaidAmount = (decimal)fee, Start = start.ToLocalTime(), End = end.ToLocalTime(), PickupPoint = doc.GetValue("handoverLocation", location).ToString(),
                 PaymentMethod = doc.GetValue("paymentMethod", "—").ToString(), TransactionId = tx, About = item == null ? doc.GetValue("description", "").ToString() : item.Description,
                 Status = displayStatus, HandoverConfirmed = handoverConfirmed,
+                BorrowerHandoverConfirmed = borrowerHandoverConfirmed, OwnerHandoverConfirmed = ownerHandoverConfirmed,
+                CanConfirmHandover = (AwaitingHandover.Contains(status) || legacyAcceptedPending) && !borrowerHandoverConfirmed && !handoverConfirmed,
                 Rating = ReadNullableInt(doc, "itemRating"), ItemRating = ReadNullableDouble(doc, "itemRating"), OwnerRating = ownerRating,
                 Review = doc.GetValue("review", "").ToString(), DisputeReason = doc.GetValue("disputeReason", "").ToString(), Theme = theme,
                 RequestedOn = ReadDate(doc, "createdAt") ?? ReadDate(doc, "requestedAt"), ApprovedOn = ReadDate(doc, "acceptedAt") ?? ReadDate(doc, "approvedAt"),

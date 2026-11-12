@@ -123,6 +123,21 @@ namespace UniShare.Controllers
             return View(details);
         }
 
+        [HttpGet]
+        public ActionResult UnavailableHandoverSlots(string id, string date, int duration = 2)
+        {
+            ObjectId itemId;
+            DateTime selectedDate;
+            if (!ObjectId.TryParse(id, out itemId) || !DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
+                return new HttpStatusCodeResult(400);
+            if (MarketplaceService.GetItem(id) == null) return HttpNotFound();
+            try
+            {
+                return Json(new { unavailableSlots = BookingService.GetUnavailableHandoverSlots(itemId, selectedDate, duration) }, JsonRequestBehavior.AllowGet);
+            }
+            catch (BookingException ex) { return new HttpStatusCodeResult(400, ex.Message); }
+        }
+
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
         public ActionResult RequestToRent(string id, DateTime handoverDate, string handoverTime, int duration, string notes)
         {

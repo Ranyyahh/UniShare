@@ -4,7 +4,9 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<link rel="stylesheet" href="~/Content/MyRentals.css" />
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/MyRentals.css")" />
+}
 
 <div class="my-rentals-page">
     <!-- A. Page Header -->
@@ -422,7 +424,7 @@
             <header class="my-rentals-modal__header">
                 <div class="my-rentals-modal__header-copy">
                     <h2 class="my-rentals-modal__title" id="pendingDetailsTitle">Rental Request Details <span class="rm-request-id" id="pendingRequestId"></span></h2>
-                    <p class="my-rentals-modal__description">Review the rental info before accepting or declining.</p>
+                    <p class="my-rentals-modal__description" id="pendingModalDescription">Your request is waiting for the item owner to review it.</p>
                 </div>
                 <button type="button" class="my-rentals-modal__close-btn" id="btnClosePendingDetails" aria-label="Close">&times;</button>
             </header>
@@ -492,16 +494,11 @@
                     </div>
                 </div>
                 <!-- Note to owner -->
-                <div class="rm-section-label">NOTE TO OWNER</div>
+                <div class="rm-section-label" id="pendingNoteTitle">YOUR NOTE TO THE OWNER</div>
                 <div class="rm-note-box" id="pendingNote"></div>
             </div>
             <footer class="my-rentals-modal__footer">
-                <button type="button" class="my-rentals-btn rm-btn-decline" id="btnPendingDecline">
-                    Decline Request
-                </button>
-                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnPendingAccept">
-                    &#10003; Accept Request
-                </button>
+                <p class="my-rentals-pending-notice" role="status">This request is pending review by the item owner. You’ll see the updated status here after they respond.</p>
             </footer>
         </div>
     </div>

@@ -27,7 +27,6 @@ namespace UniShare.Models
         public List<string> ConditionTags { get; set; }
         public List<GalleryImageViewModel> Gallery { get; set; }
         public LenderViewModel Lender { get; set; }
-        public List<DateTime> BookedDates { get; set; }
         public decimal ReplacementValue { get; set; }
         public string Accessories { get; set; }
         public string OwnerId { get; set; }
@@ -37,7 +36,6 @@ namespace UniShare.Models
         {
             ConditionTags = new List<string>();
             Gallery = new List<GalleryImageViewModel>();
-            BookedDates = new List<DateTime>();
         }
     }
 

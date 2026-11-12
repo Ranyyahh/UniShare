@@ -1,16 +1,32 @@
 @model UniShare.Controllers.RentalRecordDto
 @{ ViewBag.Title = "Rental Details"; }
-<main class="container py-4"><h1>Rental Details</h1><dl class="row">
-    <dt class="col-sm-3">Request</dt><dd class="col-sm-9">@Model.RequestId</dd>
-    <dt class="col-sm-3">Item</dt><dd class="col-sm-9">@Model.ItemName</dd>
-    <dt class="col-sm-3">Renter</dt><dd class="col-sm-9">@Model.BorrowerName (@Model.BorrowerProgram)</dd>
-    <dt class="col-sm-3">Owner</dt><dd class="col-sm-9">@Model.OwnerName</dd>
-    <dt class="col-sm-3">Schedule</dt><dd class="col-sm-9">@Model.HandoverScheduleFormatted · @Model.Duration</dd>
-    <dt class="col-sm-3">Estimated fee</dt><dd class="col-sm-9">@Model.RentalFeeFormatted</dd>
-    <dt class="col-sm-3">Status</dt><dd class="col-sm-9">@Model.Status</dd>
-    @if (!string.IsNullOrWhiteSpace(Model.AcceptedAtFormatted)) { <dt class="col-sm-3">Accepted</dt><dd class="col-sm-9">@Model.AcceptedAtFormatted</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.DeclineReason)) { <dt class="col-sm-3">Decline reason</dt><dd class="col-sm-9">@Model.DeclineReason</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.DeclineNote)) { <dt class="col-sm-3">Owner notes</dt><dd class="col-sm-9">@Model.DeclineNote</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.DeclinedAtFormatted)) { <dt class="col-sm-3">Declined</dt><dd class="col-sm-9">@Model.DeclinedAtFormatted</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.RequestNote)) { <dt class="col-sm-3">Renter notes</dt><dd class="col-sm-9">@Model.RequestNote</dd> }
-</dl><a href="@Url.Action("Index")">Back to rentals</a></main>
+<link rel="stylesheet" href="~/Content/RentalRecords.css" />
+<main class="rental-records">
+    <div class="rental-records__inner rental-records__details-page">
+        <a class="rental-records__back" href="@Url.Action(Model.BackAction ?? "Index", Model.BackController ?? "MyRentals")"><span aria-hidden="true">←</span> Back to rentals</a>
+        <header class="rental-records__header rental-records__details-header">
+            <p class="rental-records__eyebrow">RENTAL RECORD</p>
+            <div class="rental-records__details-title">
+                <div><h1>Rental Details</h1><p class="rental-records__description">Request @Model.RequestId</p></div>
+                <span class="rental-records__status">@Model.Status</span>
+            </div>
+        </header>
+        <section class="rental-records__detail-card" aria-label="Rental details">
+            <h2>Transaction information</h2>
+            <dl class="rental-records__detail-grid">
+                <div><dt>Item</dt><dd>@Model.ItemName</dd></div>
+                <div><dt>Category</dt><dd>@(string.IsNullOrWhiteSpace(Model.Category) ? "—" : Model.Category)</dd></div>
+                <div><dt>Renter</dt><dd>@Model.BorrowerName <small>@Model.BorrowerProgram</small></dd></div>
+                <div><dt>Owner</dt><dd>@(string.IsNullOrWhiteSpace(Model.OwnerName) ? "—" : Model.OwnerName)</dd></div>
+                <div><dt>Request date</dt><dd>@Model.RequestDateFormatted</dd></div>
+                <div><dt>Handover schedule</dt><dd>@Model.HandoverScheduleFormatted <small>@Model.Duration</small></dd></div>
+                <div><dt>Estimated fee</dt><dd class="rental-records__detail-fee">@Model.RentalFeeFormatted</dd></div>
+                @if (!string.IsNullOrWhiteSpace(Model.AcceptedAtFormatted)) { <div><dt>Accepted</dt><dd>@Model.AcceptedAtFormatted</dd></div> }
+                @if (!string.IsNullOrWhiteSpace(Model.DeclinedAtFormatted)) { <div><dt>Declined</dt><dd>@Model.DeclinedAtFormatted</dd></div> }
+                @if (!string.IsNullOrWhiteSpace(Model.DeclineReason)) { <div><dt>Decline reason</dt><dd>@Model.DeclineReason</dd></div> }
+                @if (!string.IsNullOrWhiteSpace(Model.DeclineNote)) { <div><dt>Owner notes</dt><dd>@Model.DeclineNote</dd></div> }
+                @if (!string.IsNullOrWhiteSpace(Model.RequestNote)) { <div class="rental-records__detail-wide"><dt>Renter notes</dt><dd>@Model.RequestNote</dd></div> }
+            </dl>
+        </section>
+    </div>
+</main>

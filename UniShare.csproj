@@ -180,6 +180,7 @@
     <Compile Include="Controllers\RentalRequestsController.cs" />
     <Compile Include="Controllers\NotificationsController.cs" />
     <Compile Include="Controllers\ReportsAnalyticsController.cs" />
+    <Compile Include="Services\MongoReportDataSource.cs" />
     <Compile Include="Controllers\SalesReportController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -240,6 +241,7 @@
     <Content Include="Content\fonts\PlusJakartaSans-Variable.ttf" />
     <Content Include="Scripts\auth-forms.js" />
     <Content Include="Scripts\availability.js" />
+    <Content Include="Scripts\rental-request.js" />
     <Content Include="Scripts\jquery-3.5.0.js" />
     <Content Include="Scripts\jquery-3.5.0.min.js" />
     <Content Include="Scripts\jquery-3.5.0.slim.js" />
@@ -286,6 +288,10 @@
     <Content Include="Views\MyListings\EditListing.cshtml" />
     <Content Include="Views\MyListings\Index.cshtml" />
     <Content Include="Views\MyListings\ItemListings.cshtml" />
+    <Content Include="Views\MyListings\ListingDetails.cshtml" />
+    <Content Include="Views\MyListings\RentalRecords.cshtml" />
+    <Content Include="Content\RentalRecords.css" />
+    <Content Include="Content\MyListings.css" />
     <Content Include="Views\MyListings\_DeleteListingModal.cshtml" />
     <Content Include="Views\MyRentals\Index.cshtml" />
     <Content Include="Views\ReportsAnalytics\Index.cshtml" />

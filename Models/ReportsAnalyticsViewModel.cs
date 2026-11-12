@@ -41,6 +41,7 @@ namespace UniShare.Models
         public int Quantity { get; set; }
         public string Status { get; set; }
         public DateTime RequestedAt { get; set; }
+        public decimal EstimatedAmount { get; set; }
         public decimal? AmountPaid { get; set; }         // null = no payment recorded
         public DateTime? PaidAt { get; set; }            // null = not paid
     }
@@ -53,6 +54,14 @@ namespace UniShare.Models
         public int TotalRentals { get; set; }
         public int ItemsRented { get; set; }
         public int TotalBorrowings { get; set; }
+        public int PendingTransactions { get; set; }
+        public int ActiveRentals { get; set; }
+        public int CompletedRentals { get; set; }
+        public int RejectedOrCancelledTransactions { get; set; }
+        public int PendingBorrowingRequests { get; set; }
+        public int ActiveBorrowedRentals { get; set; }
+        public int CompletedBorrowedRentals { get; set; }
+        public int CancelledOrRejectedBorrowings { get; set; }
     }
 
     // One borrowing transaction behind a chart point (shown in the chart tooltips).
@@ -78,14 +87,29 @@ namespace UniShare.Models
     {
         public string Name { get; set; }
         public int Quantity { get; set; }
+        public decimal Revenue { get; set; }
     }
 
     public class StatusDistribution
     {
+        public int Pending { get; set; }
+        public int Accepted { get; set; }
         public int Active { get; set; }
         public int Completed { get; set; }
         public int Disputed { get; set; }
+        public int Cancelled { get; set; }
+        public int Rejected { get; set; }
         public int NotCounted { get; set; }              // Pending / Accepted / Declined / Returned / unknown
+    }
+
+    public class ReportHistoryRow
+    {
+        public string TransactionId { get; set; }
+        public string ItemName { get; set; }
+        public string TransactionType { get; set; }
+        public string Date { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; }
     }
 
     public class ReportPayload
@@ -97,8 +121,11 @@ namespace UniShare.Models
         public bool IsSampleData { get; set; }           // true when the figures come from the preview data source
         public ReportCards Cards { get; set; }
         public TimeSeries RentalRevenue { get; set; }
+        public TimeSeries RentalRequestsReceived { get; set; }
+        public TimeSeries RentalRequestsSubmitted { get; set; }
         public List<TopItem> MostRentedItems { get; set; }
         public StatusDistribution RentalStatus { get; set; }
+        public List<ReportHistoryRow> Transactions { get; set; }
         public TimeSeries BorrowingActivity { get; set; }
         public TimeSeries BorrowingExpenses { get; set; }
         public int BorrowingsWithoutPayment { get; set; } // counted borrowings with no payment record
@@ -108,8 +135,11 @@ namespace UniShare.Models
         {
             Cards = new ReportCards();
             RentalRevenue = new TimeSeries();
+            RentalRequestsReceived = new TimeSeries();
+            RentalRequestsSubmitted = new TimeSeries();
             MostRentedItems = new List<TopItem>();
             RentalStatus = new StatusDistribution();
+            Transactions = new List<ReportHistoryRow>();
             BorrowingActivity = new TimeSeries();
             BorrowingExpenses = new TimeSeries();
         }

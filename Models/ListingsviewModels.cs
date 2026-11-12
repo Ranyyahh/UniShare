@@ -23,6 +23,8 @@ namespace UniShare.Models
         public int UnavailableCount => TotalCount - AvailableCount;
         public int PendingRequestCount { get; set; }
         public int ActiveRentalCount { get; set; }
+        public int PendingListingCount => Listings.Count(l => string.Equals(l.ApprovalStatus, "PENDING", System.StringComparison.OrdinalIgnoreCase));
+        public int RejectedListingCount => Listings.Count(l => string.Equals(l.ApprovalStatus, "REJECTED", System.StringComparison.OrdinalIgnoreCase));
     }
 
     public class ListingItemViewModel
@@ -48,6 +50,9 @@ namespace UniShare.Models
         public decimal ReplacementValue { get; set; }
         public decimal SecurityDeposit { get; set; }
         public string Accessories { get; set; }
+        public string ApprovalStatus { get; set; }
+        public string RejectionReason { get; set; }
+        public System.DateTime CreatedAt { get; set; }
 
         public bool IsAvailable => Status == ListingStatus.Available;
     }

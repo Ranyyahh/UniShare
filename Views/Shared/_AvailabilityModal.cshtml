@@ -2,13 +2,11 @@
 @using System.Linq
 @using System.Collections.Generic
 
-@* Booked dates are read by Scripts/availability.js from data-booked (yyyy-MM-dd, comma separated). *@
 <div class="ua-overlay" id="avail-modal" aria-hidden="true"
      data-item-id="@Model.ItemId"
      data-item-name="@Model.Name"
      data-available-days="@string.Join(",", Model.AvailableDays ?? new List<string>())"
-     data-request-url="@Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId })"
-     data-booked="@string.Join(",", Model.BookedDates.Select(d => d.ToString("yyyy-MM-dd")))">
+     data-request-url="@Url.Action("RequestToRent", "BrowseItems", new { id = Model.ItemId })">
     <div class="ua-dialog-wrap">
         <div class="ua-dialog" role="dialog" aria-modal="true" aria-labelledby="av-title">
 
@@ -38,8 +36,7 @@
             <div id="cal-days" class="cal-grid"></div>
 
             <div class="legend">
-                <span><i style="background:#1fa463"></i>Available for Rent</span>
-                <span><i style="background:#f59e0b"></i>Booked / Reserved</span>
+                <span><i style="background:#1fa463"></i>Owner handover day</span>
                 <span><i style="background:var(--primary)"></i>Selected Date</span>
             </div>
 

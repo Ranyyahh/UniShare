@@ -1,5 +1,11 @@
-﻿using System.Web.Mvc;
-using System.Collections.Generic;
+using System;
+using System.Globalization;
+using System.Linq;
+using System.Web.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using UniShare.Models;
+using UniShare.Services;
 
 namespace UniShare.Controllers
 {
@@ -12,103 +18,102 @@ namespace UniShare.Controllers
             return View();
         }
 
-        // ---------------------------------------------------------
-        // PLACEHOLDER API: Replace this with your actual DB query
-        // ---------------------------------------------------------
         [HttpGet]
         public JsonResult GetListings()
         {
-            var listings = new List<object>
-            {
-                new {
-                    id = "ITM-2026-0891",
-                    name = "Casio fx-991EX ClassWiz",
-                    category = "Electronics",
-                    owner = "Maria Santos",
-                    status = "pending",
-                    active = "inactive",
-                    price = "₱25/hr",
-                    meta = "Uploaded Oct 24, 2026 • 2.4 MB",
-                    desc = "Official QCU Department of Mathematics midterm/board approved non-programmable scientific calculator. Includes original protective slide cover with quick reference formula card.",
-                    course = "BS Math, BSIT, BSEd",
-                    condition = "Like New (9.5-10/10)",
-                    handover = "07:00 AM - 09:00 AM",
-                    returnTime = "05:00 PM - 06:00 PM",
-                    days = "Mon,Tue,Wed,Thu,Fri"
-                },
-                new {
-                    id = "ITM-2026-0740",
-                    name = "Logitech MX Master 3S Mouse",
-                    category = "Electronics",
-                    owner = "Lester David",
-                    status = "approved",
-                    active = "active",
-                    price = "₱50/hr",
-                    meta = "Uploaded Oct 23, 2026 • 1.8 MB",
-                    desc = "Ergonomic wireless mouse with 8K DPI tracking. Includes Bolt USB receiver and charging cable.",
-                    course = "BSIT, BSCS",
-                    condition = "Good (8-9/10)",
-                    handover = "08:00 AM - 10:00 AM",
-                    returnTime = "04:00 PM - 05:00 PM",
-                    days = "Mon,Tue,Wed,Thu,Fri"
-                },
-                new {
-                    id = "ITM-2026-0612",
-                    name = "Arduino Uno R3 Starter Kit",
-                    category = "Other Items",
-                    owner = "Kenneth Dave Ramirez",
-                    status = "rejected",
-                    active = "inactive",
-                    price = "₱40/hr",
-                    meta = "Uploaded Oct 22, 2026 • 3.1 MB",
-                    desc = "Complete starter kit with breadboard, jumper wires, and sensors. Contains 2x LiPo cells (unapproved).",
-                    course = "BSECE, BSCS",
-                    condition = "Fair (6.5-7.5/10)",
-                    handover = "09:00 AM - 11:00 AM",
-                    returnTime = "03:00 PM - 04:00 PM",
-                    days = "Mon,Tue,Wed"
-                },
-                new {
-                    id = "ITM-2026-0554",
-                    name = "Staedtler Mars 700 Pen Set",
-                    category = "School Supplies",
-                    owner = "Chloe Anne Cruz",
-                    status = "approved",
-                    active = "active",
-                    price = "₱30/hr",
-                    meta = "Uploaded Oct 21, 2026 • 1.2 MB",
-                    desc = "Professional drafting pen set with 0.1, 0.3, and 0.5 mm tips. Recently refilled with black ink.",
-                    course = "BS Architecture, BSIE",
-                    condition = "Like New (9.5-10/10)",
-                    handover = "10:00 AM - 12:00 PM",
-                    returnTime = "02:00 PM - 03:00 PM",
-                    days = "Mon,Tue,Wed,Thu,Fri,Sat"
-                }
-            };
+            var records = MongoDatabase.Items.Find(Builders<ItemDocument>.Filter.Empty)
+                .SortByDescending(x => x.CreatedAt).ToList()
+                .Select(item =>
+                {
+                    var owner = MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault();
+                    var details = item.RentalDetails ?? new ItemRentalDetailsDocument();
+                    var location = item.Location ?? new ItemLocationDocument();
+                    var submitted = item.CreatedAt == default(DateTime) ? "" :
+                        item.CreatedAt.ToLocalTime().ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
+                    var unitHours = details.PricingUnitHours > 0 ? details.PricingUnitHours : 24;
+                    var rate = details.HourlyRate > 0 ? (decimal)details.HourlyRate : (decimal)(details.PricePerDay / 24d);
+                    return new
+                    {
+                        id = item.Id.ToString(),
+                        name = item.Name ?? "Untitled item",
+                        category = item.Category ?? "Other Items",
+                        owner = owner == null ? "Student" : (owner.FirstName + " " + owner.LastName).Trim(),
+                        status = (item.ApprovalStatus ?? "PENDING").ToLowerInvariant(),
+                        active = string.Equals(item.ApprovalStatus, "APPROVED", StringComparison.OrdinalIgnoreCase) &&
+                                 string.Equals(item.AvailabilityStatus, "AVAILABLE", StringComparison.OrdinalIgnoreCase) ? "active" : "inactive",
+                        price = "\u20B1" + rate.ToString("0.##", CultureInfo.InvariantCulture) + " / " + unitHours + " hrs",
+                        deposit = "\u20B1" + ((decimal)details.SecurityDeposit).ToString("N2", CultureInfo.InvariantCulture),
+                        replacementValue = "\u20B1" + ((decimal)details.ReplacementValue).ToString("N2", CultureInfo.InvariantCulture),
+                        accessories = item.Accessories ?? "None specified",
+                        meta = "Submitted " + submitted,
+                        desc = item.Description ?? "",
+                        course = owner == null ? "Not specified" : string.Join(" ", new[] { owner.Program, owner.YearLevel }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                        condition = item.Condition ?? "Not specified",
+                        handover = item.EarliestHandoverTime ?? "Not specified",
+                        returnTime = item.LatestReturnTime ?? "Not specified",
+                        days = string.Join(",", item.AvailableDays ?? new System.Collections.Generic.List<string>()),
+                        imageUrl = item.Photos != null && item.Photos.Count > 0 ? MarketplaceService.ToImageUrl(item.Photos[0]) : null,
+                        rejectionReason = item.ApprovalRejectionReason ?? "",
+                        location = location.HandoverLocation ?? location.Building ?? ""
+                    };
+                }).ToList();
 
-            return Json(new { success = true, data = listings }, JsonRequestBehavior.AllowGet);
-        }
-        // ---------------------------------------------------------
-
-        [HttpPost]
-        public JsonResult Approve(string id)
-        {
-            // TODO: Update DB status to 'approved'
-            return Json(new { success = true, id = id, status = "Approved" });
+            return Json(new { success = true, data = records }, JsonRequestBehavior.AllowGet);
         }
 
-        [HttpPost]
-        public JsonResult Reject(string id, string reason)
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Approve(string id)
         {
-            // TODO: Update DB status to 'rejected'
-            return Json(new { success = true, id = id, reason = reason, status = "Rejected" });
+            ObjectId itemId, adminId;
+            if (!ObjectId.TryParse(id, out itemId) || !ObjectId.TryParse(User.Identity.Name, out adminId))
+                return Json(new { success = false, message = "The listing or admin account is invalid." });
+
+            var current = MongoDatabase.Items.Find(x => x.Id == itemId).FirstOrDefault();
+            if (current == null) return Json(new { success = false, message = "Listing not found." });
+            if (current.OwnerId == adminId) return new HttpStatusCodeResult(403, "Administrators cannot approve their own listings.");
+
+            var update = Builders<ItemDocument>.Update.Set(x => x.ApprovalStatus, "APPROVED")
+                .Set(x => x.ApprovalReviewedAt, DateTime.UtcNow)
+                .Set(x => x.ApprovalReviewedBy, adminId)
+                .Unset(x => x.ApprovalRejectionReason);
+            var result = MongoDatabase.Items.UpdateOne(PendingFilter(itemId), update);
+            return result.ModifiedCount == 1
+                ? (ActionResult)Json(new { success = true, message = "Listing approved." })
+                : Json(new { success = false, message = "This listing is no longer pending review." });
         }
 
-        [HttpPost]
-        public JsonResult Delete(string id)
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Reject(string id, string reason)
         {
-            // TODO: Delete from DB
-            return Json(new { success = true, id = id, status = "Deleted" });
+            ObjectId itemId, adminId;
+            if (!ObjectId.TryParse(id, out itemId) || !ObjectId.TryParse(User.Identity.Name, out adminId))
+                return Json(new { success = false, message = "The listing or admin account is invalid." });
+            reason = (reason ?? "").Trim();
+            if (reason.Length == 0 || reason.Length > 500)
+                return Json(new { success = false, message = "Enter a rejection reason (up to 500 characters)." });
+
+            var current = MongoDatabase.Items.Find(x => x.Id == itemId).FirstOrDefault();
+            if (current == null) return Json(new { success = false, message = "Listing not found." });
+            if (current.OwnerId == adminId) return new HttpStatusCodeResult(403, "Administrators cannot reject their own listings.");
+
+            var now = DateTime.UtcNow;
+            var update = Builders<ItemDocument>.Update.Set(x => x.ApprovalStatus, "REJECTED")
+                .Set(x => x.ApprovalRejectionReason, reason)
+                .Set(x => x.ApprovalReviewedAt, now)
+                .Set(x => x.ApprovalReviewedBy, adminId)
+                .Set(x => x.UpdatedAt, now);
+            var result = MongoDatabase.Items.UpdateOne(PendingFilter(itemId), update);
+            return result.ModifiedCount == 1
+                ? (ActionResult)Json(new { success = true, message = "Listing rejected." })
+                : Json(new { success = false, message = "This listing is no longer pending review." });
+        }
+
+        private static FilterDefinition<ItemDocument> PendingFilter(ObjectId itemId)
+        {
+            var filters = Builders<ItemDocument>.Filter;
+            var pendingStatus = filters.In(x => x.ApprovalStatus, new[] { "PENDING", "Pending", "pending" }) |
+                                filters.Exists("approvalStatus", false);
+            return filters.Eq(x => x.Id, itemId) & pendingStatus;
         }
     }
 }

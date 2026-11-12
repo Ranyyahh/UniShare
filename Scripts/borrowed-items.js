@@ -56,7 +56,7 @@
     }
     function today() { return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
     function byId(id) { for (var i = 0; i < items.length; i++) { if (items[i].id === id) { return items[i]; } } return null; }
-    function isAwaiting(it) { return it.status === 'Pending' || (it.status === 'Ongoing' && !it.handover); }
+    function isAwaiting(it) { return !!it.canConfirmHandover; }
     function isInUse(it) { return (it.status === 'Ongoing' || it.status === 'Return Requested') && it.handover; }
     function lower(s) { return String(s).toLowerCase(); }
     function money(n) { return PESO + n.toFixed(2); }
@@ -182,7 +182,11 @@
         var tag = '<span class="bi-duration">' + SVG_CLOCK + it.hours + ' hrs</span>';
         var foot = '';
 
-        if (isAwaiting(it)) {
+        if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
+            foot = '<div class="bi-notice">' + SVG_CLOCK + ' Waiting for the lender to confirm handover</div>';
+        } else if (it.status === 'Pending' && !it.canConfirmHandover) {
+            foot = '<div class="bi-notice">' + SVG_CLOCK + ' Waiting for the lender to approve this request</div>';
+        } else if (isAwaiting(it)) {
             foot = '<button type="button" class="us-btn us-btn--primary us-btn--block" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button>';
         } else if (it.returnRequested) {
             foot = '<div class="bi-notice">' + SVG_RETURN + ' Return request sent to the lender</div>';
@@ -258,7 +262,11 @@
 
     function detailHTML(it) {
         var actions = '';
-        if (isAwaiting(it)) {
+        if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
+            actions = '<div class="bi-notice bi-notice--block">' + SVG_CLOCK + ' Your handover confirmation is saved. The rental starts after the lender confirms.</div>';
+        } else if (it.status === 'Pending' && !it.canConfirmHandover) {
+            actions = '<div class="bi-notice bi-notice--block">' + SVG_CLOCK + ' Your request is waiting for the lender to approve it.</div>';
+        } else if (isAwaiting(it)) {
             actions = '<div class="bi-modal-actions"><button type="button" class="us-btn us-btn--danger" data-act="report" data-id="' + it.id + '">Report a problem</button>' +
                 '<button type="button" class="us-btn us-btn--primary" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button></div>';
         } else if (it.returnRequested) {
@@ -358,19 +366,20 @@
         var tbody = $('bi-history-body');
         if (!tbody) return;
 
-        var completedItems = items.filter(function (i) { return i.status === 'Completed'; });
+        var completedItems = items.filter(function (i) { return ['Completed', 'Cancelled', 'Declined', 'Rejected'].indexOf(i.status) >= 0; });
 
         if (completedItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding: 40px;">No transactions found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding: 40px;">No transactions found.</td></tr>';
             return;
         }
 
         tbody.innerHTML = completedItems.map(function (it) {
             return '<tr>' +
-                '<td><strong>' + esc(it.txn) + '</strong></td>' + // Changed to it.txn
-                '<td>' + esc(it.period.split('\u2013')[0].trim()) + '</td>' +
+                '<td><strong>' + esc(it.txn) + '</strong></td>' +
+                '<td>' + esc(it.steps.requested || it.period.split('\u2013')[0].trim()) + '</td>' +
                 '<td><strong>' + esc(it.name) + '</strong></td>' +
                 '<td>' + esc(it.lender) + '</td>' +
+                '<td>' + esc(it.status) + '</td>' +
                 '<td class="us-right"><span>' + PESO + it.total + '</span></td>' +
                 '</tr>';
         }).join('');
@@ -450,8 +459,14 @@
         var it = byId(id);
         if (!it || !isAwaiting(it)) { return; }
         postAction(root.getAttribute('data-handover-url'), { id: id, received: true }, function (result) {
-            it.status = 'Ongoing'; it.handover = true; it.endsAt = Date.now() + it.hours * 3600000;
-            it.steps.handover = today(); render(); toast(result.message);
+            it.borrowerHandoverConfirmed = true; it.canConfirmHandover = false;
+            it.handover = !!it.ownerHandoverConfirmed;
+            if (it.handover) {
+                it.status = 'Ongoing'; it.endsAt = Date.now() + it.hours * 3600000; it.steps.handover = today();
+            } else {
+                it.status = 'Pending'; it.endsAt = null;
+            }
+            render(); toast(result.message);
         });
     }
 

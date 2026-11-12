@@ -1,358 +1,100 @@
-﻿@model UniShare.Models.ListingsPageViewModel
+@model UniShare.Models.ListingsPageViewModel
 @using UniShare.Models
 @{
     ViewBag.Title = "My Listings";
 }
+<link rel="stylesheet" href="@Url.Content("~/Content/MyListings.css")" />
 
-@* ===== Page-scoped assets (loaded only on this page) ===== *@
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                fontFamily: { sans: ['Inter', 'sans-serif'] },
-                colors: {
-                    brand: { 50: '#eef2ff', 100: '#e0e7ff', DEFAULT: '#3525cd', 700: '#2a1da6' }
-                }
-            }
-        }
-    };
-</script>
+<main class="my-listings-page">
+    <header class="my-listings-header">
+        <div>
+            <p class="my-listings-eyebrow">Marketplace</p>
+            <h1>My Listings</h1>
+            <p>Manage your items and track their approval status.</p>
+        </div>
+        <a class="my-listings-create" href="@Url.Action("Create", "MyListings")"><span aria-hidden="true">+</span><span>Create Listing</span></a>
+    </header>
 
-<div class="font-sans bg-[#f7f8fd] text-slate-800 antialiased min-h-screen px-4 sm:px-6 lg:px-8 py-7">
-    <main class="max-w-[1360px] mx-auto">
+    @if (TempData["Message"] != null || TempData["Error"] != null)
+    {
+        var hasError = TempData["Error"] != null;
+        <div class="my-listings-alert @(hasError ? "is-error" : "is-success")" role="status">@(hasError ? TempData["Error"] : TempData["Message"])</div>
+    }
 
-        @* ===== Page header ===== *@
-        <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-1">
-            <div class="max-w-3xl">
-                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">My Listings</h1>
-                <p class="mt-1 text-slate-500 text-sm leading-relaxed max-w-3xl">
-                    Manage academic gear, textbooks, and calculators you offer for campus rental. Update rates, pause availability, or list new items.
-                </p>
+    <section class="my-listings-summary" aria-label="Listing summary">
+        <article class="my-listings-summary-card">
+            <span>Total Listings</span><strong>@Model.TotalCount</strong>
+        </article>
+        <article class="my-listings-summary-card is-pending">
+            <span>Pending Listings</span><strong>@Model.PendingListingCount</strong>
+        </article>
+        <article class="my-listings-summary-card is-rejected">
+            <span>Rejected Listings</span><strong>@Model.RejectedListingCount</strong>
+        </article>
+    </section>
+
+    <section class="my-listings-table-panel" aria-labelledby="myListingsHeading">
+        <div class="my-listings-table-heading">
+            <div>
+                <h2 id="myListingsHeading">Your listings</h2>
+                <p>New and updated listings are reviewed before they appear in Browse Items.</p>
             </div>
-            @if (Model.HasListings)
-            {
-                <a href="@Url.Action("Create", "MyListings")" class="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-sm hover:bg-indigo-700 transition active:scale-[0.98]">
-                    <i data-lucide="circle-plus" class="w-4 h-4"></i>
-                    <span>Create Listing</span>
-                </a>
-            }
-        </header>
-
-        @if (TempData["Message"] != null || TempData["Error"] != null)
-        {
-            var hasError = TempData["Error"] != null;
-            <div role="status" class="mt-4 rounded-xl border px-4 py-3 text-sm @(hasError ? "border-amber-200 bg-amber-50 text-amber-800" : "border-emerald-200 bg-emerald-50 text-emerald-800")">
-                @(hasError ? TempData["Error"] : TempData["Message"])
-            </div>
-        }
-
-        <nav class="mt-5 flex justify-center" aria-label="Listing sections">
-            <div class="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-slate-200 bg-slate-100/80 p-1.5">
-                <a href="@Url.Action("ItemListings", "MyListings")" aria-current="page" class="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm">
-                    My Items <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">@Model.TotalCount</span>
-                </a>
-                <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-slate-900">
-                    Rental Requests <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">@Model.PendingRequestCount</span>
-                </button>
-                <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-slate-900">
-                    Ongoing Rentals <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">@Model.ActiveRentalCount</span>
-                </button>
-                <button type="button" class="inline-flex shrink-0 items-center rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-slate-900">
-                    Past Transactions
-                </button>
-            </div>
-        </nav>
-
-        @if (Model.HasListings)
-        {
-            @* ===== Stats ===== *@
-            <section class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wider text-slate-600 uppercase">Total Listings</p>
-                        <div class="mt-2 flex items-baseline gap-3">
-                            <span class="text-4xl font-bold text-slate-900">@Model.TotalCount</span>
-                            <span class="text-xs text-slate-500">Active catalog items</span>
-                        </div>
-                    </div>
-                    <div class="w-11 h-11 rounded-xl bg-indigo-50 text-brand flex items-center justify-center">
-                        <i data-lucide="archive" class="w-5 h-5"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wider text-slate-600 uppercase">Available</p>
-                        <div class="mt-2 flex items-baseline gap-3">
-                            <span class="text-4xl font-bold text-emerald-600">@Model.AvailableCount</span>
-                            <span class="text-xs font-medium text-emerald-600 inline-flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Ready for handover
-                            </span>
-                        </div>
-                    </div>
-                    <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <i data-lucide="circle-check" class="w-5 h-5"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wider text-slate-600 uppercase">Unavailable</p>
-                        <div class="mt-2 flex items-baseline gap-3">
-                            <span class="text-4xl font-bold text-amber-600">@Model.UnavailableCount</span>
-                            <span class="text-xs font-medium text-amber-600 inline-flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Currently rented out or paused
-                            </span>
-                        </div>
-                    </div>
-                    <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                        <i data-lucide="circle-pause" class="w-5 h-5"></i>
-                    </div>
-                </div>
-            </section>
-
-            @* ===== Search + filters ===== *@
-            <section class="mt-6 bg-white rounded-2xl border border-slate-200 p-3.5 flex flex-col lg:flex-row lg:items-center gap-3">
-                <div class="relative flex-1">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                    <input id="listing-search" type="text" placeholder="Search your listings by name, category, or model..."
-                           class="w-full pl-10 pr-3 py-2.5 rounded-lg border border-slate-300 bg-slate-50/60 text-sm placeholder:text-slate-500 focus:border-brand focus:ring-brand" />
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" data-filter="all" data-active="true"
-                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-slate-100 text-sm font-medium text-slate-700 data-[active=true]:bg-indigo-600 data-[active=true]:border-indigo-600 data-[active=true]:text-white transition">
-                        All Listings
-                        <span class="px-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">@Model.TotalCount</span>
-                    </button>
-                    <button type="button" data-filter="available"
-                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-slate-100 text-sm font-medium text-slate-700 data-[active=true]:bg-indigo-600 data-[active=true]:border-indigo-600 data-[active=true]:text-white transition">
-                        Available
-                        <span class="px-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">@Model.AvailableCount</span>
-                    </button>
-                    <button type="button" data-filter="unavailable"
-                            class="filter-pill inline-flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-slate-100 text-sm font-medium text-slate-700 data-[active=true]:bg-indigo-600 data-[active=true]:border-indigo-600 data-[active=true]:text-white transition">
-                        Unavailable
-                        <span class="px-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">@Model.UnavailableCount</span>
-                    </button>
-                    <button type="button" id="filter-reset" title="Reset filters"
-                            class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </section>
-
-            @* ===== Listing cards ===== *@
-            <section class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                @foreach (var item in Model.Listings)
-                {
-                    var conditionBadge = item.Condition == "Like New" ? "Like New (9.5-10/10)"
-                        : item.Condition == "Fair" ? "Fair (6.5-7.5/10)"
-                        : item.Condition == "Heavy Use" ? "Heavy Use (5-6/10)"
-                        : "Good (8-9/10)";
-                    <article data-listing data-status="@(item.IsAvailable ? "available" : "unavailable")"
-                             data-search="@((item.Title + " " + item.CategoryLabel + " " + item.CategoryBadge).ToLowerInvariant())"
-                             class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
-
-                        <div class="relative h-48 bg-slate-100">
-                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Title" class="w-full h-full object-cover" /> }
-                            else { <div class="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500"><i data-lucide="camera" class="w-6 h-6"></i><span class="text-xs">No photo uploaded</span></div> }
-                            <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-                                <div class="flex items-center gap-1.5 min-w-0">
-                                    @if (item.IsAvailable)
-                                    {
-                                        <span class="inline-flex items-center gap-1.5 bg-emerald-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full shadow-sm">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>Available
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="inline-flex items-center gap-1.5 bg-amber-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Unavailable (@item.Status)
-                                        </span>
-                                    }
-                                    <span class="bg-white/95 text-slate-700 text-[11px] font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap">
-                                        @conditionBadge
-                                    </span>
-                                </div>
-                                <span class="bg-indigo-600 text-white text-[11px] font-semibold px-2 py-1 rounded shadow-sm whitespace-nowrap uppercase">@item.CategoryBadge</span>
-                            </div>
-                        </div>
-
-                        <div class="p-4 flex-1 flex flex-col">
-                            <p class="text-xs text-slate-600">@item.CategoryLabel</p>
-                            <h3 class="mt-1 text-sm font-semibold text-slate-900 truncate" title="@item.Title">@item.Title</h3>
-
-                            <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-xl font-bold text-brand">&#8369;@item.Price.ToString("0.##")</span>
-                                <span class="text-xs text-slate-600">/ @item.PerHours hrs</span>
-                                <span class="text-xs text-slate-500">(@Html.Raw((item.PriceNote ?? "").Replace("₱", "&#8369;").Replace("\u20B1", "&#8369;")))</span>
-                            </div>
-
-                            <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <a href="@Url.Action("Edit", "MyListings", new { id = item.Id })"
-                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>Edit
-                                    </a>
-
-                                    <button type="button" data-delete
-                                            data-id="@item.Id"
-                                            data-title="@item.Title"
-                                            data-category="@item.CategoryBadge"
-                                            data-status="@item.Status"
-                                            data-price="@($"&#8369;{item.Price:0.##} / {item.PerHours} hrs ({(item.PriceNote ?? "").Replace("₱", "&#8369;").Replace("\u20B1", "&#8369;")})")"
-                                            data-image="@Url.Content(item.ImageUrl)"
-                                            data-active-rental="@(item.Status == ListingStatus.Rented ? "true" : "false")"
-                                            title="Delete listing"
-                                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-red-600 hover:bg-red-50 transition">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                </div>
-
-                                @using (Html.BeginForm("ToggleAvailability", "MyListings", new { id = item.Id }, FormMethod.Post, new { @class = "inline" }))
-                                {
-                                    @Html.AntiForgeryToken()
-                                    if (item.IsAvailable)
-                                    {
-                                        <button type="submit" title="Pause listing" class="text-slate-500 hover:text-slate-800 transition">
-                                            <i data-lucide="circle-pause" class="w-5 h-5"></i>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button type="submit" title="Resume listing" class="text-amber-500 hover:text-amber-600 transition">
-                                            <i data-lucide="circle-play" class="w-5 h-5"></i>
-                                        </button>
-                                    }
-                                }
-                            </div>
-                        </div>
-                    </article>
-                }
-
-                @* "List another" card *@
-                <a href="@Url.Action("Create", "MyListings")"
-                   class="rounded-xl border-2 border-dashed border-slate-300 bg-white/50 hover:bg-white hover:border-indigo-300 transition min-h-[320px] flex flex-col items-center justify-center text-center p-8">
-                    <div class="w-14 h-14 rounded-xl bg-indigo-50 text-brand flex items-center justify-center">
-                        <i data-lucide="plus" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="mt-5 text-lg font-semibold text-slate-900">List Another Academic Item</h3>
-                    <p class="mt-1.5 text-sm text-slate-600 max-w-xs">Help classmates study while earning rental income on unused books or equipment.</p>
-                    <span class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">Get Started <i data-lucide="arrow-right" class="w-4 h-4"></i></span>
-                </a>
-            </section>
-
-            <p id="no-results" class="hidden mt-8 text-center text-sm text-slate-500">No listings match your search.</p>
-        }
-        else
-        {
-            @* ===== Empty state ===== *@
-            <section class="mt-8 rounded-2xl border border-dashed border-slate-300 bg-gradient-to-br from-white via-white to-indigo-50/60 px-6 py-16 sm:py-20">
-                <div class="max-w-3xl mx-auto text-center">
-                    <div class="relative mx-auto w-24 h-24 rounded-3xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                        <div class="w-16 h-16 rounded-2xl bg-indigo-100 text-brand flex items-center justify-center">
-                            <i data-lucide="archive" class="w-8 h-8"></i>
-                        </div>
-                        <span class="absolute -top-2 -right-4 w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm text-brand flex items-center justify-center">
-                            <i data-lucide="book-open" class="w-4 h-4"></i>
-                        </span>
-                        <span class="absolute -bottom-2 -left-4 w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm text-sky-700 flex items-center justify-center">
-                            <i data-lucide="calculator" class="w-4 h-4"></i>
-                        </span>
-                    </div>
-
-                    <h2 class="mt-8 text-2xl font-bold tracking-tight text-slate-900">You haven't listed any items yet</h2>
-                    <p class="mt-3 text-slate-600 leading-relaxed">
-                        Turn your unused graphing calculators, engineering drafting pens, textbooks, or campus gear into peer rental income while helping fellow QCU classmates.
-                    </p>
-
-                    <a href="@Url.Action("Create", "MyListings")"
-                       class="mt-8 inline-flex items-center gap-2.5 px-7 py-3.5 rounded-lg bg-brand text-white font-semibold shadow-md shadow-indigo-900/20 hover:bg-brand-700 transition active:scale-[0.98]">
-                        <i data-lucide="circle-plus" class="w-4 h-4"></i>
-                        <span>Create Your First Listing</span>
-                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </a>
-                </div>
-
-                <div class="max-w-4xl mx-auto mt-12 pt-10 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div class="rounded-xl border border-slate-200 bg-white/70 p-5 flex items-start gap-3">
-                        <div class="w-10 h-10 shrink-0 rounded-lg bg-white border border-slate-200 shadow-sm text-brand flex items-center justify-center">
-                            <i data-lucide="shield-check" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-slate-900 text-sm">Peer Verified &amp; Protected</h3>
-                            <p class="mt-1 text-xs text-slate-600 leading-relaxed">Only validated QCU students can rent your gear with secure campus ID records.</p>
-                        </div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 bg-white/70 p-5 flex items-start gap-3">
-                        <div class="w-10 h-10 shrink-0 rounded-lg bg-white border border-slate-200 shadow-sm text-brand flex items-center justify-center">
-                            <i data-lucide="banknote" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-slate-900 text-sm">Keep 100% of Your Rates</h3>
-                            <p class="mt-1 text-xs text-slate-600 leading-relaxed">Set hourly or daily bundle rates with zero hidden commission fees on student listings.</p>
-                        </div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 bg-white/70 p-5 flex items-start gap-3">
-                        <div class="w-10 h-10 shrink-0 rounded-lg bg-white border border-slate-200 shadow-sm text-brand flex items-center justify-center">
-                            <i data-lucide="calendar" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-slate-900 text-sm">Flexible Handover Schedules</h3>
-                            <p class="mt-1 text-xs text-slate-600 leading-relaxed">Set your weekly on-campus schedule and convenient hours for quick peer hand-offs.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        }
-
-        @* Delete confirmation dialog (must be outside the form) *@
-        @Html.Partial("_DeleteListingModal")
-
-    </main>
-</div>
-
-<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-<script>
-    lucide.createIcons();
-
-    // Client-side search + status filter (only runs when listings exist)
-    (function () {
-        var search = document.getElementById('listing-search');
-        if (!search) return;
-
-        var cards = document.querySelectorAll('[data-listing]');
-        var pills = document.querySelectorAll('.filter-pill');
-        var empty = document.getElementById('no-results');
-        var filter = 'all';
-
-        function apply() {
-            var q = search.value.trim().toLowerCase();
-            var shown = 0;
-            cards.forEach(function (c) {
-                var ok = (filter === 'all' || c.dataset.status === filter) &&
-                    (q === '' || c.dataset.search.indexOf(q) !== -1);
-                c.classList.toggle('hidden', !ok);
-                if (ok) shown++;
-            });
-            empty.classList.toggle('hidden', shown !== 0);
-        }
-
-        function setFilter(value) {
-            filter = value;
-            pills.forEach(function (p) { p.dataset.active = (p.dataset.filter === value) ? 'true' : 'false'; });
-            apply();
-        }
-
-        pills.forEach(function (p) { p.addEventListener('click', function () { setFilter(p.dataset.filter); }); });
-        search.addEventListener('input', apply);
-        document.getElementById('filter-reset').addEventListener('click', function () {
-            search.value = '';
-            setFilter('all');
-        });
-    })();
-</script>
+            <span class="my-listings-count">@Model.TotalCount total</span>
+        </div>
+        <div class="my-listings-table-scroll">
+            <table class="my-listings-table">
+                <thead>
+                    <tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col">Price</th><th scope="col">Date Submitted</th><th scope="col">Status</th><th scope="col"><span class="my-listings-visually-hidden">Actions</span></th></tr>
+                </thead>
+                <tbody>
+                    @if (!Model.HasListings)
+                    {
+                        <tr><td colspan="6" class="my-listings-empty">No listings yet. Create a listing to get started.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.Listings)
+                        {
+                            var approval = (item.ApprovalStatus ?? "PENDING").ToUpperInvariant();
+                            var statusClass = approval.ToLowerInvariant();
+                            var statusLabel = approval == "APPROVED" ? "Approved" : approval == "REJECTED" ? "Rejected" : "Pending";
+                            <tr>
+                                <td>
+                                    <div class="my-listings-item">
+                                        @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                        {
+                                            <img src="@Url.Content(item.ImageUrl)" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <span class="my-listings-image-placeholder" aria-hidden="true"></span>
+                                        }
+                                        <div><strong>@item.Title</strong>
+                                            @if (approval == "REJECTED" && !string.IsNullOrWhiteSpace(item.RejectionReason))
+                                            {
+                                                <small class="my-listings-reason">Reason: @item.RejectionReason</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@item.CategoryLabel</td>
+                                <td class="my-listings-price">&#8369;@item.Price.ToString("N2") <small>/ @item.PerHours hr@(item.PerHours == 1 ? "" : "s")</small></td>
+                                <td>@(item.CreatedAt == default(DateTime) ? "-" : item.CreatedAt.ToLocalTime().ToString("MMM d, yyyy"))</td>
+                                <td><span class="my-listings-status is-@statusClass">@statusLabel</span></td>
+                                <td>
+                                    <div class="my-listings-actions">
+                                        <a href="@Url.Action("Details", "MyListings", new { id = item.Id })">View Details</a>
+                                        @if (item.Status != ListingStatus.Rented)
+                                        {
+                                            <a class="is-edit" href="@Url.Action("Edit", "MyListings", new { id = item.Id })">Edit Listing</a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
