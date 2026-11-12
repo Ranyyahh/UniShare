@@ -73,6 +73,6 @@ namespace UniShare.Controllers
 
         public ActionResult ItemListings() { return View(); }
         public ActionResult DisputeReports() { return View(); }
-        public ActionResult ReportsAndAnalytics() { return View(); }
+        public ActionResult ReportsAndAnalytics() { return RedirectToAction("Index", "AdminReportsAnalytics"); }
     }
 }

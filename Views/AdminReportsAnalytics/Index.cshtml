@@ -1,0 +1,29 @@
+@{
+    ViewBag.Title = "Reports & Analytics";
+    ViewBag.ShowAdminSidebar = true;
+}
+@section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-reports-analytics.css")" /> }
+<main class="admin-reports" id="adminReports" data-url="@Url.Action("Data", "AdminReportsAnalytics")">
+    <header class="admin-reports__header">
+        <div><p class="admin-reports__eyebrow">ADMIN INSIGHTS</p><h1>Reports &amp; Analytics</h1><p>Platform activity and listing performance from UniShare records.</p></div>
+        <label class="admin-reports__period">Rental trend period
+            <select id="reportPeriod"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="daily">Daily</option><option value="yearly">Yearly</option></select>
+        </label>
+    </header>
+    <div id="reportError" class="admin-reports__error" role="alert" hidden></div>
+    <section aria-labelledby="summaryTitle"><h2 id="summaryTitle">Platform overview</h2>
+        <div class="admin-reports__cards">
+            <article class="admin-report-card"><span>Platform revenue</span><strong id="platformRevenue">—</strong><small id="revenueNote">Loading records…</small></article>
+            <article class="admin-report-card"><span>Total rentals</span><strong id="totalRentals">—</strong><small>Unique booking records</small></article>
+            <article class="admin-report-card"><span>Verified users</span><strong id="totalUsers">—</strong><small>Approved and active accounts</small></article>
+            <article class="admin-report-card"><span>Listed items</span><strong id="totalItems">—</strong><small>All listings, including unreviewed</small></article>
+        </div>
+    </section>
+    <section class="admin-reports__charts" aria-labelledby="analyticsTitle"><h2 id="analyticsTitle">Analytics</h2>
+        <article class="admin-chart-card"><h3>Rental transactions over time</h3><p>Booking records by creation date</p><div class="admin-chart" id="rentalChart" aria-live="polite">Loading…</div></article>
+        <article class="admin-chart-card"><h3>Item listing status</h3><p>Approval distribution across all listings</p><div class="admin-chart" id="statusChart" aria-live="polite">Loading…</div></article>
+        <article class="admin-chart-card"><h3>Most rented items</h3><p>Transactions with non-cancelled outcomes</p><div class="admin-chart" id="itemsChart" aria-live="polite">Loading…</div></article>
+        <article class="admin-chart-card"><h3>User activity overview</h3><p id="activityNote">Transactions by renter and item owner</p><div class="admin-chart" id="activityChart" aria-live="polite">Loading…</div></article>
+    </section>
+</main>
+@section scripts { <script src="@Url.Content("~/Scripts/admin-reports-analytics.js")"></script> }

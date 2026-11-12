@@ -210,6 +210,7 @@
     <Compile Include="Controllers\RentalRequestsController.cs" />
     <Compile Include="Controllers\NotificationsController.cs" />
     <Compile Include="Controllers\ReportsAnalyticsController.cs" />
+    <Compile Include="Controllers\AdminReportsAnalyticsController.cs" />
     <Compile Include="Services\MongoReportDataSource.cs" />
     <Compile Include="Controllers\SalesReportController.cs" />
     <Compile Include="Global.asax.cs">
@@ -247,6 +248,7 @@
     <Content Include="Content\Site.css" />
     <Content Include="Content\MyRentals.css" />
     <Content Include="Content\ReportsAnalytics.css" />
+    <Content Include="Content\admin-reports-analytics.css" />
     <Content Include="Content\auth.css" />
     <Content Include="Content\chatroom.css" />
     <Content Include="Content\items.css" />
@@ -263,6 +265,7 @@
     <Content Include="Global.asax" />
     <Content Include="mongocrypt.dll" />
     <Content Include="Scripts\admin-dashboard.js" />
+    <Content Include="Scripts\admin-reports-analytics.js" />
     <Content Include="Scripts\admin-item-booking.js" />
     <Content Include="Scripts\admin-student-verification.js" />
     <Content Include="Scripts\bootstrap.js" />
@@ -326,6 +329,7 @@
     <Content Include="Views\MyListings\_DeleteListingModal.cshtml" />
     <Content Include="Views\MyRentals\Index.cshtml" />
     <Content Include="Views\ReportsAnalytics\Index.cshtml" />
+    <Content Include="Views\AdminReportsAnalytics\Index.cshtml" />
     <Content Include="Views\Notifications\Index.cshtml" />
     <Content Include="Views\SalesReport\Index.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
