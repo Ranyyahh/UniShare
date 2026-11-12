@@ -1,129 +1,83 @@
-﻿@model UniShare.Models.TransactionViewModel
+@model UniShare.Models.TransactionViewModel
 @{
     Layout = null;
-    var details = Model;
-
-    string statusBadgeClass = details.Status == "Confirmed" ? "badge-confirmed" : "badge-pending";
+    var statusLabel = Model.Status == "UNPAID" && !string.IsNullOrWhiteSpace(Model.SubmittedAt) ? "Awaiting Owner Confirmation" : Model.Status;
+    var statusBadgeClass = Model.Status == "PAID" ? "badge-confirmed" : Model.Status == "UNPAID" ? "badge-pending" : "badge-pending";
 }
 
-<div class="modal-form-wrapper">
-    <!-- Header: TXN title, LIVE RECORD badge, Status badge, Close (X) button -->
+<div class="modal-form-wrapper" id="payment-admin-details">
     <div class="modal-header-bar">
         <div class="modal-title-group">
-            <h3 class="modal-txn-id">@details.TransactionId</h3>
-            <span class="badge badge-live-record"><span class="live-dot"></span> LIVE RECORD</span>
-            <span class="badge @statusBadgeClass" id="modalStatusBadge">@details.Status</span>
+            <h3 class="modal-txn-id">Payment @Model.TransactionId</h3>
+            <span class="badge badge-live-record"><span class="live-dot"></span> DATABASE RECORD</span>
+            <span class="badge @statusBadgeClass" id="modalStatusBadge">@statusLabel</span>
         </div>
         <button type="button" id="btnTxnCloseModal" class="btn-close-modal" title="Close Modal">&times;</button>
     </div>
 
     <div class="modal-body-scroll">
-        <!-- Item Section: Item Name, Booking ID, Serial, and small gray Image Placeholder -->
         <div class="modal-section">
-            <label class="form-section-title">Item Details</label>
+            <label class="form-section-title">Rental and payment</label>
             <div class="modal-item-row">
-                <div class="img-placeholder">
-                    <i class="glyphicon glyphicon-camera"></i>
-                </div>
+                <div class="img-placeholder"><i class="glyphicon glyphicon-list-alt"></i></div>
                 <div class="modal-item-text">
-                    <div class="modal-item-name">@details.ItemName</div>
-                    <div class="modal-item-sub">
-                        <span>Booking ID: <strong class="txn-code">@details.BookingId</strong></span>
-                        <span class="modal-meta-sep">&bull;</span>
-                        <span>Serial: <strong class="txn-code">@details.Serial</strong></span>
-                    </div>
+                    <div class="modal-item-name">@Model.ItemName</div>
+                    <div class="modal-item-sub"><span>Request: <strong class="txn-code">@Model.BookingId</strong></span><span class="modal-meta-sep">&bull;</span><span>Charge: <strong>@Model.ChargeType.Replace("_", " ")</strong></span></div>
                 </div>
             </div>
         </div>
 
-        <!-- Parties Involved Section: Two columns side-by-side using .party-card -->
         <div class="modal-section">
-            <label class="form-section-title">Parties Involved</label>
+            <label class="form-section-title">Parties</label>
             <div class="modal-two-col">
-                <!-- Left: Borrower (Name, ID, Course) -->
-                <div class="party-card party-card-borrower">
-                    <div class="party-role-tag role-borrower">Borrower</div>
-                    <div class="party-name">@details.BorrowerName</div>
-                    <div class="party-sub"><span class="party-label">ID:</span> <span class="txn-code">@details.BorrowerId</span></div>
-                    <div class="party-sub"><span class="party-label">Course:</span> @details.BorrowerCourse</div>
-                </div>
-
-                <!-- Right: Owner (Name, ID, Course, Rating) -->
-                <div class="party-card party-card-owner">
-                    <div class="party-role-tag role-owner">Owner</div>
-                    <div class="party-name">@details.OwnerName</div>
-                    <div class="party-sub"><span class="party-label">ID:</span> <span class="txn-code">@details.OwnerId</span></div>
-                    <div class="party-sub"><span class="party-label">Course:</span> @details.OwnerCourse</div>
-                    <div class="party-sub"><span class="party-label">Rating:</span> <span class="owner-rating">@details.OwnerRating</span></div>
-                </div>
+                <div class="party-card party-card-borrower"><div class="party-role-tag role-borrower">Borrower</div><div class="party-name">@Model.BorrowerName</div><div class="party-sub"><span class="party-label">Student ID:</span> <span class="txn-code">@Model.BorrowerId</span></div><div class="party-sub"><span class="party-label">Program:</span> @Model.BorrowerCourse</div></div>
+                <div class="party-card party-card-owner"><div class="party-role-tag role-owner">Owner</div><div class="party-name">@Model.OwnerName</div><div class="party-sub"><span class="party-label">Student ID:</span> <span class="txn-code">@Model.OwnerId</span></div><div class="party-sub"><span class="party-label">Program:</span> @Model.OwnerCourse</div></div>
             </div>
         </div>
 
-        <!-- Recorded Settlement Breakdown Section -->
         <div class="settlement-box">
-            <div class="settlement-title">RECORDED SETTLEMENT BREAKDOWN</div>
-            <div class="settlement-row">
-                <span>Base Rental Fee (4 Hours)</span>
-                <span class="currency">@details.BaseFee</span>
-            </div>
-            <div class="settlement-row penalty-text">
-                <span>Overdue Penalty (1.5 hrs @@ PHP20/hr cap)</span>
-                <span>@details.LateFee</span>
-            </div>
-            <div class="settlement-row total-row">
-                <span>Total Recorded Settlement</span>
-                <span class="currency">@details.TotalAmount</span>
-            </div>
-            <div class="gcash-box">
-                <span>GCash Ref: <strong id="modalGcashRefText">@details.GCashRef</strong></span>
-                <button type="button" class="btn-copy-ref" id="btnCopyGcashRef" title="Copy Reference Number">
-                    <i class="glyphicon glyphicon-copy"></i> Copy
-                </button>
-            </div>
+            <div class="settlement-title">RECORDED PAYMENT BREAKDOWN</div>
+            <div class="settlement-row"><span>Rental fee</span><span class="currency">@Model.BaseFee</span></div>
+            <div class="settlement-row penalty-text"><span>Late fee</span><span>@Model.LateFee</span></div>
+            <div class="settlement-row"><span>Payment method</span><span>@Model.Method</span></div>
+            <div class="settlement-row total-row"><span>Payment amount</span><span class="currency">@Model.TotalAmount</span></div>
+            @if (!string.IsNullOrWhiteSpace(Model.GCashRef))
+            {
+                <div class="gcash-box"><span>GCash reference: <strong id="modalGcashRefText">@Model.GCashRef</strong></span><button type="button" class="btn-copy-ref" id="btnCopyGcashRef" title="Copy reference number"><i class="glyphicon glyphicon-copy"></i> Copy</button></div>
+            }
         </div>
 
-        <!-- Audit Handshake Timeline: Simple vertical list with Green and Blue check icons -->
         <div class="modal-section">
-            <label class="form-section-title">Audit Handshake Timeline</label>
+            <label class="form-section-title">Payment timeline</label>
             <div class="audit-timeline">
-                <div class="timeline-step">
-                    <span class="timeline-icon icon-emerald"><i class="glyphicon glyphicon-ok-sign"></i></span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">Payment Authorized via GCash</div>
-                        <div class="timeline-meta">Settlement hash confirmed on university ledger &bull; @details.DateLogged</div>
-                    </div>
-                </div>
-                <div class="timeline-step">
-                    <span class="timeline-icon icon-blue"><i class="glyphicon glyphicon-ok-sign"></i></span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">Escrow Handshake &amp; Audit Logged</div>
-                        <div class="timeline-meta">Automated system check passed &bull; Funds escrowed</div>
-                    </div>
-                </div>
-                <div class="timeline-step">
-                    <span class="timeline-icon icon-amber"><i class="glyphicon glyphicon-time"></i></span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">Awaiting Owner Return Confirmation</div>
-                        <div class="timeline-meta">Pending equipment return verification by lender</div>
-                    </div>
-                </div>
+                <div class="timeline-step"><span class="timeline-icon icon-blue"><i class="glyphicon glyphicon-time"></i></span><div class="timeline-content"><div class="timeline-title">Payment record created</div><div class="timeline-meta">@Model.DateLogged</div></div></div>
+                @if (!string.IsNullOrWhiteSpace(Model.SubmittedAt))
+                {
+                    <div class="timeline-step"><span class="timeline-icon icon-blue"><i class="glyphicon glyphicon-send"></i></span><div class="timeline-content"><div class="timeline-title">Borrower reported payment</div><div class="timeline-meta">@Model.SubmittedAt</div></div></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.OwnerConfirmedAt))
+                {
+                    <div class="timeline-step"><span class="timeline-icon icon-emerald"><i class="glyphicon glyphicon-ok-sign"></i></span><div class="timeline-content"><div class="timeline-title">Owner confirmed receipt</div><div class="timeline-meta">@Model.OwnerConfirmedAt</div></div></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.DisputeReason))
+                {
+                    <div class="timeline-step"><span class="timeline-icon icon-amber"><i class="glyphicon glyphicon-warning-sign"></i></span><div class="timeline-content"><div class="timeline-title">Payment disputed</div><div class="timeline-meta">@Model.DisputeReason</div></div></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.RefundedAt))
+                {
+                    <div class="timeline-step"><span class="timeline-icon icon-amber"><i class="glyphicon glyphicon-repeat"></i></span><div class="timeline-content"><div class="timeline-title">Payment refunded</div><div class="timeline-meta">@Model.RefundedAt</div></div></div>
+                }
             </div>
         </div>
-
-        <!-- Interactive Alert / Feedback Banner -->
         <div id="modalAlertBox" class="modal-alert-box" style="display:none;"></div>
     </div>
 
-    <!-- Actions: Purple button, White button, Red link -->
     <div class="modal-actions-bar">
-        <button type="button" class="btn btn-audit-verify" id="btnMarkAudited">
-            Mark as Audited &amp; Verified
-        </button>
-        <button type="button" class="btn btn-send-reminder" id="btnSendReminder">
-            Send Owner Confirmation Reminder
-        </button>
-        <a href="javascript:void(0);" class="link-flag-dispute" id="btnFlagDispute">
-            Flag for Dispute Review
-        </a>
+        @if (Model.Status == "PAID" || Model.Status == "DISPUTED")
+        {
+            @Html.AntiForgeryToken()
+            <button type="button" class="btn btn-send-reminder" id="btnRefundPayment" data-payment-id="@Model.TransactionId" data-url="@Url.Action("RefundPayment", "Payments")">Record refund</button>
+        }
+        <button type="button" class="btn btn-default" id="btnTxnFooterClose">Close</button>
     </div>
 </div>

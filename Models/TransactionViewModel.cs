@@ -5,6 +5,7 @@ namespace UniShare.Models
     public class TransactionViewModel
     {
         public string TransactionId { get; set; }
+        public string ChargeType { get; set; }
         public string BookingId { get; set; }
         public string DateLogged { get; set; }
         public string DateRange { get; set; }
@@ -20,8 +21,13 @@ namespace UniShare.Models
         public string BaseFee { get; set; }
         public string LateFee { get; set; }
         public string TotalAmount { get; set; }
+        public decimal Amount { get; set; }
         public string GCashRef { get; set; }
         public string Method { get; set; }
         public string Status { get; set; }
+        public string SubmittedAt { get; set; }
+        public string OwnerConfirmedAt { get; set; }
+        public string RefundedAt { get; set; }
+        public string DisputeReason { get; set; }
     }
 }

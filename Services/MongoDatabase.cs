@@ -23,6 +23,9 @@ namespace UniShare.Services
         public static IMongoCollection<BsonDocument> Bookings { get { return Database.Value.GetCollection<BsonDocument>("bookings"); } }
         public static IMongoCollection<BsonDocument> BookingLocks { get { return Database.Value.GetCollection<BsonDocument>("bookingLocks"); } }
         public static IMongoCollection<BsonDocument> Rentals { get { return Database.Value.GetCollection<BsonDocument>("rentals"); } }
+        public static IMongoCollection<BsonDocument> Payments { get { return Database.Value.GetCollection<BsonDocument>("payments"); } }
+        public static IMongoCollection<BsonDocument> LateFees { get { return Database.Value.GetCollection<BsonDocument>("lateFees"); } }
+        public static IMongoCollection<BsonDocument> Returns { get { return Database.Value.GetCollection<BsonDocument>("returns"); } }
         public static IMongoCollection<BsonDocument> Ratings { get { return Database.Value.GetCollection<BsonDocument>("ratings"); } }
     }
 }

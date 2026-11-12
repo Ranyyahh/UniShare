@@ -357,23 +357,45 @@
     function buildTransactionHistory() {
         var tbody = $('bi-history-body');
         if (!tbody) return;
-
-        var completedItems = items.filter(function (i) { return i.status === 'Completed'; });
-
-        if (completedItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding: 40px;">No transactions found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = completedItems.map(function (it) {
-            return '<tr>' +
-                '<td><strong>' + esc(it.txn) + '</strong></td>' + // Changed to it.txn
-                '<td>' + esc(it.period.split('\u2013')[0].trim()) + '</td>' +
-                '<td><strong>' + esc(it.name) + '</strong></td>' +
-                '<td>' + esc(it.lender) + '</td>' +
-                '<td class="us-right"><span>' + PESO + it.total + '</span></td>' +
-                '</tr>';
-        }).join('');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-secondary); padding: 40px;">Loading payment history…</td></tr>';
+        fetch(root.getAttribute('data-payment-history-url'), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then(function (response) {
+                return response.json().then(function (result) {
+                    if (!response.ok) throw new Error(result.message || 'Payment history could not be loaded.');
+                    return result;
+                });
+            })
+            .then(function (records) {
+                if (!records || records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-secondary); padding: 40px;">No payment records found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = records.map(function (record) {
+                    var id = record.Id || record.id || '';
+                    var date = record.SubmittedAt || record.submittedAt || record.CreatedAt || record.createdAt;
+                    var dateMatch = /\/Date\((-?\d+)\)\//.exec(String(date || ''));
+                    var parsedDate = date ? new Date(dateMatch ? Number(dateMatch[1]) : date) : null;
+                    var dateText = parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString() : '—';
+                    var charge = record.ChargeType || record.chargeType || 'RENTAL_FEE';
+                    var method = record.PaymentMethod || record.paymentMethod || '—';
+                    var reference = record.TransactionReference || record.transactionReference || '';
+                    var status = record.Status || record.status || 'UNPAID';
+                    var amount = Number(record.Amount || record.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    var itemName = record.ItemName || record.itemName || 'Rental';
+                    return '<tr>' +
+                        '<td><strong>' + esc(id) + '</strong></td>' +
+                        '<td>' + esc(dateText) + '</td>' +
+                        '<td><strong>' + esc(itemName) + '</strong></td>' +
+                        '<td>' + esc(String(charge).replace(/_/g, ' ')) + '</td>' +
+                        '<td>' + esc(method) + (reference ? '<br><small>' + esc(reference) + '</small>' : '') + '</td>' +
+                        '<td>' + esc(status) + '</td>' +
+                        '<td class="us-right"><span>' + PESO + amount + '</span></td>' +
+                        '</tr>';
+                }).join('');
+            })
+            .catch(function (error) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--danger, #b42318); padding: 40px;">' + esc(error.message || 'Payment history could not be loaded.') + '</td></tr>';
+            });
     }
 
     function tick() {

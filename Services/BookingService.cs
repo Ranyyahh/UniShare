@@ -46,6 +46,8 @@ namespace UniShare.Services
                 { "_id", ObjectId.GenerateNewId() }, { "requestId", "REQ-" + now.ToString("yyyyMMdd") + "-" + ObjectId.GenerateNewId().ToString().Substring(18).ToUpperInvariant() },
                 { "itemId", item.Id }, { "borrowerId", renterId }, { "ownerId", item.OwnerId }, { "startDate", start }, { "endDate", end },
                 { "handoverDate", start }, { "handoverTime", handoverTime }, { "durationHours", durationHours }, { "duration", durationHours + " hours" },
+                { "hourlyRate", Math.Round(rate, 4, MidpointRounding.AwayFromZero) },
+                { "rentalFeeAmount", Math.Round(rate * durationHours, 2, MidpointRounding.AwayFromZero) },
                 { "estimatedFee", Math.Round(rate * durationHours, 2, MidpointRounding.AwayFromZero) }, { "status", "PENDING" },
                 { "createdAt", now }, { "expiresAt", now.AddHours(24) }, { "notes", (notes ?? "").Trim() }, { "itemName", item.Name }
             };

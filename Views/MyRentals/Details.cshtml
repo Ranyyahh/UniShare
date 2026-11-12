@@ -1,16 +1,81 @@
-@model UniShare.Controllers.RentalRecordDto
-@{ ViewBag.Title = "Rental Details"; }
-<main class="container py-4"><h1>Rental Details</h1><dl class="row">
-    <dt class="col-sm-3">Request</dt><dd class="col-sm-9">@Model.RequestId</dd>
-    <dt class="col-sm-3">Item</dt><dd class="col-sm-9">@Model.ItemName</dd>
-    <dt class="col-sm-3">Renter</dt><dd class="col-sm-9">@Model.BorrowerName (@Model.BorrowerProgram)</dd>
-    <dt class="col-sm-3">Owner</dt><dd class="col-sm-9">@Model.OwnerName</dd>
-    <dt class="col-sm-3">Schedule</dt><dd class="col-sm-9">@Model.HandoverScheduleFormatted · @Model.Duration</dd>
-    <dt class="col-sm-3">Estimated fee</dt><dd class="col-sm-9">@Model.RentalFeeFormatted</dd>
-    <dt class="col-sm-3">Status</dt><dd class="col-sm-9">@Model.Status</dd>
-    @if (!string.IsNullOrWhiteSpace(Model.AcceptedAtFormatted)) { <dt class="col-sm-3">Accepted</dt><dd class="col-sm-9">@Model.AcceptedAtFormatted</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.DeclineReason)) { <dt class="col-sm-3">Decline reason</dt><dd class="col-sm-9">@Model.DeclineReason</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.DeclineNote)) { <dt class="col-sm-3">Owner notes</dt><dd class="col-sm-9">@Model.DeclineNote</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.DeclinedAtFormatted)) { <dt class="col-sm-3">Declined</dt><dd class="col-sm-9">@Model.DeclinedAtFormatted</dd> }
-    @if (!string.IsNullOrWhiteSpace(Model.RequestNote)) { <dt class="col-sm-3">Renter notes</dt><dd class="col-sm-9">@Model.RequestNote</dd> }
-</dl><a href="@Url.Action("Index")">Back to rentals</a></main>
+@model UniShare.Controllers.RentalPaymentPageViewModel
+@{
+    ViewBag.Title = "Rental Details";
+    var rental = Model.Rental;
+    var paymentDetails = Model.Payments;
+    var paymentScript = Url.Content("~/Scripts/payment-details.js") + "?v=" +
+        System.IO.File.GetLastWriteTimeUtc(Server.MapPath("~/Scripts/payment-details.js")).Ticks;
+}
+<main class="container py-4">
+    <h1>Rental Details</h1>
+    <dl class="row">
+        <dt class="col-sm-3">Request</dt><dd class="col-sm-9">@rental.RequestId</dd>
+        <dt class="col-sm-3">Item</dt><dd class="col-sm-9">@rental.ItemName</dd>
+        <dt class="col-sm-3">Renter</dt><dd class="col-sm-9">@rental.BorrowerName (@rental.BorrowerProgram)</dd>
+        <dt class="col-sm-3">Owner</dt><dd class="col-sm-9">@rental.OwnerName</dd>
+        <dt class="col-sm-3">Schedule</dt><dd class="col-sm-9">@rental.HandoverScheduleFormatted · @rental.Duration</dd>
+        <dt class="col-sm-3">Rental fee</dt><dd class="col-sm-9">@rental.RentalFeeFormatted</dd>
+        <dt class="col-sm-3">Status</dt><dd class="col-sm-9">@rental.Status</dd>
+        @if (!string.IsNullOrWhiteSpace(rental.AcceptedAtFormatted)) { <dt class="col-sm-3">Accepted</dt><dd class="col-sm-9">@rental.AcceptedAtFormatted</dd> }
+        @if (!string.IsNullOrWhiteSpace(rental.DeclineReason)) { <dt class="col-sm-3">Decline reason</dt><dd class="col-sm-9">@rental.DeclineReason</dd> }
+        @if (!string.IsNullOrWhiteSpace(rental.DeclineNote)) { <dt class="col-sm-3">Owner notes</dt><dd class="col-sm-9">@rental.DeclineNote</dd> }
+        @if (!string.IsNullOrWhiteSpace(rental.DeclinedAtFormatted)) { <dt class="col-sm-3">Declined</dt><dd class="col-sm-9">@rental.DeclinedAtFormatted</dd> }
+        @if (!string.IsNullOrWhiteSpace(rental.RequestNote)) { <dt class="col-sm-3">Renter notes</dt><dd class="col-sm-9">@rental.RequestNote</dd> }
+    </dl>
+
+    <section class="card my-4" id="payment-details"
+             data-booking-id="@rental.BookingObjectId"
+             data-details-url="@Url.Action("PaymentDetails", "Payments")"
+             data-submit-url="@Url.Action("SubmitPayment", "Payments")"
+             data-confirm-url="@Url.Action("ConfirmReceipt", "Payments")"
+             data-confirm-return-url="@Url.Action("ConfirmReturn", "BorrowedItems")"
+             data-dispute-url="@Url.Action("DisputePayment", "Payments")"
+             data-finalize-url="@Url.Action("FinalizeLateFee", "Payments")">
+        @Html.AntiForgeryToken()
+        <div class="card-header"><h2 class="h4 mb-0">Payment and fee details</h2></div>
+        <div class="card-body">
+            <p class="text-muted">Payments are recorded for this rental. The owner confirms receipt after the money has actually been received.</p>
+            <div id="payment-message" class="alert" role="status" hidden></div>
+            <div id="payment-charge-details" class="row g-3" aria-live="polite">
+                <div class="col-md-6"><div class="border rounded p-3 h-100"><h3 class="h5">Rental fee</h3><p class="mb-1">₱@paymentDetails.RentalFee.ToString("N2")</p><p class="small text-muted mb-0">@paymentDetails.DurationHours hour(s) × ₱@paymentDetails.HourlyRate.ToString("N2") per hour</p></div></div>
+                <div class="col-md-6"><div class="border rounded p-3 h-100"><h3 class="h5">Late fee</h3><p class="mb-0">@(paymentDetails.LateFee == null ? "No late fee recorded." : paymentDetails.LateFee.Status + " · ₱" + paymentDetails.LateFee.EstimatedAmount.ToString("N2"))</p></div></div>
+            </div>
+
+            <div id="payment-entry-panel" class="border rounded p-3 mt-4" hidden>
+                <h3 class="h5">Submit a payment</h3>
+                <p class="text-muted">Cash and GCash are recorded manually. GCash reference is optional; UniShare does not process GCash transactions.</p>
+                <form id="payment-entry-form" class="row g-3">
+                    <div class="col-md-4"><label class="form-label" for="payment-charge-type">Charge</label><select id="payment-charge-type" class="form-select" name="ChargeType" required></select></div>
+                    <div class="col-md-4"><label class="form-label" for="payment-method">Payment method</label><select id="payment-method" class="form-select" name="PaymentMethod" required><option value="CASH">Cash</option><option value="GCASH">GCash</option></select></div>
+                    <div class="col-md-4" id="payment-reference-field" hidden><label class="form-label" for="payment-reference">GCash reference (optional)</label><input id="payment-reference" class="form-control" name="TransactionReference" maxlength="100" autocomplete="off" /></div>
+                    <div class="col-12"><button class="btn btn-primary" type="submit">Save payment details</button></div>
+                </form>
+            </div>
+
+            <div id="owner-return-confirm-panel" class="border rounded p-3 mt-4" hidden>
+                <h3 class="h5">Confirm item return</h3>
+                <p class="text-muted">Confirm only after you have actually received the item. This records its return and finalizes the late-fee calculation.</p>
+                <button id="owner-confirm-return-button" class="btn btn-outline-primary" type="button">Confirm returned item</button>
+            </div>
+
+            <div id="late-fee-owner-panel" class="border rounded p-3 mt-4" hidden>
+                <h3 class="h5">Finalize late fee</h3>
+                <p class="text-muted">The estimate is separate from the rental fee. Confirm the final amount after the return is recorded.</p>
+                <form id="late-fee-finalize-form" class="row g-3 align-items-end">
+                    <div class="col-md-4"><label class="form-label" for="late-fee-final-amount">Final amount (PHP)</label><input id="late-fee-final-amount" class="form-control" type="number" min="0" step="0.01" /></div>
+                    <div class="col-md-4"><button class="btn btn-outline-primary" type="submit">Save finalized fee</button></div>
+                </form>
+            </div>
+
+            <div class="mt-4">
+                <h3 class="h5">Payment history for this rental</h3>
+                <div class="table-responsive"><table class="table table-sm align-middle">
+                    <thead><tr><th>Charge</th><th>Amount</th><th>Method / reference</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+                    <tbody id="payment-history-body"><tr><td colspan="6" class="text-muted">Loading payment records…</td></tr></tbody>
+                </table></div>
+            </div>
+        </div>
+    </section>
+    <a href="@Url.Action("Index")">Back to rentals</a>
+</main>
+<script src="@paymentScript"></script>

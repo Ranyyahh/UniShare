@@ -67,7 +67,7 @@ $(document).ready(function () {
     });
 
     // 2. Close Modal Handlers (Close button, Overlay click, ESC key)
-    $(document).on("click", "#btnTxnCloseModal, .btn-close-modal", function (e) {
+    $(document).on("click", "#btnTxnCloseModal, #btnTxnFooterClose, .btn-close-modal", function (e) {
         e.preventDefault();
         closeModal();
     });
@@ -118,6 +118,8 @@ $(document).ready(function () {
             if (selectedDateRange) {
                 if (selectedDateRange === "last 7 days") {
                     matchesDate = (rowDateRange === "today" || rowDateRange === "last 7 days");
+                } else if (selectedDateRange === "last 30 days") {
+                    matchesDate = (rowDateRange === "today" || rowDateRange === "last 7 days" || rowDateRange === "last 30 days");
                 } else if (selectedDateRange === "today") {
                     matchesDate = (rowDateRange === "today");
                 }
@@ -175,43 +177,36 @@ $(document).ready(function () {
         }
     });
 
-    // 5. Modal Action Button Interactions
-    $(document).on("click", "#btnMarkAudited", function (e) {
+    // 5. Real payment refund action; record changes are persisted server-side.
+    $(document).on("click", "#btnRefundPayment", function (e) {
         e.preventDefault();
-        var $badge = $("#modalStatusBadge");
-        $badge.removeClass("badge-pending").addClass("badge-confirmed").text("Confirmed");
+        var $button = $(this);
+        var reason = window.prompt("Reason for refund:");
+        if (!reason || !reason.trim()) return;
 
-        var $activeRow = $(".clickable-row.selected");
-        if ($activeRow.length > 0) {
-            $activeRow.data("status", "Confirmed");
-        }
-
-        $("#modalAlertBox")
-            .removeClass("modal-alert-info modal-alert-danger")
-            .addClass("modal-alert-box modal-alert-success")
-            .html('<strong>Audited &amp; Verified:</strong> Settlement confirmed on university ledger.')
-            .slideDown(150);
-
-        $(this).prop("disabled", true).css("opacity", "0.7");
-    });
-
-    $(document).on("click", "#btnSendReminder", function (e) {
-        e.preventDefault();
-        $("#modalAlertBox")
-            .removeClass("modal-alert-success modal-alert-danger")
-            .addClass("modal-alert-box modal-alert-info")
-            .html('<strong>Reminder Dispatched:</strong> Automated notification sent to equipment lender.')
-            .slideDown(150);
-
-        $(this).prop("disabled", true).css("opacity", "0.7");
-    });
-
-    $(document).on("click", "#btnFlagDispute", function (e) {
-        e.preventDefault();
-        $("#modalAlertBox")
-            .removeClass("modal-alert-success modal-alert-info")
-            .addClass("modal-alert-box modal-alert-danger")
-            .html('<strong>Flagged for Review:</strong> Transaction referred to Student Dispute Tribunal.')
-            .slideDown(150);
+        var $details = $("#payment-admin-details");
+        var token = $details.find("input[name='__RequestVerificationToken']").val();
+        $button.prop("disabled", true);
+        $.ajax({
+            url: $button.data("url"),
+            type: "POST",
+            data: { PaymentId: $button.data("payment-id"), Reason: reason.trim(), __RequestVerificationToken: token },
+            success: function () {
+                var $row = $(".clickable-row.selected");
+                $row.attr("data-status", "REFUNDED").data("status", "REFUNDED");
+                $row.children("td").eq(9).text("REFUNDED");
+                $("#modalStatusBadge").removeClass("badge-confirmed badge-pending").addClass("badge-pending").text("REFUNDED");
+                $("#modalAlertBox").removeClass("modal-alert-info modal-alert-danger").addClass("modal-alert-box modal-alert-success")
+                    .text("Refund recorded and payment status updated.").slideDown(150);
+                $button.remove();
+                filterRecords();
+            },
+            error: function (xhr) {
+                var result = xhr.responseJSON || {};
+                $("#modalAlertBox").removeClass("modal-alert-success modal-alert-info").addClass("modal-alert-box modal-alert-danger")
+                    .text(result.message || "Refund could not be recorded. Refresh and try again.").slideDown(150);
+                $button.prop("disabled", false);
+            }
+        });
     });
 });

@@ -62,12 +62,14 @@
         <select id="txnMethodSelect" class="filter-input filter-select">
             <option value="">All Methods</option>
             <option value="GCash">GCash</option>
-            <option value="Maya">Maya</option>
+            <option value="Cash">Cash</option>
         </select>
         <select id="txnStatusSelect" class="filter-input filter-select">
             <option value="">All Statuses</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Awaiting Owner Confirmation">Awaiting Owner Confirmation</option>
+            <option value="PAID">Paid</option>
+            <option value="UNPAID">Unpaid / awaiting confirmation</option>
+            <option value="DISPUTED">Disputed</option>
+            <option value="REFUNDED">Refunded</option>
         </select>
         <select id="txnDateRangeSelect" class="filter-input filter-select">
             <option value="Last 7 Days">Last 7 Days</option>
@@ -91,14 +93,15 @@
                         <th>Owner</th>
                         <th class="amount-col">Base Fee</th>
                         <th class="amount-col">Late Fee</th>
-                        <th class="amount-col">Total Amount</th>
+                        <th class="amount-col">Payment Amount</th>
                         <th class="method-col">Method</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr class="clickable-row" data-id="@item.TransactionId" data-method="@item.Method" data-status="@item.Status" data-daterange="@item.DateRange" data-search="@item.TransactionId @item.BookingId @item.ItemName @item.BorrowerName @item.OwnerName @item.Method @item.Status">
+                        <tr class="clickable-row" data-id="@item.TransactionId" data-method="@item.Method" data-status="@item.Status" data-daterange="@item.DateRange" data-search="@item.TransactionId @item.BookingId @item.ItemName @item.BorrowerName @item.OwnerName @item.Method @item.Status @item.ChargeType @item.GCashRef">
                             <td>
                                 <input type="checkbox" class="txn-row-check" value="@item.TransactionId" />
                             </td>
@@ -115,8 +118,9 @@
                             <td class="amount-col currency">@(item.LateFee != "PHP 0.00" ? item.LateFee : "-")</td>
                             <td class="amount-col currency font-weight-bold">@item.TotalAmount</td>
                             <td class="method-col">
-                                <span class="badge-method badge-method-@item.Method.ToLower()">@item.Method</span>
+                                <span class="badge-method badge-method-@item.Method.ToLowerInvariant()">@item.Method</span>
                             </td>
+                            <td>@(item.Status == "UNPAID" && !string.IsNullOrWhiteSpace(item.SubmittedAt) ? "Awaiting Owner Confirmation" : item.Status)</td>
                         </tr>
                     }
                 </tbody>

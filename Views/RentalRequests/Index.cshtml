@@ -12,6 +12,7 @@
         @foreach (var request in Model)
         {
             <tr><td>@request.RequestId<br /><small>@request.RequestDateFormatted</small></td><td>@request.ItemName</td><td>@request.BorrowerName<br /><small>@request.BorrowerProgram</small></td><td>@request.HandoverScheduleFormatted<br />@request.Duration</td><td>@request.RentalFeeFormatted</td><td>@request.Status</td><td>
+                <a class="btn btn-sm btn-outline-primary mb-1" href="@Url.Action("Details", "MyRentals", new { id = request.BookingObjectId })">Payment and fee details</a>
                 @if (request.Status == "Pending" || request.Status == "Requested")
                 {
                     using (Html.BeginForm("Decide", "RentalRequests", FormMethod.Post, new { @class = "d-inline" })) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@request.BookingObjectId" /><input type="hidden" name="accept" value="true" /><button class="btn btn-sm btn-success" type="submit">Accept</button> }

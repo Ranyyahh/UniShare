@@ -91,6 +91,8 @@ namespace UniShare.Services
             if (isBooking) MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]), update);
             else MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]), update);
             UpdateLinkedRental(doc, ownerId, update);
+            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+            if (bookingId.IsObjectId) PaymentManagementService.FinalizeForConfirmedReturn(bookingId.AsObjectId, ownerId, now);
             return true;
         }
 

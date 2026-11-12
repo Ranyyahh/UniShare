@@ -263,7 +263,10 @@ db.bookings.insertOne({
     quantity: 1,
 
     pricePerDay: 500,
+    rentalFeeAmount: 1000,
     totalAmount: 1000,
+    hourlyRate: 20.8333,
+    durationHours: 48,
 
     status: "PENDING",
 
@@ -292,18 +295,26 @@ db.payments.insertOne({
     bookingId: bookingId,
 
     payerId: borrowerId,
+    ownerId: ownerId,
 
+    chargeType: "RENTAL_FEE",
     amount: 1000,
+    currency: "PHP",
 
     paymentMethod: "GCASH",
 
-    paymentProvider: "PAYMONGO",
+    transactionReference: "",
 
-    transactionReference: "PMNG-TEST-001",
+    status: "UNPAID",
 
-    status: "PENDING",
-
+    paymentSubmittedAt: null,
+    ownerConfirmedBy: null,
+    ownerConfirmedAt: null,
     paidAt: null,
+    disputedAt: null,
+    disputeReason: null,
+    refundedAt: null,
+    refundReason: null,
 
     createdAt: new Date(),
     updatedAt: new Date()
@@ -397,6 +408,38 @@ db.returns.insertOne({
     lateFee: 0,
 
     status: "PENDING",
+
+    createdAt: new Date(),
+    updatedAt: new Date()
+});
+
+
+// ======================================================
+// 9A. LATE FEES
+// ======================================================
+
+db.lateFees.insertOne({
+    _id: ObjectId(),
+
+    rentalId: rentalId,
+    bookingId: bookingId,
+    borrowerId: borrowerId,
+    ownerId: ownerId,
+
+    dueAt: new Date("2026-11-17T00:00:00Z"),
+    returnedAt: null,
+    gracePeriodMinutes: 30,
+    hourlyRate: 20.8333,
+    billableHours: 0,
+
+    estimatedAmount: 0,
+    estimatedThrough: new Date(),
+    estimatedAt: new Date(),
+
+    finalizedAmount: null,
+    finalizedAt: null,
+    finalizedBy: null,
+    status: "ESTIMATED",
 
     createdAt: new Date(),
     updatedAt: new Date()
@@ -613,11 +656,25 @@ db.payments.createIndex({
 });
 
 db.payments.createIndex({
+    bookingId: 1,
+    chargeType: 1
+}, { unique: true });
+
+db.payments.createIndex({
     payerId: 1
 });
 
 db.payments.createIndex({
     transactionReference: 1
+});
+
+db.payments.createIndex({
+    ownerId: 1,
+    createdAt: -1
+});
+
+db.payments.createIndex({
+    status: 1
 });
 
 
@@ -639,6 +696,12 @@ db.rentals.createIndex({
 db.rentals.createIndex({
     ownerId: 1
 });
+
+// LATE FEES
+db.lateFees.createIndex({ rentalId: 1 }, { unique: true });
+db.lateFees.createIndex({ bookingId: 1 });
+db.lateFees.createIndex({ borrowerId: 1, status: 1 });
+db.lateFees.createIndex({ ownerId: 1, status: 1 });
 
 
 // RETURNS

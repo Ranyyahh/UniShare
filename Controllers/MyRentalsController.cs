@@ -91,6 +91,12 @@ namespace UniShare.Controllers
         }
     }
 
+    public class RentalPaymentPageViewModel
+    {
+        public RentalRecordDto Rental { get; set; }
+        public PaymentDetailsViewModel Payments { get; set; }
+    }
+
     [Authorize]
     public class MyRentalsController : Controller
     {
@@ -127,7 +133,11 @@ namespace UniShare.Controllers
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
             var booking = BookingService.GetForParticipant(id, userId);
             if (booking == null) return HttpNotFound();
-            return View(MapBooking(booking));
+            return View(new RentalPaymentPageViewModel
+            {
+                Rental = MapBooking(booking),
+                Payments = PaymentManagementService.GetPaymentDetails(booking.GetValue("_id", BsonNull.Value).ToString(), userId)
+            });
         }
 
         [HttpGet]
@@ -194,8 +204,16 @@ namespace UniShare.Controllers
         private static string ToDisplayStatus(string status)
         {
             if (string.IsNullOrWhiteSpace(status)) return "Pending";
-            var normalized = status.ToLowerInvariant();
-            return char.ToUpperInvariant(normalized[0]) + normalized.Substring(1);
+            var normalized = status.Trim().ToUpperInvariant();
+            if (normalized == "PENDING" || normalized == "REQUESTED") return "Pending";
+            if (normalized == "ACCEPTED" || normalized == "CONFIRMED") return "Accepted";
+            if (normalized == "ACTIVE" || normalized == "ONGOING") return "Ongoing";
+            if (normalized == "RETURN_REQUESTED" || normalized == "RETURN PENDING") return "Return Requested";
+            if (normalized == "COMPLETED" || normalized == "COMPLETE" || normalized == "RETURNED") return "Completed";
+            if (normalized == "DECLINED" || normalized == "REJECTED") return "Declined";
+            if (normalized == "CANCELLED" || normalized == "CANCELED") return "Cancelled";
+            var display = normalized.ToLowerInvariant().Replace('_', ' ');
+            return char.ToUpperInvariant(display[0]) + display.Substring(1);
         }
 
         // Preserve the earlier pending-request cancellation endpoint.

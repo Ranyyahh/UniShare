@@ -63,7 +63,8 @@
      data-handover-url="@Url.Action("ConfirmHandover", "BorrowedItems")"
      data-return-url="@Url.Action("ReturnItem", "BorrowedItems")"
      data-dispute-url="@Url.Action("Dispute", "BorrowedItems")"
-     data-rate-url="@Url.Action("Rate", "BorrowedItems")">
+     data-rate-url="@Url.Action("Rate", "BorrowedItems")"
+     data-payment-history-url="@Url.Action("PaymentHistory", "Payments")">
     @Html.AntiForgeryToken()
 
     <div class="us-page-head" style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -142,7 +143,9 @@
                             <th>ID</th>
                             <th>Date</th>
                             <th>Item</th>
-                            <th>Lender</th>
+                            <th>Charge</th>
+                            <th>Method / reference</th>
+                            <th>Status</th>
                             <th class="us-right">Amount</th>
                         </tr>
                     </thead>
