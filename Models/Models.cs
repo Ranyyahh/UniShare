@@ -32,6 +32,11 @@ namespace UniShare.Models
         public int Id { get; set; }
         public string RecordId { get; set; }
         public string OwnerId { get; set; }
+        public string BorrowerId { get; set; }
+        public string Borrower { get; set; }
+        public string BorrowerInitials { get; set; }
+        public string BorrowerProgram { get; set; }
+        public bool IsOwnerView { get; set; }
         public string ItemId { get; set; }
         public string ImageUrl { get; set; }
         public double? OwnerRating { get; set; }

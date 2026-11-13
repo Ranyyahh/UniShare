@@ -2,6 +2,10 @@
 @{
     ViewBag.Title = "Borrowed Items";
     string initial = (ViewBag.Status as string) ?? "Pending";
+    string side = (ViewBag.Side as string) ?? "borrowed";
+    bool ownerSide = side == "lent";
+    string nextSide = ownerSide ? "borrowed" : "lent";
+    string sideUrl = Url.Action("Index", "BorrowedItems", new { side = nextSide, status = initial });
 
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     Func<DateTime?, string> fmt = d => d.HasValue ? d.Value.ToString("MMM d", inv) : null;
@@ -19,9 +23,13 @@
             name = b.ItemName,
             image = b.ImageUrl,
             category = b.Category,
-            lender = b.Lender,
-            initials = b.LenderInitials,
-            program = b.LenderProgram,
+            lender = ownerSide ? b.Borrower : b.Lender,
+            initials = ownerSide ? b.BorrowerInitials : b.LenderInitials,
+            program = ownerSide ? b.BorrowerProgram : b.LenderProgram,
+            counterpartyLabel = ownerSide ? "Borrower" : "Lender",
+            counterpartyId = ownerSide ? b.BorrowerId : b.OwnerId,
+            isOwnerView = ownerSide,
+            rentalDetailsUrl = Url.Action("Details", "MyRentals", new { id = b.RecordId }),
             ownerRating = b.OwnerRating,
             itemRating = b.ItemRating,
             price = b.PricePerHour,
@@ -61,8 +69,9 @@
     <link href="@Url.Content("~/Content/borrowed-items.css")" rel="stylesheet" />
 }
 
-<div class="bi-page" data-initial="@initial"
+<div class="bi-page" data-initial="@initial" data-side="@side"
      data-messages-url="@Url.Action("Index", "Messages")"
+     data-rental-details-url="@Url.Action("Details", "MyRentals")"
      data-handover-url="@Url.Action("ConfirmHandover", "BorrowedItems")"
      data-return-url="@Url.Action("ReturnItem", "BorrowedItems")"
      data-condition-url="@Url.Action("RecordCondition", "BorrowedItems")"
@@ -72,8 +81,8 @@
 
     <div class="us-page-head" style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-            <h1>Borrowed Items</h1>
-            <p>Track the gadgets, textbooks, and equipment you borrowed from other students. Confirm handovers and leave reviews once a rental is done.</p>
+            <h1>@(ownerSide ? "Items Borrowed from You" : "Borrowed Items")</h1>
+            <p>@(ownerSide ? "Track items you lent to other students and review their rental progress." : "Track the gadgets, textbooks, and equipment you borrowed from other students. Confirm handovers and leave reviews once a rental is done.")</p>
         </div>
         <button type="button" class="us-btn us-btn--outline" data-act="history" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -89,6 +98,11 @@
         </button>
     </div>
 
+    <nav class="bi-side-switch" aria-label="Rental role">
+        <a class="@(ownerSide ? "" : "is-active")" href="@Url.Action("Index", "BorrowedItems", new { side = "borrowed", status = initial })">Borrowed from others</a>
+        <a class="@(ownerSide ? "is-active" : "")" href="@Url.Action("Index", "BorrowedItems", new { side = "lent", status = initial })">Borrowed from you</a>
+    </nav>
+
     <div class="bi-toolbar">
         <div class="bi-tabs" role="tablist" aria-label="Filter by status">
             <span class="bi-tabs__thumb" aria-hidden="true"></span>
@@ -101,7 +115,7 @@
         <div class="bi-filters">
             <label class="bi-search">
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" /><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-                <input id="bi-search" type="search" placeholder="Search by item name, lender, or transaction ID..." autocomplete="off" aria-label="Search borrowed items" />
+            <input id="bi-search" type="search" placeholder="Search by item name, @(ownerSide ? "borrower" : "lender"), or transaction ID..." autocomplete="off" aria-label="Search borrowed items" />
             </label>
 
             <div class="bi-select">
@@ -122,8 +136,8 @@
         @if (Model == null || Model.Count == 0)
         {
             <strong>You have not borrowed any items yet.</strong>
-            <p>Rentals for items you own are listed under My Rentals.</p>
-            <a class="us-btn us-btn--outline" href="@Url.Action("Index", "MyRentals")">View My Rentals</a>
+            <p>@(ownerSide ? "Accepted and active rentals of your listings will appear here." : "Switch to Borrowed from you to track items you lend to other students.")</p>
+            <a class="us-btn us-btn--outline" href="@sideUrl">@(ownerSide ? "View items you borrowed" : "View items borrowed from you")</a>
         }
         else
         {
@@ -157,7 +171,7 @@
                             <th>ID</th>
                             <th>Date</th>
                             <th>Item</th>
-                            <th>Lender</th>
+                            <th id="bi-history-party-heading">@(ownerSide ? "Borrower" : "Lender")</th>
                             <th>Status</th>
                             <th class="us-right">Amount</th>
                         </tr>

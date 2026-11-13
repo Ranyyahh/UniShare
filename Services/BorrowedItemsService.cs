@@ -42,6 +42,20 @@ namespace UniShare.Services
                 .OrderByDescending(x => x.RequestedOn ?? x.Start).ToList();
         }
 
+        public static List<BorrowedItem> GetForOwner(ObjectId ownerId)
+        {
+            BookingService.ExpirePending();
+            RefreshOverdue(ownerId);
+            var ownerFilter = Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) |
+                              Builders<BsonDocument>.Filter.Eq("ownerId", ownerId.ToString());
+            var bookings = MongoDatabase.Bookings.Find(ownerFilter).ToList().Where(IsDisplayable).ToList();
+            var bookingIds = new HashSet<string>(bookings.Select(x => x.GetValue("_id", BsonNull.Value).ToString()), StringComparer.OrdinalIgnoreCase);
+            var rentals = MongoDatabase.Rentals.Find(ownerFilter).ToList().Where(IsDisplayable)
+                .Where(x => !bookingIds.Contains(x.GetValue("bookingId", BsonNull.Value).ToString())).ToList();
+            return bookings.Select(x => Map(x, ownerId, true)).Concat(rentals.Select(x => Map(x, ownerId, true)))
+                .OrderByDescending(x => x.RequestedOn ?? x.Start).ToList();
+        }
+
         public static BorrowedItem GetDetails(ObjectId borrowerId, string recordId)
         {
             RefreshOverdue(borrowerId);
@@ -388,7 +402,7 @@ namespace UniShare.Services
             MongoDatabase.Rentals.UpdateOne(filter, update);
         }
 
-        private static BorrowedItem Map(BsonDocument doc, ObjectId borrowerId)
+        private static BorrowedItem Map(BsonDocument doc, ObjectId borrowerId, bool isOwnerView = false)
         {
             var idValue = doc.GetValue("_id", BsonNull.Value);
             var itemIdValue = doc.GetValue("itemId", BsonNull.Value);
@@ -436,11 +450,13 @@ namespace UniShare.Services
             ObjectId parsedBorrowerId;
             if (!borrowerIdValue.IsObjectId) ObjectId.TryParse(borrowerIdValue.ToString(), out parsedBorrowerId);
             else parsedBorrowerId = borrowerIdValue.AsObjectId;
+            UserDocument borrower = null;
             if (string.IsNullOrWhiteSpace(borrowerName) && !parsedBorrowerId.Equals(ObjectId.Empty))
             {
-                var borrower = MongoDatabase.Users.Find(x => x.Id == parsedBorrowerId).FirstOrDefault();
+                borrower = MongoDatabase.Users.Find(x => x.Id == parsedBorrowerId).FirstOrDefault();
                 borrowerName = borrower == null ? "Student" : (borrower.FirstName + " " + borrower.LastName).Trim();
             }
+            else if (!parsedBorrowerId.Equals(ObjectId.Empty)) borrower = MongoDatabase.Users.Find(x => x.Id == parsedBorrowerId).FirstOrDefault();
             var image = item != null && item.Photos != null && item.Photos.Count > 0 ? MarketplaceService.ToImageUrl(item.Photos[0]) : null;
             var location = item == null ? "" : MarketplaceService.FormatLocation(item.Location);
             var itemName = item == null ? doc.GetValue("itemName", "Item").ToString() : item.Name;
@@ -449,7 +465,10 @@ namespace UniShare.Services
             var theme = status == "DISPUTED" ? "mint" : status == "COMPLETED" || status == "COMPLETE" ? "peach" : "indigo";
             var record = new BorrowedItem
             {
-                RecordId = idValue.ToString(), OwnerId = !ratingOwnerId.Equals(ObjectId.Empty) ? ratingOwnerId.ToString() : "", ItemId = itemIdValue.IsObjectId ? itemIdValue.AsObjectId.ToString() : itemIdValue.ToString(), ItemName = itemName, Category = item == null ? doc.GetValue("category", "Other Items").ToString() : item.Category,
+                RecordId = idValue.ToString(), OwnerId = !ratingOwnerId.Equals(ObjectId.Empty) ? ratingOwnerId.ToString() : "",
+                BorrowerId = !parsedBorrowerId.Equals(ObjectId.Empty) ? parsedBorrowerId.ToString() : "", Borrower = borrowerName,
+                BorrowerInitials = Initials(borrowerName), BorrowerProgram = borrower == null ? doc.GetValue("borrowerProgram", "").ToString() : ((borrower.Program ?? "") + (string.IsNullOrWhiteSpace(borrower.YearLevel) ? "" : " " + borrower.YearLevel)),
+                IsOwnerView = isOwnerView, ItemId = itemIdValue.IsObjectId ? itemIdValue.AsObjectId.ToString() : itemIdValue.ToString(), ItemName = itemName, Category = item == null ? doc.GetValue("category", "Other Items").ToString() : item.Category,
                 Lender = ownerName, LenderInitials = Initials(ownerName), LenderProgram = owner == null ? doc.GetValue("ownerProgram", "").ToString() : ((owner.Program ?? "") + (string.IsNullOrWhiteSpace(owner.YearLevel) ? "" : " " + owner.YearLevel)),
                 PricePerHour = (decimal)price, PaidAmount = (decimal)fee, Start = start.ToLocalTime(), End = end.ToLocalTime(), PickupPoint = doc.GetValue("handoverLocation", location).ToString(),
                 PaymentMethod = "Cash", TransactionId = tx, About = item == null ? doc.GetValue("description", "").ToString() : item.Description,
