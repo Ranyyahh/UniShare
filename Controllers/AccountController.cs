@@ -75,6 +75,12 @@ namespace UniShare.Controllers
             if (!email.EndsWith("@unishare.qcu.edu.ph") && !email.EndsWith("@qcu.edu.ph"))
                 ModelState.AddModelError("SchoolEmail", "Must be @qcu.edu.ph email");
 
+            if (!Regex.IsMatch((model.Phone ?? "").Trim(), @"^\+63 9\d{2} \d{3} \d{4}$"))
+                ModelState.AddModelError("Phone", "Use the format +63 900 000 0000");
+            var allowedPrograms = new[] { "BSIT", "BSCpE", "BSCE", "BSArch", "BSA", "BSCS", "BSEd" };
+            if (!allowedPrograms.Contains((model.Program ?? "").Trim(), StringComparer.OrdinalIgnoreCase))
+                ModelState.AddModelError("Program", "Choose a program / course from the list");
+
             var dateFormats = new[] { "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "MM/dd/yyyy", "M/d/yyyy", "dd-MM-yyyy" };
             DateTime birthdate;
             if (!DateTime.TryParseExact((model.Birthdate ?? "").Trim(), dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthdate) || birthdate.Date >= DateTime.Today)
@@ -96,6 +102,12 @@ namespace UniShare.Controllers
                 if (MongoDatabase.Users.Find(x => x.StudentIdNumber == studentNo).Any())
                 {
                     ModelState.AddModelError("StudentIdNumber", "Student ID already exists");
+                    return View(model);
+                }
+                var phone = model.Phone.Trim();
+                if (MongoDatabase.Users.Find(x => x.Phone == phone || x.ContactNumber == phone).Any())
+                {
+                    ModelState.AddModelError("Phone", "Contact number already exists");
                     return View(model);
                 }
                 userId = ObjectId.GenerateNewId();

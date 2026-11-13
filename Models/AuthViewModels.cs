@@ -43,11 +43,11 @@ namespace UniShare.Models
         [Required(ErrorMessage = "Required"), StringLength(100, MinimumLength = 8, ErrorMessage = "Min 8 chars"), DataType(DataType.Password)] public string Password { get; set; }
         [Required(ErrorMessage = "Required"), Compare("Password", ErrorMessage = "Passwords don't match"), DataType(DataType.Password), Display(Name = "Confirm password")] public string ConfirmPassword { get; set; }
         [Required(ErrorMessage = "Required"), StringLength(10)] public string Birthdate { get; set; }
-        [Required(ErrorMessage = "Required"), StringLength(30)] public string Phone { get; set; }
+        [Required(ErrorMessage = "Required"), StringLength(16)] public string Phone { get; set; }
         [Required(ErrorMessage = "Required"), StringLength(40)] public string Section { get; set; }
-        [Required(ErrorMessage = "Required"), StringLength(40)] public string StudentIdNumber { get; set; }
+        [Required(ErrorMessage = "Required"), RegularExpression(@"^\d{2}-\d{4}$", ErrorMessage = "Use the format 00-0000")] public string StudentIdNumber { get; set; }
         [Required(ErrorMessage = "Required"), StringLength(80)] public string Program { get; set; }
-        [Required(ErrorMessage = "Required"), StringLength(40)] public string YearLevel { get; set; }
+        [Required(ErrorMessage = "Required"), RegularExpression(@"^(1st|2nd|3rd|4th) Year$", ErrorMessage = "Choose a year from 1st to 4th")] public string YearLevel { get; set; }
         [Required(ErrorMessage = "Document required")]
         [Display(Name = "Student ID or COR Document")]
         public HttpPostedFileBase StudentDocument { get; set; }

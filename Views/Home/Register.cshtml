@@ -58,7 +58,7 @@
                     @Html.ValidationMessageFor(x => x.StudentIdNumber, "", new { @class = "field-error" })
                 </div>
                 <div class="input-wrap">
-                    @Html.TextBoxFor(x => x.StudentIdNumber, new { placeholder = "e.g. 21-00000", required = "required" })
+                    @Html.TextBoxFor(x => x.StudentIdNumber, new { placeholder = "00-0000", inputmode = "numeric", maxlength = "7", data_student_number = "true", required = "required" })
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
                     @Html.ValidationMessageFor(x => x.Phone, "", new { @class = "field-error" })
                 </div>
                 <div class="input-wrap">
-                    @Html.TextBoxFor(x => x.Phone, new { type = "tel", autocomplete = "tel", placeholder = "+63 900 000 0000", required = "required" })
+                    @Html.TextBoxFor(x => x.Phone, new { type = "tel", autocomplete = "tel", inputmode = "numeric", placeholder = "+63 900 000 0000", maxlength = "16", data_phone_mask = "true", required = "required" })
                 </div>
             </div>
         </div>
@@ -91,7 +91,16 @@
                     @Html.ValidationMessageFor(x => x.Program, "", new { @class = "field-error" })
                 </div>
                 <div class="input-wrap">
-                    @Html.TextBoxFor(x => x.Program, new { placeholder = "e.g. BSIT, BSCS, BSA", required = "required" })
+                    @Html.DropDownListFor(x => x.Program, new[] {
+                                                new SelectListItem { Text = "Choose program / course", Value = "" },
+                                                new SelectListItem { Text = "BSIT", Value = "BSIT" },
+                                                new SelectListItem { Text = "BSCpE", Value = "BSCpE" },
+                                                new SelectListItem { Text = "BSCE", Value = "BSCE" },
+                                                new SelectListItem { Text = "BSArch", Value = "BSArch" },
+                                                new SelectListItem { Text = "BSA", Value = "BSA" },
+                                                new SelectListItem { Text = "BSCS", Value = "BSCS" },
+                                                new SelectListItem { Text = "BSEd", Value = "BSEd" }
+                                            }, new { required = "required" })
                 </div>
             </div>
             <div class="field-group">
@@ -106,7 +115,6 @@
                         new SelectListItem { Text = "2nd Year", Value = "2nd Year" },
                         new SelectListItem { Text = "3rd Year", Value = "3rd Year" },
                         new SelectListItem { Text = "4th Year", Value = "4th Year" },
-                        new SelectListItem { Text = "5th Year", Value = "5th Year" }
                     }, new { required = "required" })
                 </div>
             </div>
@@ -128,7 +136,7 @@
                     @Html.ValidationMessageFor(x => x.Birthdate, "", new { @class = "field-error" })
                 </div>
                 <div class="input-wrap">
-                    @Html.TextBoxFor(x => x.Birthdate, new { inputmode = "numeric", placeholder = "dd/mm/yyyy", required = "required", data_date_input = "true" })
+                    @Html.TextBoxFor(x => x.Birthdate, new { inputmode = "numeric", placeholder = "DD/MM/YYYY", maxlength = "10", required = "required", data_date_input = "true" })
                 </div>
             </div>
         </div>
@@ -192,6 +200,30 @@
                     }
                 });
             }
+
+            function digits(value) { return value.replace(/\D/g, ""); }
+            var student = document.querySelector("[data-student-number]");
+            if (student) student.addEventListener("input", function () {
+                var value = digits(this.value).slice(0, 6);
+                this.value = value.length > 2 ? value.slice(0, 2) + "-" + value.slice(2) : value;
+            });
+            var phone = document.querySelector("[data-phone-mask]");
+            if (phone) phone.addEventListener("input", function () {
+                var value = digits(this.value);
+                if (value.indexOf("63") === 0) value = value.slice(2);
+                if (value.indexOf("0") === 0) value = value.slice(1);
+                value = value.slice(0, 10);
+                var formatted = "+63";
+                if (value.length) formatted += " " + value.slice(0, 3);
+                if (value.length > 3) formatted += " " + value.slice(3, 6);
+                if (value.length > 6) formatted += " " + value.slice(6, 10);
+                this.value = formatted;
+            });
+            var birthdate = document.querySelector("[data-date-input]");
+            if (birthdate) birthdate.addEventListener("input", function () {
+                var value = digits(this.value).slice(0, 8);
+                this.value = value.length > 4 ? value.slice(0, 2) + "/" + value.slice(2, 4) + "/" + value.slice(4) : value.length > 2 ? value.slice(0, 2) + "/" + value.slice(2) : value;
+            });
 
             document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
                 button.addEventListener('click', function () {
