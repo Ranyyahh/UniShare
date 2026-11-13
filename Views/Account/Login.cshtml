@@ -33,11 +33,11 @@
 
         <div class="field-group">
             <div class="label-row">
-                <label for="SchoolEmail">School Email Address</label>
+                <label for="SchoolEmail">Email or Username</label>
                 @Html.ValidationMessageFor(x => x.SchoolEmail, "", new { @class = "field-error" })
             </div>
             <div class="input-wrap">
-                @Html.TextBoxFor(x => x.SchoolEmail, new { type = "email", autocomplete = "username", placeholder = "name@unishare.qcu.edu.ph", required = "required" })
+                @Html.TextBoxFor(x => x.SchoolEmail, new { type = "text", autocomplete = "username", placeholder = "Email or username", required = "required" })
             </div>
         </div>
 

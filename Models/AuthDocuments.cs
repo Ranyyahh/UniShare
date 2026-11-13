@@ -30,6 +30,7 @@ namespace UniShare.Models
         [BsonIgnoreIfNull] [BsonElement("schoolIdPhoto")] public string SchoolIdPhoto { get; set; }
         [BsonIgnoreIfNull] [BsonElement("oneByOnePhoto")] public string OneByOnePhoto { get; set; }
         [BsonIgnoreIfNull] [BsonElement("registrationForm")] public string RegistrationForm { get; set; }
+        [BsonIgnoreIfNull] [BsonElement("submittedDocument")] public string SubmittedDocument { get; set; }
         [BsonElement("verificationStatus")] public string VerificationStatus { get; set; }
         [BsonElement("createdAt")] public DateTime CreatedAt { get; set; }
         [BsonElement("updatedAt")] public DateTime UpdatedAt { get; set; }

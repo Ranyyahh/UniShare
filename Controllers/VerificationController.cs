@@ -108,11 +108,18 @@ namespace UniShare.Controllers
             ObjectId objectId;
             if (!ObjectId.TryParse(id, out objectId) || (kind != "id" && kind != "photo" && kind != "form")) return HttpNotFound();
             var application = MongoDatabase.Verifications.Find(x => x.Id == objectId).FirstOrDefault();
-            if (application == null) return HttpNotFound();
-            var user = MongoDatabase.Users.Find(x => x.Id == application.UserId).FirstOrDefault();
-            var name = kind == "id" ? (application.SchoolIdPath ?? (user == null ? null : user.SchoolIdPhoto))
-                : kind == "photo" ? (application.OneByOnePhotoPath ?? (user == null ? null : user.OneByOnePhoto))
-                : (application.RegistrationFormPath ?? application.SubmittedDocument ?? (user == null ? null : user.RegistrationForm));
+            if (application == null)
+            {
+                application = MongoDatabase.Verifications.Find(x => x.UserId == objectId).SortByDescending(x => x.SubmittedAt).FirstOrDefault();
+            }
+            var user = application != null
+                ? MongoDatabase.Users.Find(x => x.Id == application.UserId).FirstOrDefault()
+                : MongoDatabase.Users.Find(x => x.Id == objectId).FirstOrDefault();
+            if (application == null && user == null) return HttpNotFound();
+
+            var name = kind == "id" ? ((application != null ? application.SchoolIdPath : null) ?? (user != null ? (user.SchoolIdPhoto ?? user.SubmittedDocument) : null))
+                : kind == "photo" ? ((application != null ? application.OneByOnePhotoPath : null) ?? (user != null ? user.OneByOnePhoto : null))
+                : ((application != null ? (application.RegistrationFormPath ?? application.SubmittedDocument) : null) ?? (user != null ? (user.RegistrationForm ?? user.SubmittedDocument) : null));
             var path = Server.MapPath("~/App_Data/Verification/" + Path.GetFileName(name ?? ""));
             if (!System.IO.File.Exists(path)) return HttpNotFound();
             var ext = Path.GetExtension(path).ToLowerInvariant();

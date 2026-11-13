@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
@@ -25,8 +26,20 @@ namespace UniShare.Controllers
             if (!ModelState.IsValid) return View(model);
             try
             {
-                var email = model.SchoolEmail.Trim().ToLowerInvariant();
-                var user = MongoDatabase.Users.Find(x => x.SchoolEmail == email).FirstOrDefault();
+                var identifier = (model.SchoolEmail ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(identifier))
+                {
+                    ModelState.AddModelError("", "The email or username is required.");
+                    return View(model);
+                }
+
+                var regex = new BsonRegularExpression("^" + Regex.Escape(identifier) + "$", "i");
+                var filter = Builders<UserDocument>.Filter.Or(
+                    Builders<UserDocument>.Filter.Regex(x => x.SchoolEmail, regex),
+                    Builders<UserDocument>.Filter.Regex(x => x.Username, regex)
+                );
+                var user = MongoDatabase.Users.Find(filter).FirstOrDefault();
+
                 if (user != null)
                 {
                     AdminAccountabilityService.IsUserRestricted(user.Id);
@@ -34,7 +47,7 @@ namespace UniShare.Controllers
                 }
                 if (user == null || (user.Status != "ACTIVE" && user.Status != "PENDING") || String.IsNullOrEmpty(user.PasswordHash) || !PasswordHasher.Verify(model.Password, user.PasswordHash))
                 {
-                    ModelState.AddModelError("", "The email or password is incorrect.");
+                    ModelState.AddModelError("", "The email/username or password is incorrect.");
                     return View(model);
                 }
                 var ticket = new FormsAuthenticationTicket(1, user.Id.ToString(), DateTime.Now,
@@ -127,13 +140,15 @@ namespace UniShare.Controllers
 
                 if (user.Role == "ADMIN")
                 {
+                    var adminName = !string.IsNullOrWhiteSpace(user.Username) ? user.Username : "Administrator";
                     return Json(new
                     {
-                        displayName       = user.FirstName + " " + user.LastName,
+                        displayName       = adminName,
+                        initials          = "A",
                         email             = user.SchoolEmail,
                         role              = user.Role,
                         isAdmin           = true,
-                        username          = user.Username ?? "",
+                        username          = user.Username ?? "admin",
                         contactNumber     = user.ContactNumber ?? user.Phone ?? "",
                         registered        = user.CreatedAt != default(DateTime)
                                               ? user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")
@@ -142,18 +157,36 @@ namespace UniShare.Controllers
                 }
 
                 var verif = MongoDatabase.Verifications.Find(x => x.UserId == user.Id).SortByDescending(x => x.SubmittedAt).FirstOrDefault();
+                var studentName = string.Join(" ", new[] { user.FirstName, user.MiddleName, user.LastName }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
+                var sFn = (user.FirstName ?? "").Trim();
+                var sLn = (user.LastName ?? "").Trim();
+                var studentInitials = "ST";
+                if (!string.IsNullOrEmpty(sFn) && !string.IsNullOrEmpty(sLn))
+                {
+                    studentInitials = (sFn.Substring(0, 1) + sLn.Substring(0, 1)).ToUpperInvariant();
+                }
+                else if (!string.IsNullOrEmpty(sFn))
+                {
+                    studentInitials = sFn.Substring(0, Math.Min(2, sFn.Length)).ToUpperInvariant();
+                }
+                else if (!string.IsNullOrEmpty(sLn))
+                {
+                    studentInitials = sLn.Substring(0, Math.Min(2, sLn.Length)).ToUpperInvariant();
+                }
+
                 return Json(new
                 {
-                    displayName        = user.FirstName + " " + user.LastName,
+                    displayName        = string.IsNullOrWhiteSpace(studentName) ? "Student" : studentName,
+                    initials           = studentInitials,
                     email              = user.SchoolEmail,
                     role               = user.Role,
                     isAdmin            = false,
                     verificationStatus = user.VerificationStatus ?? "PENDING",
                     studentId          = user.StudentIdNumber ?? (verif != null ? verif.StudentIdNumber : ""),
-                    program            = verif != null ? verif.Program : "",
-                    yearLevel          = verif != null ? verif.YearLevel : "",
+                    program            = (verif != null && !string.IsNullOrWhiteSpace(verif.Program)) ? verif.Program : (user.Program ?? ""),
+                    yearLevel          = (verif != null && !string.IsNullOrWhiteSpace(verif.YearLevel)) ? verif.YearLevel : (user.YearLevel ?? ""),
                     section            = user.Section ?? "",
-                    phone              = user.Phone ?? user.ContactNumber ?? "",
+                    phone              = user.ContactNumber ?? user.Phone ?? "",
                     registered         = user.CreatedAt != default(DateTime)
                                            ? user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")
                                            : "Active"

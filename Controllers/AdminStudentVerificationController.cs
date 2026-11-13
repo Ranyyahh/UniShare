@@ -34,6 +34,8 @@ namespace UniShare.Controllers
                 return new HttpStatusCodeResult(400, "Invalid status or page parameters.");
             try
             {
+                SyncStudentVerifications();
+
                 var requestedPage = page;
                 var searchTerm = (search ?? "").Trim();
                 if (searchTerm.Length > 120) searchTerm = searchTerm.Substring(0, 120);
@@ -56,15 +58,16 @@ namespace UniShare.Controllers
                 }).ToList();
 
                 var totalStudents = (int)MongoDatabase.Users.CountDocuments(x => x.Role == "STUDENT");
-                var latestStatuses = MongoDatabase.Verifications.Aggregate<BsonDocument>(BuildStatusCountPipeline()).ToList();
-                var statusCounts = latestStatuses.GroupBy(x => x.GetValue("_id", "").ToString(), StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(g => g.Key.ToUpperInvariant(), g => g.Sum(x => x.GetValue("count", 0).ToInt32()));
+                var pendingCount = (int)MongoDatabase.Users.CountDocuments(x => x.Role == "STUDENT" && (x.VerificationStatus == "PENDING" || x.VerificationStatus == null || x.VerificationStatus == ""));
+                var approvedCount = (int)MongoDatabase.Users.CountDocuments(x => x.Role == "STUDENT" && x.VerificationStatus == "APPROVED");
+                var rejectedCount = (int)MongoDatabase.Users.CountDocuments(x => x.Role == "STUDENT" && x.VerificationStatus == "REJECTED");
+
                 var stats = new
                 {
                     total = totalStudents,
-                    pending = statusCounts.ContainsKey("PENDING") ? statusCounts["PENDING"] : 0,
-                    approved = (int)MongoDatabase.Users.CountDocuments(x => x.Role == "STUDENT" && x.VerificationStatus == "APPROVED"),
-                    rejected = statusCounts.ContainsKey("REJECTED") ? statusCounts["REJECTED"] : 0
+                    pending = pendingCount,
+                    approved = approvedCount,
+                    rejected = rejectedCount
                 };
                 return Json(new { success = true, data = rows, total, page, pageSize, totalPages, stats }, JsonRequestBehavior.AllowGet);
             }
@@ -72,6 +75,71 @@ namespace UniShare.Controllers
             {
                 Response.StatusCode = 503;
                 return Json(new { success = false, message = "Student verification records are unavailable. Check the database connection and try again." }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        private static void SyncStudentVerifications()
+        {
+            try
+            {
+                var students = MongoDatabase.Users.Find(x => x.Role == "STUDENT").ToList();
+                if (students.Count == 0) return;
+
+                var studentIds = students.Select(s => s.Id).ToList();
+                var existingApps = MongoDatabase.Verifications.Find(x => studentIds.Contains(x.UserId)).ToList();
+                var appByUserId = existingApps
+                    .GroupBy(x => x.UserId)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.SubmittedAt != default(DateTime) ? x.SubmittedAt : (x.CreatedAt ?? DateTime.MinValue)).First());
+
+                var now = DateTime.UtcNow;
+                var toInsert = new List<VerificationApplicationDocument>();
+
+                foreach (var student in students)
+                {
+                    var rawStatus = string.IsNullOrWhiteSpace(student.VerificationStatus) ? "PENDING" : student.VerificationStatus.Trim().ToUpperInvariant();
+                    if (!new[] { "PENDING", "APPROVED", "REJECTED" }.Contains(rawStatus)) rawStatus = "PENDING";
+
+                    VerificationApplicationDocument app;
+                    if (!appByUserId.TryGetValue(student.Id, out app))
+                    {
+                        var submitted = student.CreatedAt != default(DateTime) ? student.CreatedAt : now;
+                        toInsert.Add(new VerificationApplicationDocument
+                        {
+                            Id = ObjectId.GenerateNewId(),
+                            UserId = student.Id,
+                            SchoolEmail = student.SchoolEmail,
+                            StudentIdNumber = student.StudentIdNumber,
+                            Program = student.Program,
+                            YearLevel = student.YearLevel,
+                            SchoolIdPath = student.SchoolIdPhoto,
+                            OneByOnePhotoPath = student.OneByOnePhoto,
+                            RegistrationFormPath = student.RegistrationForm,
+                            SubmittedDocument = student.SubmittedDocument ?? student.SchoolIdPhoto ?? student.RegistrationForm,
+                            Status = rawStatus,
+                            SubmittedAt = submitted,
+                            CreatedAt = submitted,
+                            ReviewedAt = (rawStatus == "APPROVED" || rawStatus == "REJECTED") ? (student.UpdatedAt != default(DateTime) ? (DateTime?)student.UpdatedAt : submitted) : null
+                        });
+                    }
+                    else
+                    {
+                        if (!string.Equals(app.Status, rawStatus, StringComparison.OrdinalIgnoreCase))
+                        {
+                            MongoDatabase.Verifications.UpdateOne(
+                                x => x.Id == app.Id,
+                                Builders<VerificationApplicationDocument>.Update.Set(x => x.Status, rawStatus));
+                        }
+                    }
+                }
+
+                if (toInsert.Count > 0)
+                {
+                    MongoDatabase.Verifications.InsertMany(toInsert);
+                }
+            }
+            catch
+            {
+                // Silently ignore background sync issues so normal queries can proceed
             }
         }
 
@@ -112,21 +180,6 @@ namespace UniShare.Controllers
             return PipelineDefinition<VerificationApplicationDocument, BsonDocument>.Create(stages);
         }
 
-        private static PipelineDefinition<VerificationApplicationDocument, BsonDocument> BuildStatusCountPipeline()
-        {
-            var stages = new[]
-            {
-                new BsonDocument("$addFields", new BsonDocument("_sortDate", new BsonDocument("$ifNull", new BsonArray { "$submittedAt", "$createdAt" }))),
-                new BsonDocument("$sort", new BsonDocument("_sortDate", -1)),
-                new BsonDocument("$lookup", new BsonDocument { { "from", "users" }, { "localField", "userId" }, { "foreignField", "_id" }, { "as", "student" } }),
-                new BsonDocument("$unwind", "$student"),
-                new BsonDocument("$match", new BsonDocument("student.role", "STUDENT")),
-                new BsonDocument("$group", new BsonDocument { { "_id", "$userId" }, { "status", new BsonDocument("$first", "$status") } }),
-                new BsonDocument("$group", new BsonDocument { { "_id", "$status" }, { "count", new BsonDocument("$sum", 1) } })
-            };
-            return PipelineDefinition<VerificationApplicationDocument, BsonDocument>.Create(stages);
-        }
-
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Approve(string id)
         {
@@ -143,13 +196,43 @@ namespace UniShare.Controllers
 
         private ActionResult Review(string id, string decision, string notes)
         {
-            ObjectId applicationId, adminId;
-            if (!ObjectId.TryParse(id, out applicationId)) return new HttpStatusCodeResult(400, "Invalid application ID.");
+            ObjectId parsedId, adminId;
+            if (!ObjectId.TryParse(id, out parsedId)) return new HttpStatusCodeResult(400, "Invalid application ID.");
             if (!ObjectId.TryParse(User.Identity.Name, out adminId)) return new HttpUnauthorizedResult();
             try
             {
-                var application = MongoDatabase.Verifications.Find(x => x.Id == applicationId).FirstOrDefault();
+                var application = MongoDatabase.Verifications.Find(x => x.Id == parsedId).FirstOrDefault();
+                if (application == null)
+                {
+                    application = MongoDatabase.Verifications.Find(x => x.UserId == parsedId).SortByDescending(x => x.SubmittedAt).FirstOrDefault();
+                }
+                if (application == null)
+                {
+                    var studentUser = MongoDatabase.Users.Find(x => x.Id == parsedId && x.Role == "STUDENT").FirstOrDefault();
+                    if (studentUser != null)
+                    {
+                        var createTime = studentUser.CreatedAt != default(DateTime) ? studentUser.CreatedAt : DateTime.UtcNow;
+                        application = new VerificationApplicationDocument
+                        {
+                            Id = ObjectId.GenerateNewId(),
+                            UserId = studentUser.Id,
+                            SchoolEmail = studentUser.SchoolEmail,
+                            StudentIdNumber = studentUser.StudentIdNumber,
+                            Program = studentUser.Program,
+                            YearLevel = studentUser.YearLevel,
+                            SchoolIdPath = studentUser.SchoolIdPhoto,
+                            OneByOnePhotoPath = studentUser.OneByOnePhoto,
+                            RegistrationFormPath = studentUser.RegistrationForm,
+                            SubmittedDocument = studentUser.SubmittedDocument ?? studentUser.SchoolIdPhoto ?? studentUser.RegistrationForm,
+                            Status = "PENDING",
+                            SubmittedAt = createTime,
+                            CreatedAt = createTime
+                        };
+                        MongoDatabase.Verifications.InsertOne(application);
+                    }
+                }
                 if (application == null) return HttpNotFound();
+
                 var student = MongoDatabase.Users.Find(x => x.Id == application.UserId && x.Role == "STUDENT").FirstOrDefault();
                 if (student == null) return HttpNotFound("Student account not found.");
 
@@ -157,7 +240,7 @@ namespace UniShare.Controllers
                 var update = Builders<VerificationApplicationDocument>.Update.Set(x => x.Status, decision)
                     .Set(x => x.ReviewNotes, notes).Set(x => x.ReviewedAt, now).Set(x => x.ReviewedBy, adminId);
                 var result = MongoDatabase.Verifications.UpdateOne(
-                    x => x.Id == applicationId && x.UserId == application.UserId && x.Status == "PENDING", update);
+                    x => x.Id == application.Id && x.UserId == application.UserId && x.Status == "PENDING", update);
                 if (result.ModifiedCount != 1)
                     return new HttpStatusCodeResult(409, "This application is no longer pending review.");
 
@@ -173,12 +256,12 @@ namespace UniShare.Controllers
                         Id = ObjectId.GenerateNewId(), UserId = adminId,
                         Action = decision == "APPROVED" ? "APPROVE_STUDENT" : "REJECT_STUDENT",
                         EntityType = "USER", EntityId = application.UserId,
-                        Details = new BsonDocument { { "verificationId", applicationId }, { "status", decision }, { "notes", notes ?? "" } },
+                        Details = new BsonDocument { { "verificationId", application.Id }, { "status", decision }, { "notes", notes ?? "" } },
                         CreatedAt = now
                     });
                 }
                 catch { }
-                return Json(new { success = true, id = applicationId.ToString(), status = decision, message = decision == "APPROVED" ? "Student account approved." : "Application rejected." });
+                return Json(new { success = true, id = application.Id.ToString(), status = decision, message = decision == "APPROVED" ? "Student account approved." : "Application rejected." });
             }
             catch (Exception ex) when (ex is MongoException || ex is InvalidOperationException || ex is FormatException)
             {
@@ -189,11 +272,11 @@ namespace UniShare.Controllers
 
         private object ToRow(VerificationApplicationDocument app, UserDocument user)
         {
-            var status = (app.Status ?? "UNKNOWN").ToUpperInvariant();
+            var status = (!string.IsNullOrWhiteSpace(app.Status) ? app.Status : (user.VerificationStatus ?? "PENDING")).ToUpperInvariant();
             var submitted = app.SubmittedAt != default(DateTime) ? app.SubmittedAt : (app.CreatedAt ?? user.CreatedAt);
             var name = string.Join(" ", new[] { user.FirstName, user.MiddleName, user.LastName }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
-            var registrationFile = !string.IsNullOrWhiteSpace(app.RegistrationFormPath) ? app.RegistrationFormPath : app.SubmittedDocument;
-            var idFile = !string.IsNullOrWhiteSpace(app.SchoolIdPath) ? app.SchoolIdPath : user.SchoolIdPhoto;
+            var registrationFile = !string.IsNullOrWhiteSpace(app.RegistrationFormPath) ? app.RegistrationFormPath : (app.SubmittedDocument ?? user.RegistrationForm ?? user.SubmittedDocument);
+            var idFile = !string.IsNullOrWhiteSpace(app.SchoolIdPath) ? app.SchoolIdPath : (user.SchoolIdPhoto ?? app.SubmittedDocument ?? user.SubmittedDocument);
             var photoFile = !string.IsNullOrWhiteSpace(app.OneByOnePhotoPath) ? app.OneByOnePhotoPath : user.OneByOnePhoto;
             return new
             {

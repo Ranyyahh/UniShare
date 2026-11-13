@@ -40,7 +40,19 @@
         summary.className = 'account-profile-summary';
         var avatar = textElement('span', 'account-avatar account-avatar--large', '?');
         avatar.setAttribute('aria-hidden', 'true');
-        var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('');
+        var initials = '?';
+        if (data && (data.isAdmin || data.role === 'ADMIN')) {
+            initials = 'A';
+        } else if (data && data.initials) {
+            initials = data.initials.toUpperCase();
+        } else {
+            var parts = name.trim().split(/\s+/).filter(Boolean);
+            if (parts.length >= 2) {
+                initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+            } else if (parts.length === 1) {
+                initials = parts[0].slice(0, 2).toUpperCase();
+            }
+        }
         avatar.textContent = initials || '?';
         summary.appendChild(avatar);
         var copy = document.createElement('div');
@@ -166,22 +178,34 @@
         }
     });
 
-    var headerName = document.querySelector('[data-account-name]');
-    var headerAvatar = document.querySelector('[data-account-avatar]');
-    var headerSubtitle = document.querySelector('[data-account-subtitle]');
+    var headerNames = document.querySelectorAll('[data-account-name]');
+    var headerAvatars = document.querySelectorAll('[data-account-avatar]');
+    var headerSubtitles = document.querySelectorAll('[data-account-subtitle]');
     var profileUrl = modal.getAttribute('data-profile-url');
     fetch(profileUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
         .then(function (response) { return response.ok ? response.json() : null; })
         .then(function (data) {
-            if (!data || !data.displayName) return;
-            if (headerName) headerName.textContent = data.displayName;
-            var initials = data.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('');
-            if (headerAvatar) headerAvatar.textContent = initials || '?';
-            if (headerSubtitle) {
-                if (data.role === 'ADMIN') headerSubtitle.textContent = 'Administrator';
-                else if (data.verificationStatus === 'APPROVED') headerSubtitle.textContent = 'Verified Student';
-                else headerSubtitle.textContent = 'Pending Verification';
+            if (!data) return;
+            var initials = '?';
+            if (data.isAdmin || data.role === 'ADMIN') {
+                initials = 'A';
+            } else if (data.initials) {
+                initials = data.initials.toUpperCase();
+            } else if (data.displayName) {
+                var parts = data.displayName.trim().split(/\s+/).filter(Boolean);
+                if (parts.length >= 2) {
+                    initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                } else if (parts.length === 1) {
+                    initials = parts[0].slice(0, 2).toUpperCase();
+                }
             }
+            headerAvatars.forEach(function (el) { el.textContent = initials; });
+            headerNames.forEach(function (el) { if (data.displayName) el.textContent = data.displayName; });
+            headerSubtitles.forEach(function (el) {
+                if (data.role === 'ADMIN') el.textContent = 'Administrator';
+                else if (data.verificationStatus === 'APPROVED') el.textContent = 'Verified Student';
+                else el.textContent = 'Pending Verification';
+            });
         })
         .catch(function () { /* Keep the neutral account label when no profile is available. */ });
 }());
