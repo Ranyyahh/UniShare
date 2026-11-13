@@ -36,6 +36,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Patch: Block "Borrow / Rent" buttons
+        var clickedActionBtn = e.target.closest('button, a');
+        if (clickedActionBtn) {
+            var actionText = (clickedActionBtn.innerText || "").toLowerCase();
+            var actionId = (clickedActionBtn.id || "").toLowerCase();
+            var actionClass = (clickedActionBtn.className || "").toLowerCase();
+
+            if (actionText.includes('borrow') || 
+                actionText.includes('rent') || 
+                actionText.includes('request') ||
+                actionId.includes('borrow') || 
+                actionId.includes('rent') ||
+                actionClass.includes('btn-borrow') || 
+                actionClass.includes('btn-rent') ||
+                actionClass.includes('btn-request')) {
+                
+                showPendingModal(e);
+                return;
+            }
+        }
+
         const target = e.target.closest('a, button');
         if (!target) return;
 
