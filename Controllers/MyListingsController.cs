@@ -186,7 +186,7 @@ namespace UniShare.Controllers
                 Condition = ToStoredCondition(model.Condition),
                 AvailabilityStatus = "AVAILABLE",
                 ApprovalStatus = "PENDING",
-                AvailableDays = model.AvailableDays ?? new List<string>(),
+                AvailableDays = NormalizeAvailableDays(model.AvailableDays),
                 EarliestHandoverTime = model.EarliestHandoverTime,
                 LatestReturnTime = model.LatestReturnTime,
                 Accessories = model.Accessories,
@@ -339,7 +339,7 @@ namespace UniShare.Controllers
                 .Set(x => x.Category, category != null ? category.Name : "Others")
                 .Set(x => x.Condition, ToStoredCondition(model.Condition))
                 .Set(x => x.Photos, newPhotos)
-                .Set(x => x.AvailableDays, model.AvailableDays ?? new List<string>())
+                .Set(x => x.AvailableDays, NormalizeAvailableDays(model.AvailableDays))
                 .Set(x => x.EarliestHandoverTime, model.EarliestHandoverTime)
                 .Set(x => x.LatestReturnTime, model.LatestReturnTime)
                 .Set(x => x.Accessories, model.Accessories)

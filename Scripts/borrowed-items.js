@@ -182,7 +182,14 @@
         var tag = '<span class="bi-duration">' + SVG_CLOCK + it.hours + ' hrs</span>';
         var foot = '';
 
-        if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
+        if (it.isOwnerView) {
+            if (isInUse(it)) {
+                var ownerTimer = timerInfo(it);
+                foot = '<div class="bi-card__timer bi-card__timer--' + ownerTimer.cls + '" data-tbox-mini="' + it.id + '">' + SVG_CLOCK + '<span data-tlabel="' + it.id + '">' + ownerTimer.label + '</span><b data-tmini="' + it.id + '">' + ownerTimer.value + '</b></div>';
+            } else {
+                foot = '<a class="us-btn us-btn--primary us-btn--block" href="' + esc(it.rentalDetailsUrl) + '">Manage rental</a>';
+            }
+        } else if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
             foot = '<div class="bi-notice">' + SVG_CLOCK + ' Waiting for the lender to confirm handover</div>';
         } else if (it.status === 'Pending' && !it.canConfirmHandover) {
             foot = '<div class="bi-notice">' + SVG_CLOCK + ' Waiting for the lender to approve this request</div>';
@@ -213,7 +220,7 @@
             '<span class="card-rating">' + (it.itemRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.itemRating) : '') + '</span>' +
             '</h3>' +
             '<div class="bi-meta" style="margin-bottom: 4px;"><span class="bi-price">' + PESO + it.price + '<small>/hr</small></span>' +
-            '<span class="bi-lender" style="display:flex; align-items:center; gap:4px;">Lender: <strong>' + esc(it.lender) + '</strong> <span class="owner-rating">' + (it.ownerRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.ownerRating) : '') + '</span></span></div>' +
+            '<span class="bi-lender" style="display:flex; align-items:center; gap:4px;">' + esc(it.counterpartyLabel || 'Lender') + ': <strong>' + esc(it.lender) + '</strong> <span class="owner-rating">' + (!it.isOwnerView && it.ownerRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.ownerRating) : '') + '</span></span></div>' +
             '<div class="bi-foot">' + foot + '</div></div></article>';
     }
 
@@ -262,7 +269,9 @@
 
     function detailHTML(it) {
         var actions = '';
-        if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
+        if (it.isOwnerView) {
+            actions = '<div class="bi-notice bi-notice--block">Manage handover, payment, and return confirmations from rental details.</div><div class="bi-modal-actions"><a class="us-btn us-btn--primary" href="' + esc(it.rentalDetailsUrl) + '">Open rental details</a></div>';
+        } else if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
             actions = '<div class="bi-notice bi-notice--block">' + SVG_CLOCK + ' Your handover confirmation is saved. The rental starts after the lender confirms.</div>';
         } else if (it.status === 'Pending' && !it.canConfirmHandover) {
             actions = '<div class="bi-notice bi-notice--block">' + SVG_CLOCK + ' Your request is waiting for the lender to approve it.</div>';
@@ -290,10 +299,10 @@
         return '<div class="bi-dialog__body"><aside class="bi-dialog__side">' + tile(it, true) +
             '<div class="bi-lender-card"><div class="bi-lender-card__top"><span class="us-avatar">' + esc(it.initials) + '</span>' +
             '<div style="flex:1; display:flex; justify-content:space-between; align-items:flex-start;">' +
-            '<div><strong>' + esc(it.lender) + '</strong><small>Lender &bull; ' + esc(it.program) + '</small></div>' +
-            '<span style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;">' + (it.ownerRating ? '<span style="color:#f59e0b; font-size:14px;">&#9733;</span> ' + ratingText(it.ownerRating) : 'New') + '</span>' +
+            '<div><strong>' + esc(it.lender) + '</strong><small>' + esc(it.counterpartyLabel || 'Lender') + ' &bull; ' + esc(it.program) + '</small></div>' +
+            '<span style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;">' + (!it.isOwnerView && it.ownerRating ? '<span style="color:#f59e0b; font-size:14px;">&#9733;</span> ' + ratingText(it.ownerRating) : '') + '</span>' +
             '</div></div>' +
-            '<button type="button" class="us-btn us-btn--outline us-btn--block" data-msg-lender="' + esc(it.lender) + '" data-msg-item="' + esc(it.name) + '" data-owner-id="' + esc(it.ownerId) + '" data-item-id="' + esc(it.itemId) + '">' + SVG_MSG + ' Message Lender</button></div>' +
+            '<button type="button" class="us-btn us-btn--outline us-btn--block" data-msg-person="' + esc(it.lender) + '" data-party-id="' + esc(it.counterpartyId || it.ownerId) + '" data-item-id="' + esc(it.itemId) + '">' + SVG_MSG + ' Message ' + esc(it.counterpartyLabel || 'Lender') + '</button></div>' +
             '<div class="bi-about"><h4>About this item</h4><p>' + esc(it.about) + '</p></div></aside>' +
             '<section class="bi-dialog__main">' + statusPill(it, true) + '<span class="bi-cat">' + esc(it.category) + '</span>' +
             '<h3 class="bi-dialog__name" style="display:flex; justify-content:space-between; align-items:flex-start;">' +
@@ -365,6 +374,8 @@
     function buildTransactionHistory() {
         var tbody = $('bi-history-body');
         if (!tbody) return;
+        var partyHeading = $('bi-history-party-heading');
+        if (partyHeading) { partyHeading.textContent = root.getAttribute('data-side') === 'lent' ? 'Borrower' : 'Lender'; }
 
         var completedItems = items.filter(function (i) { return ['Completed', 'Cancelled', 'Declined', 'Rejected'].indexOf(i.status) >= 0; });
 
@@ -547,10 +558,10 @@
     }
 
     root.addEventListener('click', function (e) {
-        var messageButton = e.target.closest('[data-msg-lender]');
+        var messageButton = e.target.closest('[data-msg-person]');
         if (messageButton) {
             e.stopPropagation();
-            var params = new URLSearchParams({ userId: messageButton.getAttribute('data-owner-id') || '', itemId: messageButton.getAttribute('data-item-id') || '' });
+            var params = new URLSearchParams({ userId: messageButton.getAttribute('data-party-id') || '', itemId: messageButton.getAttribute('data-item-id') || '' });
             window.location.href = root.getAttribute('data-messages-url') + '?' + params.toString();
             return;
         }

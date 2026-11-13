@@ -4,9 +4,26 @@
     var form = document.getElementById('rental-form');
     if (!form) return;
 
-    var slots = ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
+    function buildSlots() {
+        function minutes(value, fallback) {
+            var match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+            return match ? Number(match[1]) * 60 + Number(match[2]) : fallback;
+        }
+        var first = minutes(form.dataset.earliestTime, 9 * 60);
+        var last = minutes(form.dataset.latestTime, 16 * 60);
+        var result = [];
+        for (var minute = first; minute <= last; minute += 30) {
+            var hour24 = Math.floor(minute / 60), hour12 = hour24 % 12 || 12;
+            result.push((hour12 < 10 ? '0' : '') + hour12 + ':' + (minute % 60 < 10 ? '0' : '') + (minute % 60) + ' ' + (hour24 >= 12 ? 'PM' : 'AM'));
+        }
+        return result;
+    }
+    var slots = buildSlots();
     var dayNumbers = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-    var configuredDays = (form.dataset.availableDays || '').split(',').map(function (day) { return dayNumbers[day]; }).filter(function (day) { return day !== undefined; });
+    var configuredDays = (form.dataset.availableDays || '').split(',').map(function (day) {
+        var normalized = String(day || '').trim().substring(0, 3);
+        return dayNumbers[normalized.charAt(0).toUpperCase() + normalized.substring(1).toLowerCase()];
+    }).filter(function (day) { return day !== undefined; });
     var ownerDays = configuredDays.length ? configuredDays : [0, 1, 2, 3, 4, 5, 6];
     var selected = new Date(); selected.setHours(0, 0, 0, 0);
     var month = new Date(selected.getFullYear(), selected.getMonth(), 1);
@@ -119,6 +136,7 @@
             .then(function (response) { if (!response.ok) throw new Error('Availability could not be loaded.'); return response.json(); })
             .then(function (data) {
                 if (callId !== requestNumber) return;
+                if (Array.isArray(data.slots)) slots = data.slots;
                 unavailable = data.unavailableSlots || [];
                 isLoading = false;
                 if (!selectedTime || unavailable.indexOf(selectedTime) >= 0) selectedTime = slots.find(function (slot) { return unavailable.indexOf(slot) < 0; }) || '';

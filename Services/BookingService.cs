@@ -13,7 +13,6 @@ namespace UniShare.Services
     {
         private static readonly string[] NonBlockingStatuses = { "CANCELLED", "CANCELED", "DECLINED", "EXPIRED", "REJECTED" };
         private static readonly string[] AcceptedStatuses = { "ACCEPTED", "ACTIVE", "ONGOING", "OVERDUE" };
-        private static readonly string[] HandoverSlots = { "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM" };
 
         public static BsonDocument Submit(ObjectId renterId, string itemId, DateTime handoverDate, string handoverTime, int durationHours, string notes)
         {
@@ -88,7 +87,7 @@ namespace UniShare.Services
             var bookings = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId)).ToList();
             var item = MongoDatabase.Items.Find(x => x.Id == itemId).FirstOrDefault();
             var unavailable = new List<string>();
-            foreach (var slot in HandoverSlots)
+            foreach (var slot in GetHandoverSlots(item))
             {
                 DateTime time;
                 if (!DateTime.TryParseExact(slot, new[] { "hh:mm tt", "h:mm tt" }, System.Globalization.CultureInfo.InvariantCulture,
@@ -99,6 +98,19 @@ namespace UniShare.Services
                     bookings.Any(x => BlocksAvailability(x, DateTime.UtcNow) && Overlaps(x, start, end))) unavailable.Add(slot);
             }
             return unavailable;
+        }
+
+        public static List<string> GetHandoverSlots(ItemDocument item)
+        {
+            if (item == null) return new List<string>();
+            TimeSpan earliest, latest;
+            if (!TryParseScheduleTime(item.EarliestHandoverTime, out earliest)) earliest = new TimeSpan(9, 0, 0);
+            if (!TryParseScheduleTime(item.LatestReturnTime, out latest)) latest = new TimeSpan(16, 0, 0);
+            var slots = new List<string>();
+            if (latest < earliest) return slots;
+            for (var time = earliest; time <= latest; time = time.Add(TimeSpan.FromMinutes(30)))
+                slots.Add(DateTime.Today.Add(time).ToString("hh:mm tt", CultureInfo.InvariantCulture));
+            return slots;
         }
 
         public static List<BsonDocument> ForRenter(ObjectId id) { ExpirePending(); return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("borrowerId", id)).SortByDescending(x => x["createdAt"]).ToList(); }
@@ -195,15 +207,23 @@ namespace UniShare.Services
         private static bool IsWithinListingSchedule(ItemDocument item, DateTime start)
         {
             var availableDays = item.AvailableDays ?? new List<string>();
-            if (availableDays.Count > 0 && !availableDays.Any(x => String.Equals(x, start.ToString("dddd", CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))) return false;
-            DateTime earliest, latest;
-            if (!String.IsNullOrWhiteSpace(item.EarliestHandoverTime) &&
-                DateTime.TryParseExact(item.EarliestHandoverTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out earliest) &&
-                start.TimeOfDay < earliest.TimeOfDay) return false;
-            if (!String.IsNullOrWhiteSpace(item.LatestReturnTime) &&
-                DateTime.TryParseExact(item.LatestReturnTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out latest) &&
-                start.TimeOfDay > latest.TimeOfDay) return false;
+            var day = start.ToString("ddd", CultureInfo.InvariantCulture);
+            if (availableDays.Count > 0 && !availableDays.Any(x => String.Equals((x ?? "").Trim().Substring(0, Math.Min(3, (x ?? "").Trim().Length)), day, StringComparison.OrdinalIgnoreCase))) return false;
+            TimeSpan earliest, latest;
+            if (TryParseScheduleTime(item.EarliestHandoverTime, out earliest) && start.TimeOfDay < earliest) return false;
+            if (TryParseScheduleTime(item.LatestReturnTime, out latest) && start.TimeOfDay > latest) return false;
             return true;
+        }
+        private static bool TryParseScheduleTime(string value, out TimeSpan time)
+        {
+            if (TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out time)) return true;
+            DateTime parsed;
+            if (DateTime.TryParseExact(value, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed))
+            {
+                time = parsed.TimeOfDay;
+                return true;
+            }
+            return false;
         }
         private static bool IsExpired(BsonDocument d, DateTime now) { return Date(d, "expiresAt", Date(d, "createdAt", now).AddHours(24)) <= now; }
         private static DateTime Date(BsonDocument d, string key, DateTime fallback) { var v = d.GetValue(key, BsonNull.Value); return v.IsValidDateTime ? v.ToUniversalTime() : fallback; }

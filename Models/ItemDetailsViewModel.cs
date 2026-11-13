@@ -32,6 +32,8 @@ namespace UniShare.Models
         public string Accessories { get; set; }
         public string OwnerId { get; set; }
         public List<string> AvailableDays { get; set; } = new List<string>();
+        public string EarliestHandoverTime { get; set; }
+        public string LatestReturnTime { get; set; }
 
         public ItemDetailsViewModel()
         {

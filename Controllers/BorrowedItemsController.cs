@@ -15,12 +15,14 @@ namespace UniShare.Controllers
     public class BorrowedItemsController : Controller
     {
         [HttpGet]
-        public ActionResult Index(string status)
+        public ActionResult Index(string status, string side)
         {
             ObjectId borrowerId;
             if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return new HttpStatusCodeResult(401);
             ViewBag.Status = NormalizeTab(status);
-            return View(BorrowedItemsService.GetForBorrower(borrowerId));
+            var ownerSide = string.Equals(side, "lent", StringComparison.OrdinalIgnoreCase);
+            ViewBag.Side = ownerSide ? "lent" : "borrowed";
+            return View(ownerSide ? BorrowedItemsService.GetForOwner(borrowerId) : BorrowedItemsService.GetForBorrower(borrowerId));
         }
 
         [HttpGet]

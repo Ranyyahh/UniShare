@@ -187,6 +187,8 @@ namespace UniShare.Services
                 Rating = rating.Item1,
                 ReviewCount = rating.Item2,
                 AvailableDays = item.AvailableDays ?? new List<string>(),
+                EarliestHandoverTime = item.EarliestHandoverTime,
+                LatestReturnTime = item.LatestReturnTime,
                 Lender = new LenderViewModel
                 {
                     Name = ownerName,
