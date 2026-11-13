@@ -54,12 +54,10 @@ namespace UniShare.Services
             var borrowerAlreadyConfirmed = doc.GetValue("borrowerHandoverConfirmed", doc.GetValue("handoverConfirmed", false)).ToBoolean();
             if (borrowerAlreadyConfirmed) return false;
             var now = DateTime.UtcNow;
-            var ownerConfirmed = doc.GetValue("ownerHandoverConfirmed", false).ToBoolean();
             var update = Builders<BsonDocument>.Update.Set("borrowerHandoverConfirmed", true).Set("borrowerHandoverConfirmedAt", now).Set("updatedAt", now);
-            if (ownerConfirmed)
-                update = update.Set("status", "ONGOING").Set("handoverConfirmed", true).Set("handoverConfirmedAt", now).Set("handoverAt", now);
             UpdateRecord(doc, isBooking, borrowerId, update);
             UpdateLinkedRental(doc, borrowerId, update);
+            ActivateIfBothConfirmed(doc.GetValue("_id", BsonNull.Value), isBooking);
             return true;
         }
 
@@ -75,16 +73,40 @@ namespace UniShare.Services
             if (doc == null || doc.GetValue("ownerHandoverConfirmed", false).ToBoolean()) return false;
 
             var now = DateTime.UtcNow;
-            var borrowerConfirmed = doc.GetValue("borrowerHandoverConfirmed", doc.GetValue("handoverConfirmed", false)).ToBoolean();
             var update = Builders<BsonDocument>.Update.Set("ownerHandoverConfirmed", true).Set("ownerHandoverConfirmedAt", now).Set("updatedAt", now);
-            if (borrowerConfirmed)
-                update = update.Set("status", "ONGOING").Set("handoverConfirmed", true).Set("handoverConfirmedAt", now).Set("handoverAt", now);
             var collection = isBooking ? MongoDatabase.Bookings : MongoDatabase.Rentals;
             var ownerNotConfirmed = Builders<BsonDocument>.Filter.Eq("ownerHandoverConfirmed", false) | Builders<BsonDocument>.Filter.Exists("ownerHandoverConfirmed", false);
             var result = collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id) & ownerFilter & allowed & ownerNotConfirmed, update);
             if (result.ModifiedCount != 1) return false;
             UpdateLinkedRental(doc, ownerId, update);
+            ActivateIfBothConfirmed(doc.GetValue("_id", BsonNull.Value), isBooking);
             return true;
+        }
+
+        private static void ActivateIfBothConfirmed(BsonValue id, bool isBooking)
+        {
+            if (!id.IsObjectId) return;
+            var collection = isBooking ? MongoDatabase.Bookings : MongoDatabase.Rentals;
+            var doc = collection.Find(Builders<BsonDocument>.Filter.Eq("_id", id)).FirstOrDefault();
+            if (doc == null || !doc.GetValue("borrowerHandoverConfirmed", doc.GetValue("handoverConfirmed", false)).ToBoolean() ||
+                !doc.GetValue("ownerHandoverConfirmed", false).ToBoolean()) return;
+
+            var now = DateTime.UtcNow;
+            var eligible = Builders<BsonDocument>.Filter.Eq("_id", id) &
+                Builders<BsonDocument>.Filter.In("status", new[] { "ACCEPTED", "APPROVED", "PENDING", "ACTIVE" }) &
+                Builders<BsonDocument>.Filter.Eq("borrowerHandoverConfirmed", true) &
+                Builders<BsonDocument>.Filter.Eq("ownerHandoverConfirmed", true);
+            var update = Builders<BsonDocument>.Update.Set("status", "ONGOING").Set("handoverConfirmed", true)
+                .Set("handoverConfirmedAt", now).Set("handoverAt", now).Set("updatedAt", now);
+            if (collection.UpdateOne(eligible, update).ModifiedCount != 1) return;
+
+            var bookingId = doc.GetValue("bookingId", id);
+            if (bookingId.IsObjectId)
+            {
+                MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                    Builders<BsonDocument>.Filter.Eq("borrowerHandoverConfirmed", true) &
+                    Builders<BsonDocument>.Filter.Eq("ownerHandoverConfirmed", true), update);
+            }
         }
 
         public static bool RequestReturn(ObjectId borrowerId, string recordId)
@@ -107,8 +129,9 @@ namespace UniShare.Services
             if (doc == null) return false;
             var now = DateTime.UtcNow;
             var update = Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("returnedAt", now).Set("completedAt", now).Set("updatedAt", now);
-            if (isBooking) MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]), update);
-            else MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]), update);
+            var filter = Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]);
+            var result = isBooking ? MongoDatabase.Bookings.UpdateOne(filter, update) : MongoDatabase.Rentals.UpdateOne(filter, update);
+            if (result.ModifiedCount != 1) return false;
             UpdateLinkedRental(doc, ownerId, update);
             return true;
         }

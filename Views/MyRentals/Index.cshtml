@@ -6,13 +6,19 @@
 
 <link rel="stylesheet" href="~/Content/MyRentals.css" />
 
-<div class="my-rentals-page">
+<div class="my-rentals-page" data-history-url="@Url.Action("HistoryData", "MyRentals")" data-handover-url="@Url.Action("ConfirmHandover", "MyRentals")" data-return-url="@Url.Action("ConfirmReturn", "MyRentals")">
+    @Html.AntiForgeryToken()
     <!-- A. Page Header -->
     <header class="my-rentals-header">
         <div class="my-rentals-header__title-group">
             <h1 class="my-rentals-header__title">Rentals</h1>
             <p class="my-rentals-header__description">Manage rental requests, monitor active and overdue bookings, and keep track of returns and reported issues.</p>
         </div>
+        <div class="my-rentals-header__actions">
+        <button type="button" id="btnRentalHistory" class="my-rentals-btn-history" aria-haspopup="dialog" aria-controls="myRentalsHistoryModal">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2"/><circle cx="18" cy="17" r="4" fill="white"/><path d="M18 15v2l1.5 1"/></svg>
+            <span>History</span>
+        </button>
         <button type="button"
                 id="btnRefreshRentals"
                 class="my-rentals-btn-refresh"
@@ -21,7 +27,16 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
             <span>Refresh</span>
         </button>
+        </div>
     </header>
+
+    <div id="myRentalsHistoryModal" class="my-rentals-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="myRentalsHistoryTitle">
+        <section class="my-rentals-modal my-rentals-modal--history">
+            <header class="my-rentals-modal__header"><div><h2 class="my-rentals-modal__title" id="myRentalsHistoryTitle">Rental History</h2><p class="my-rentals-modal__description">Past rentals you requested and rentals received for your listings.</p></div><button type="button" class="my-rentals-modal__close-btn" id="btnCloseRentalHistory" aria-label="Close history">&times;</button></header>
+            <div class="my-rentals-modal__body"><div id="myRentalsHistoryContent" class="my-rentals-history-content" aria-live="polite">Loading history…</div></div>
+            <footer class="my-rentals-modal__footer"><button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnRentalHistoryDone">Close</button></footer>
+        </section>
+    </div>
 
     <!-- B. Summary Cards (display-only; filtering is done through the Filter modal) -->
     <section class="my-rentals-summary" aria-label="Rentals Summary">
@@ -774,7 +789,7 @@
             </div>
             <footer class="my-rentals-modal__footer">
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOngoingClose">Close</button>
-                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnOngoingConfirmReturn" data-flow-target="modalReturn">&#10003; Confirm Return</button>
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOngoingConfirmReturn" disabled title="The borrower must submit the return request first.">Awaiting Borrower Return</button>
             </footer>
         </div>
     </div>
@@ -909,7 +924,7 @@
             </div>
             <footer class="my-rentals-modal__footer">
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOverdueClose">Close</button>
-                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnOverdueProceedReturn">Proceed to Return</button>
+                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOverdueProceedReturn" disabled title="The borrower must submit the return request first.">Awaiting Borrower Return</button>
             </footer>
         </div>
     </div>
@@ -1216,6 +1231,7 @@
                         <span class="rm-fee-large" id="acceptedFeeBreakdown"></span>
                     </div>
                 </div>
+                <div class="rm-request-note"><span class="rm-section-label">BORROWER'S REQUEST NOTE</span><p id="acceptedRequestNote"></p></div>
                 <!-- Two-Party Handover Verification -->
                 <section class="rm-verify-section" aria-labelledby="acceptedVerifyHeading">
                     <div class="rm-verify-header">
@@ -1698,6 +1714,9 @@
                         <dt>Rental Fee</dt>
                         <dd><span class="details-primary details-fee" id="detailsFee"></span></dd>
                     </div>
+                    <div class="my-rentals-details-field my-rentals-details-field--full"><dt>Request note</dt><dd><span class="details-primary" id="detailsRequestNote"></span></dd></div>
+                    <div class="my-rentals-details-field my-rentals-details-field--full"><dt>Handover confirmation</dt><dd class="details-confirmations"><span id="detailsOwnerConfirmation"></span><span id="detailsBorrowerConfirmation"></span></dd></div>
+                    <div class="my-rentals-details-field my-rentals-details-field--full" id="detailsTimerField" hidden><dt>Rental timer</dt><dd><span class="details-primary" id="detailsTimer"></span></dd></div>
                 </dl>
             </div>
 

@@ -22,11 +22,15 @@ namespace UniShare.Controllers
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
             var model = new MyRentalsViewModel
             {
-                Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId)).ToList(),
+                Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId))
+                    .Concat(BookingService.ForOwner(userId)
+                    .Where(x => x.GetValue("borrowerId", BsonNull.Value).ToString() != userId.ToString())
+                    .Select(x => MapBooking(x, userId)))
+                    .OrderByDescending(x => x.RequestDate).ToList(),
                 IncomingRequests = BookingService.ForOwner(userId)
                     .Where(x => new[] { "PENDING", "REQUESTED" }.Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
                     .Where(x => x.GetValue("borrowerId", BsonNull.Value).ToString() != userId.ToString())
-                    .Select(MapBooking).ToList()
+                    .Select(x => MapBooking(x, userId)).ToList()
             };
 
             // Summary cards are counted from the records, so they always agree with the table
@@ -72,6 +76,44 @@ namespace UniShare.Controllers
             return View(history.Select(MapBooking).ToList());
         }
 
+        [HttpGet]
+        public ActionResult HistoryData()
+        {
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
+            var closed = new[] { "COMPLETED", "COMPLETE", "RETURNED", "DECLINED", "CANCELLED", "CANCELED", "EXPIRED", "REJECTED" };
+            var ownerRows = BookingService.ForOwner(userId)
+                .Where(x => closed.Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
+                .Select(x => MapBooking(x, userId))
+                .Select(x => new { x.RequestDate, row = new { x.RequestId, x.ItemName, Participant = x.BorrowerName, Role = "Owner", x.RequestDateFormatted, x.Status, x.RentalFeeFormatted } });
+            var renterRows = BookingService.ForRenter(userId)
+                .Where(x => closed.Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
+                .Select(x => MapBooking(x, userId))
+                .Select(x => new { x.RequestDate, row = new { x.RequestId, x.ItemName, Participant = x.OwnerName, Role = "Borrower", x.RequestDateFormatted, x.Status, x.RentalFeeFormatted } });
+            var rows = ownerRows.Concat(renterRows).OrderByDescending(x => x.RequestDate).Select(x => x.row).ToList();
+            return Json(rows, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ConfirmHandover(string id)
+        {
+            ObjectId ownerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return Json(new { ok = false, message = "Please sign in again." });
+            var saved = BorrowedItemsService.ConfirmHandoverByOwner(ownerId, id);
+            var booking = BookingService.GetForParticipant(id, ownerId);
+            var handoverValue = booking == null ? BsonNull.Value : booking.GetValue("handoverAt", BsonNull.Value);
+            return Json(new { ok = saved, message = saved ? "Your handover confirmation has been saved." : "This handover is no longer awaiting your confirmation.", ownerConfirmed = booking != null && booking.GetValue("ownerHandoverConfirmed", false).ToBoolean(), borrowerConfirmed = booking != null && booking.GetValue("borrowerHandoverConfirmed", booking.GetValue("handoverConfirmed", false)).ToBoolean(), status = booking == null ? "" : booking.GetValue("status", "").ToString(), handoverAt = handoverValue.IsValidDateTime ? handoverValue.ToUniversalTime().ToString("o") : "" });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ConfirmReturn(string id)
+        {
+            ObjectId ownerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return Json(new { ok = false, message = "Please sign in again." });
+            var saved = BorrowedItemsService.ConfirmReturnByOwner(ownerId, id);
+            return Json(new { ok = saved, message = saved ? "The return confirmation has been saved." : "This rental is not awaiting your return confirmation." });
+        }
+
         internal static RentalRecordDto MapBooking(BsonDocument booking)
         {
             return MapBooking(booking, ObjectId.Empty);
@@ -83,8 +125,10 @@ namespace UniShare.Controllers
             var item = itemValue.IsObjectId ? MongoDatabase.Items.Find(x => x.Id == itemValue.AsObjectId).FirstOrDefault() : null;
             var borrowerValue = booking.GetValue("borrowerId", BsonNull.Value);
             var borrower = borrowerValue.IsObjectId ? MongoDatabase.Users.Find(x => x.Id == borrowerValue.AsObjectId).FirstOrDefault() : null;
-            var startValue = booking.GetValue("handoverDate", booking.GetValue("startDate", BsonDateTime.Create(DateTime.UtcNow)));
-            var start = startValue.IsValidDateTime ? startValue.ToUniversalTime().ToLocalTime() : DateTime.Now;
+            var requestedStartValue = booking.GetValue("handoverDate", booking.GetValue("startDate", BsonDateTime.Create(DateTime.UtcNow)));
+            var requestedStart = requestedStartValue.IsValidDateTime ? requestedStartValue.ToUniversalTime().ToLocalTime() : DateTime.Now;
+            var actualStartValue = booking.GetValue("handoverAt", BsonNull.Value);
+            var start = actualStartValue.IsValidDateTime ? actualStartValue.ToUniversalTime().ToLocalTime() : requestedStart;
             var hoursValue = booking.GetValue("durationHours", 1);
             var hours = hoursValue.IsNumeric ? hoursValue.ToInt32() : 1;
             var status = booking.GetValue("status", "PENDING").ToString();
@@ -104,8 +148,9 @@ namespace UniShare.Controllers
                 RequestDate = booking.GetValue("createdAt", BsonDateTime.Create(DateTime.UtcNow)).ToUniversalTime().ToLocalTime(),
                 RequestDateFormatted = booking.GetValue("createdAt", BsonDateTime.Create(DateTime.UtcNow)).ToUniversalTime().ToLocalTime().ToString("MMM d, yyyy"),
                 HandoverDate = start, HandoverDateFormatted = start.ToString("MMM d, yyyy"),
-                HandoverTimeFormatted = booking.GetValue("handoverTime", start.ToString("hh:mm tt")).ToString(),
-                HandoverScheduleFormatted = start.ToString("MMM d, yyyy") + " · " + booking.GetValue("handoverTime", start.ToString("hh:mm tt")),
+                ExpectedReturnDate = start.AddHours(hours), ExpectedReturnFormatted = start.AddHours(hours).ToString("MMM d, yyyy h:mm tt"),
+                HandoverTimeFormatted = start.ToString("hh:mm tt"),
+                HandoverScheduleFormatted = requestedStart.ToString("MMM d, yyyy") + " · " + booking.GetValue("handoverTime", requestedStart.ToString("hh:mm tt")),
                 Duration = hours + " hour" + (hours == 1 ? "" : "s"), DurationHours = hours,
                 RentalFee = fee, RentalFeeFormatted = "₱" + fee.ToString("N2"), Status = ToDisplayStatus(status),
                 OwnerName = item == null ? "" : (MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault() is UserDocument owner ? (owner.FirstName + " " + owner.LastName).Trim() : ""),
@@ -114,6 +159,8 @@ namespace UniShare.Controllers
                     new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status.Trim().ToUpperInvariant()),
                 OwnerHandoverConfirmed = booking.GetValue("ownerHandoverConfirmed", false).ToBoolean() ||
                     new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status.Trim().ToUpperInvariant()),
+                BorrowerHandoverConfirmedAt = FormatDate(booking, "borrowerHandoverConfirmedAt"),
+                OwnerHandoverConfirmedAt = FormatDate(booking, "ownerHandoverConfirmedAt"),
                 DeclineReason = booking.GetValue("declineReason", "").ToString(), DeclineNote = booking.GetValue("declineNotes", "").ToString(),
                 DeclinedAtFormatted = FormatDate(booking, "declinedAt"), AcceptedAtFormatted = FormatDate(booking, "acceptedAt")
             };
@@ -128,7 +175,9 @@ namespace UniShare.Controllers
         private static string ToDisplayStatus(string status)
         {
             if (string.IsNullOrWhiteSpace(status)) return "Pending";
-            var normalized = status.ToLowerInvariant();
+            var raw = status.Trim().ToUpperInvariant();
+            if (raw == "RETURN_REQUESTED" || raw == "RETURN PENDING") return "Returned";
+            var normalized = raw.Replace('_', ' ').ToLowerInvariant();
             return char.ToUpperInvariant(normalized[0]) + normalized.Substring(1);
         }
 
