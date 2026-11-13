@@ -3,7 +3,7 @@
     ViewBag.Title = Model.Title;
 }
 <link rel="stylesheet" href="~/Content/RentalRecords.css" />
-<main class="rental-records">
+<main class="rental-records" data-condition-url="@Url.Action("RecordCondition", "BorrowedItems")">
     <div class="rental-records__inner">
         <header class="rental-records__header">
             <p class="rental-records__eyebrow">RENTAL MANAGEMENT</p>
@@ -48,7 +48,7 @@
                             <td>
                                 @if (Model.ActiveTab == "ongoing" && rental.BorrowerHandoverConfirmed && !rental.OwnerHandoverConfirmed)
                                 {
-                                    using (Html.BeginForm("ConfirmHandoverByOwner", "BorrowedItems", new { id = rental.BookingObjectId }, FormMethod.Post, new { @class = "rental-records__owner-confirm-form" }))
+                                    using (Html.BeginForm("ConfirmHandoverByOwner", "BorrowedItems", new { id = rental.BookingObjectId }, FormMethod.Post, new { @class = "rental-records__owner-confirm-form", data_booking_id = rental.BookingObjectId }))
                                     {
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="rental-records__owner-confirm">Confirm handover</button>
@@ -69,3 +69,225 @@
     }
     </div>
 </main>
+
+<dialog id="ownerHandoverWarning"
+        class="rental-records__handover-dialog"
+        aria-labelledby="ownerHandoverWarningTitle"
+        aria-describedby="ownerHandoverWarningText">
+    <div class="rental-records__handover-dialog-body">
+        <p class="rental-records__handover-eyebrow">HANDOVER CONDITION</p>
+        <h2 id="ownerHandoverWarningTitle">Before confirming the handover</h2>
+        <p id="ownerHandoverWarningText">
+            Before confirming the handover, please make sure to document the item's current condition.
+            Check for any existing damage, scratches, defects, or missing parts, and ensure that the renter is aware of its condition.
+        </p>
+
+        <div class="rental-records__condition-fields">
+            <label class="rental-records__condition-field" for="ownerHandoverCondition">
+                Handover condition
+                <select id="ownerHandoverCondition" required>
+                    <option value="GOOD">Good</option>
+                    <option value="EXCELLENT">Excellent</option>
+                    <option value="FAIR">Fair</option>
+                    <option value="POOR">Poor</option>
+                    <option value="DAMAGED">Damaged</option>
+                </select>
+            </label>
+
+            <label class="rental-records__condition-field" for="ownerHandoverNotes">
+                Notes
+                <textarea id="ownerHandoverNotes" maxlength="1000" rows="3" placeholder="Describe the item's condition or included accessories"></textarea>
+            </label>
+
+            <label class="rental-records__condition-field" for="ownerHandoverPhotos">
+                Condition photos
+                <input id="ownerHandoverPhotos" type="file" accept="image/jpeg,image/png" multiple />
+                <span class="rental-records__condition-help">JPG or PNG, up to 5 photos (5 MB each).</span>
+            </label>
+        </div>
+
+        <p id="ownerHandoverConditionError" class="rental-records__condition-error" role="alert" hidden></p>
+    </div>
+
+    <footer class="rental-records__handover-dialog-actions">
+        <button type="button" id="btnOwnerHandoverReview" class="rental-records__handover-review">
+            Go Back / Review Condition
+        </button>
+        <button type="button" id="btnOwnerHandoverContinue" class="rental-records__handover-continue">
+            Continue / Confirm Handover
+        </button>
+    </footer>
+</dialog>
+
+@section scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            var root = document.querySelector('.rental-records');
+            var warningDialog = document.getElementById('ownerHandoverWarning');
+            var condition = document.getElementById('ownerHandoverCondition');
+            var notes = document.getElementById('ownerHandoverNotes');
+            var photos = document.getElementById('ownerHandoverPhotos');
+            var errorBox = document.getElementById('ownerHandoverConditionError');
+            var reviewButton = document.getElementById('btnOwnerHandoverReview');
+            var continueButton = document.getElementById('btnOwnerHandoverContinue');
+            var pendingForm = null;
+            var isSaving = false;
+
+            if (!root || !warningDialog) {
+                return;
+            }
+
+            var warningText =
+                "Before confirming the handover, please make sure to document the item's current condition. " +
+                'Check for any existing damage, scratches, defects, or missing parts, and ensure that the renter is aware of its condition.';
+
+            function showError(message) {
+                isSaving = false;
+                continueButton.disabled = false;
+
+                if (warningDialog.open) {
+                    errorBox.textContent = message;
+                    errorBox.hidden = false;
+                    continueButton.focus();
+                } else {
+                    window.alert(message);
+                }
+            }
+
+            function submitAfterWarning(form) {
+                form.dataset.handoverWarningAccepted = 'true';
+
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    HTMLFormElement.prototype.submit.call(form);
+                }
+            }
+
+            function saveConditionThenSubmit(form) {
+                var files = photos.files;
+
+                if (!condition.value) {
+                    showError('Choose the handover condition before continuing.');
+                    return;
+                }
+                if (files.length > 5) {
+                    showError('Upload no more than five condition photos.');
+                    return;
+                }
+
+                var token = form.querySelector('input[name="__RequestVerificationToken"]');
+                var body = new FormData();
+                body.append('id', form.getAttribute('data-booking-id') || '');
+                body.append('phase', 'HANDOVER');
+                body.append('condition', condition.value);
+                body.append('notes', notes.value);
+                if (token) {
+                    body.append('__RequestVerificationToken', token.value);
+                }
+
+                Array.prototype.forEach.call(files, function (file) {
+                    body.append('photos', file, file.name);
+                });
+
+                fetch(root.getAttribute('data-condition-url'), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: body
+                })
+                    .then(function (response) {
+                        return response.json().then(function (result) {
+                            if (!response.ok || !result || !result.ok) {
+                                throw new Error(result && result.message
+                                    ? result.message
+                                    : 'Condition details could not be saved.');
+                            }
+                            return result;
+                        });
+                    })
+                    .then(function () {
+                        isSaving = false;
+                        pendingForm = null;
+                        if (warningDialog.open) {
+                            warningDialog.close();
+                        }
+                        submitAfterWarning(form);
+                    })
+                    .catch(function (error) {
+                        showError(error.message || 'Condition details could not be saved.');
+                    });
+            }
+
+            document.querySelectorAll('.rental-records__owner-confirm-form').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (form.dataset.handoverWarningAccepted === 'true') {
+                        form.dataset.handoverWarningAccepted = 'false';
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    if (typeof warningDialog.showModal !== 'function') {
+                        if (window.confirm(warningText)) {
+                            pendingForm = form;
+                            isSaving = true;
+                            saveConditionThenSubmit(form);
+                        }
+                        return;
+                    }
+
+                    pendingForm = form;
+                    errorBox.hidden = true;
+                    errorBox.textContent = '';
+                    warningDialog.showModal();
+                    condition.focus();
+                });
+            });
+
+            reviewButton.addEventListener('click', function () {
+                if (isSaving) {
+                    return;
+                }
+
+                var form = pendingForm;
+                pendingForm = null;
+                errorBox.hidden = true;
+                continueButton.disabled = false;
+                warningDialog.close();
+
+                if (form) {
+                    var trigger = form.querySelector('button[type="submit"]');
+                    if (trigger) {
+                        trigger.focus();
+                    }
+                }
+            });
+
+            continueButton.addEventListener('click', function () {
+                if (!pendingForm || isSaving) {
+                    return;
+                }
+
+                isSaving = true;
+                continueButton.disabled = true;
+                errorBox.hidden = true;
+                saveConditionThenSubmit(pendingForm);
+            });
+
+            warningDialog.addEventListener('cancel', function (event) {
+                if (isSaving) {
+                    event.preventDefault();
+                }
+            });
+
+            warningDialog.addEventListener('close', function () {
+                if (!isSaving) {
+                    pendingForm = null;
+                    continueButton.disabled = false;
+                }
+            });
+        })();
+    </script>
+}

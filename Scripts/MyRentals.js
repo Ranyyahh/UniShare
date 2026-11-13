@@ -1219,16 +1219,16 @@
         if (!rental || rental.Status !== 'Accepted' || rental.OwnerHandoverConfirmed) {
             return;
         }
-        elements.btnAcceptedConfirmHandover.disabled = true;
+        elements.btnStatusConfirmOk.disabled = true;
         postHandoverCondition(rental.BookingObjectId, function (conditionResult) {
             if (!conditionResult || !conditionResult.ok) {
-                elements.btnAcceptedConfirmHandover.disabled = false;
+                elements.btnStatusConfirmOk.disabled = false;
                 window.alert(conditionResult && conditionResult.message ? conditionResult.message : 'Handover condition could not be saved.');
                 return;
             }
             postRentalAction('data-handover-url', rental.BookingObjectId, function (result) {
                 if (!result || !result.ok) {
-                    elements.btnAcceptedConfirmHandover.disabled = false;
+                    elements.btnStatusConfirmOk.disabled = false;
                     window.alert(result && result.message ? result.message : 'Handover confirmation could not be saved.');
                     return;
                 }
@@ -1238,7 +1238,15 @@
                 rental.HandoverDate = result.handoverAt || rental.HandoverDate;
                 rental.OwnerHandoverConfirmedAt = formatDateTime(new Date());
                 renderHandoverVerification(rental);
-                if (result.ownerConfirmed && result.borrowerConfirmed) window.location.reload();
+                if (result.ownerConfirmed && result.borrowerConfirmed) {
+                    window.location.reload();
+                    return;
+                }
+
+                confirmKind = null;
+                flow.returnTo = null;
+                flow.returnFocus = null;
+                showFlowModal(elements.acceptedModal, elements.btnCloseAcceptedModal);
             });
         });
     }
@@ -1648,7 +1656,7 @@
         showFlowModal(elements.returnModal, elements.btnCloseReturnModal);
     }
 
-    // --- Shared confirmation step (Mark as Completed / Mark as Resolved) ---
+    // --- Shared confirmation step (handover / completed / resolved) ---
     var CONFIRM_STEPS = {
         completed: {
             title: 'Mark as Completed?',
@@ -1663,6 +1671,14 @@
             result: 'The dispute is closed and the rental moves to Completed.',
             ok: '\u2713 Mark as Resolved',
             from: ['Disputed']
+        },
+        handover: {
+            title: 'Confirm handover?',
+            text: "Before confirming the handover, please make sure to document the item's current condition. Check for any existing damage, scratches, defects, or missing parts, and ensure that the renter is aware of its condition.",
+            result: 'Continuing first saves the condition, notes, and selected photos from the handover form, then sends your confirmation.',
+            ok: '\u2713 Continue / Confirm Handover',
+            cancel: 'Go Back / Review Condition',
+            from: ['Accepted']
         }
     };
     var confirmKind = null;
@@ -1670,7 +1686,8 @@
     function openStatusConfirm(kind, returnToModal, returnFocusEl) {
         var rental = flow.rental;
         var step = CONFIRM_STEPS[kind];
-        if (!rental || !step || step.from.indexOf(rental.Status) === -1) {
+        if (!rental || !step || step.from.indexOf(rental.Status) === -1 ||
+            (kind === 'handover' && rental.OwnerHandoverConfirmed)) {
             return;
         }
 
@@ -1682,7 +1699,9 @@
         setText('statusConfirmItemName', rental.ItemName);
         setText('statusConfirmBorrower', 'Borrower: ' + rental.BorrowerName);
         setThumb('statusConfirmThumb', rental.ItemImageUrl, rental.ItemName);
+        elements.btnStatusConfirmCancel.textContent = step.cancel || 'Cancel';
         elements.btnStatusConfirmOk.textContent = step.ok;
+        elements.btnStatusConfirmOk.disabled = false;
 
         flow.returnTo = returnToModal || null;
         flow.returnFocus = returnFocusEl || null;
@@ -1693,7 +1712,8 @@
         var rental = flow.rental;
         var step = CONFIRM_STEPS[confirmKind];
         // Ignore a second click (or a stale dialog): the record must still be in the expected status
-        if (!rental || !step || step.from.indexOf(rental.Status) === -1) {
+        if (!rental || !step || step.from.indexOf(rental.Status) === -1 ||
+            (confirmKind === 'handover' && rental.OwnerHandoverConfirmed)) {
             return;
         }
 
@@ -1704,6 +1724,8 @@
             });
         } else if (confirmKind === 'resolved') {
             window.alert('Only an administrator can resolve a dispute. Use Dispute Management to review and close it.');
+        } else if (confirmKind === 'handover') {
+            confirmHandover();
         }
     }
 
@@ -2038,7 +2060,11 @@
         });
         elements.btnAcceptedConfirmHandover.addEventListener('click', function (e) {
             e.preventDefault();
-            confirmHandover();
+            openStatusConfirm(
+                'handover',
+                elements.acceptedModal,
+                document.getElementById('ownerHandoverCondition')
+            );
         });
 
         // Declined (view only)
