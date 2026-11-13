@@ -195,7 +195,11 @@ namespace UniShare.Services
         private static bool IsWithinListingSchedule(ItemDocument item, DateTime start)
         {
             var availableDays = item.AvailableDays ?? new List<string>();
-            if (availableDays.Count > 0 && !availableDays.Any(x => String.Equals(x, start.ToString("dddd", CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))) return false;
+            var dayAbbreviation = start.ToString("ddd", CultureInfo.InvariantCulture);
+            var dayName = start.ToString("dddd", CultureInfo.InvariantCulture);
+            if (availableDays.Count > 0 && !availableDays.Any(x =>
+                String.Equals((x ?? "").Trim(), dayAbbreviation, StringComparison.OrdinalIgnoreCase) ||
+                String.Equals((x ?? "").Trim(), dayName, StringComparison.OrdinalIgnoreCase))) return false;
             DateTime earliest, latest;
             if (!String.IsNullOrWhiteSpace(item.EarliestHandoverTime) &&
                 DateTime.TryParseExact(item.EarliestHandoverTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out earliest) &&
