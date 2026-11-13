@@ -59,6 +59,9 @@
       <HintPath>packages\AWSSDK.SecurityToken.3.7.100.27\lib\net45\AWSSDK.SecurityToken.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=2.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
       <Private>True</Private>
@@ -88,6 +91,26 @@
       <HintPath>packages\MongoDB.Libmongocrypt.1.12.0\lib\net472\MongoDB.Libmongocrypt.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="SharpCompress, Version=0.48.0.0, Culture=neutral, PublicKeyToken=afb0a02973931d96, processorArchitecture=MSIL">
+      <HintPath>packages\SharpCompress.0.48.0\lib\net48\SharpCompress.dll</HintPath>
+    </Reference>
+    <Reference Include="Snappier, Version=1.3.1.0, Culture=neutral, PublicKeyToken=a1b25124e6e13a3a, processorArchitecture=MSIL">
+      <HintPath>packages\Snappier.1.3.1\lib\net472\Snappier.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encoding.CodePages, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Text.Encoding.CodePages.8.0.0\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="ZstdSharp">
+      <HintPath>packages\ZstdSharp.Port.0.7.3\lib\net461\ZstdSharp.dll</HintPath>
     <Reference Include="SharpCompress">
       <HintPath>packages\SharpCompress.0.30.1\lib\net461\SharpCompress.dll</HintPath>
       <Private>True</Private>
@@ -132,7 +155,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+    <Reference Include="System.Numerics.Vectors, Version=4.1.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
       <Private>True</Private>
     </Reference>
@@ -194,6 +217,7 @@
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\VerificationController.cs" />
     <Compile Include="Controllers\AdminController.cs" />
+    <Compile Include="Controllers\AdminAccountabilityController.cs" />
     <Compile Include="Controllers\AdminDashboardController.cs" />
     <Compile Include="Controllers\AdminItemBookingController.cs" />
     <Compile Include="Controllers\AdminStudentVerificationController.cs" />
@@ -209,6 +233,7 @@
     <Compile Include="Controllers\MyRentalsController.cs" />
     <Compile Include="Controllers\RentalRequestsController.cs" />
     <Compile Include="Controllers\NotificationsController.cs" />
+    <Compile Include="Controllers\Dispute Management\DisputeManagement.cs" />
     <Compile Include="Controllers\ReportsAnalyticsController.cs" />
     <Compile Include="Controllers\AdminReportsAnalyticsController.cs" />
     <Compile Include="Services\MongoReportDataSource.cs" />
@@ -221,6 +246,7 @@
     <Compile Include="Models\BrowseItemsViewModel.cs" />
     <Compile Include="Models\AuthViewModels.cs" />
     <Compile Include="Models\AuthDocuments.cs" />
+    <Compile Include="Models\AdminAccountabilityViewModels.cs" />
     <Compile Include="Models\CreateListingViewModel.cs" />
     <Compile Include="Models\DashboardViewModels.cs" />
     <Compile Include="Models\EditListingViewModel.cs" />
@@ -229,6 +255,8 @@
     <Compile Include="Models\ListingsviewModels.cs" />
     <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
     <Compile Include="Services\MongoDatabase.cs" />
+    <Compile Include="Services\AdminAccountabilityService.cs" />
+    <Compile Include="Services\AccountRestrictionFilter.cs" />
     <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\MarketplaceService.cs" />
     <Compile Include="Services\BookingService.cs" />
@@ -255,6 +283,7 @@
     <Content Include="Content\borrowed-items.css" />
     <Content Include="Content\unishare-popups.css" />
     <Content Include="Content\admin-sidebar.css" />
+    <Content Include="Content\admin-accountability.css" />
     <Content Include="Content\img\placeholder.png" />
     <Content Include="Content\images\casio-fx991ex.jpg" />
     <Content Include="Content\images\engineering-mechanics-statics.jpg" />
@@ -296,6 +325,7 @@
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Account\Register.cshtml" />
     <Content Include="Views\Account\Settings.cshtml" />
+    <Content Include="Views\Account\Restricted.cshtml" />
     <Content Include="Views\Verification\Status.cshtml" />
     <Content Include="Views\Verification\Apply.cshtml" />
     <Content Include="Views\Admin\DisputeReports.cshtml" />
@@ -341,6 +371,11 @@
     <Content Include="Views\Shared\_AvailabilityModal.cshtml" />
     <Content Include="Views\Index.cshtml" />
     <Content Include="Views\AdminDashboard\Index.cshtml" />
+    <Content Include="Views\NoShowReports\Index.cshtml" />
+    <Content Include="Views\UserManagement\Index.cshtml" />
+    <Content Include="Views\AccountRestriction\Index.cshtml" />
+    <Content Include="Views\RatingsReviews\Index.cshtml" />
+    <Content Include="Views\AuditLogs\Index.cshtml" />
     <Content Include="Views\AdminItemBooking\Index.cshtml" />
     <Content Include="Views\AdminStudentVerification\Index.cshtml" />
     <Content Include="Views\BorrowedItems\Index.cshtml" />
@@ -389,7 +424,6 @@
   <Target Name="AfterBuild">
   </Target> -->
   <ItemGroup>
-    <Compile Include="Controllers\Dispute Management\DisputeManagement.cs" />
     <Compile Include="Controllers\Transaction &amp; Payment Records\TransactionPaymentRecords.cs" />
     <Compile Include="Models\DisputeViewModel.cs" />
     <Compile Include="Models\TransactionViewModel.cs" />

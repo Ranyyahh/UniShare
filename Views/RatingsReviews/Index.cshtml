@@ -1,0 +1,35 @@
+@model UniShare.Models.RatingsReviewsViewModel
+@{ ViewBag.Title = "Ratings & Reviews"; ViewBag.ShowAdminSidebar = true; }
+@section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
+<main class="aa-page">
+    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN MANAGEMENT</p><h1>Ratings &amp; reviews</h1><p>Ratings are submitted only for completed rentals. Review reports, hide policy-violating content, or restore a review after review.</p></div></header>
+    @if (TempData["Success"] != null) { <div class="aa-alert">@TempData["Success"]</div> }
+    @if (TempData["Error"] != null) { <div class="aa-alert aa-alert--error">@TempData["Error"]</div> }
+    @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">Ratings are unavailable. Check the database connection.</div> }
+    <section class="aa-panel">
+        <div class="aa-toolbar"><a class="aa-button @(Model.Filter == "reported" ? "" : "aa-button--quiet")" href="@Url.Action("Index", "RatingsReviews", new { filter = "all" })">All reviews</a><a class="aa-button @(Model.Filter == "reported" ? "aa-button--quiet" : "")" href="@Url.Action("Index", "RatingsReviews", new { filter = "reported" })">Reported reviews</a></div>
+        <div class="aa-table-wrap"><table class="aa-table"><thead><tr><th>Rental / item</th><th>Review by</th><th>Review about</th><th>Ratings</th><th>Review</th><th>Status / report</th><th>Admin action</th></tr></thead><tbody>
+        @if (Model.Reviews.Count == 0) { <tr><td colspan="7" class="aa-empty">No reviews are in this view.</td></tr> }
+        @foreach (var review in Model.Reviews)
+        {
+            <tr><td><span class="aa-cell-title">@review.ItemName</span><span class="aa-cell-sub">@review.CreatedAt.ToString("MMM d, yyyy") · @review.BookingId</span></td>
+                <td>@review.ReviewerName</td><td>@review.ReviewedUserName</td><td>Item: @(review.ItemRating.HasValue ? review.ItemRating.Value + "/5" : "—")<span class="aa-cell-sub">Owner: @(review.OwnerRating.HasValue ? review.OwnerRating.Value + "/5" : "—")</span></td>
+                <td class="aa-wrap">@(String.IsNullOrWhiteSpace(review.Review) ? "No written review" : review.Review)</td>
+                <td><span class="aa-status aa-status--@review.Status.ToLowerInvariant()">@review.Status</span>@if (!String.IsNullOrWhiteSpace(review.ReportReason)) { <span class="aa-cell-sub">Report: @review.ReportReason</span> }</td>
+                <td><div class="aa-actions">
+                    @if (review.Status == "REPORTED")
+                    {
+                        using (Html.BeginForm("Moderate", "RatingsReviews", FormMethod.Post)) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@review.Id" /><input type="hidden" name="decision" value="HIDE" /><button class="aa-button aa-button--danger" type="submit">Hide review</button> }
+                        using (Html.BeginForm("Moderate", "RatingsReviews", FormMethod.Post)) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@review.Id" /><input type="hidden" name="decision" value="DISMISS" /><button class="aa-button aa-button--quiet" type="submit">Dismiss report</button> }
+                    }
+                    else if (review.Status == "HIDDEN")
+                    {
+                        using (Html.BeginForm("Moderate", "RatingsReviews", FormMethod.Post)) { @Html.AntiForgeryToken()<input type="hidden" name="id" value="@review.Id" /><input type="hidden" name="decision" value="RESTORE" /><button class="aa-button aa-button--success" type="submit">Restore</button> }
+                    }
+                    else { <span class="aa-cell-sub">No action needed</span> }
+                </div></td>
+            </tr>
+        }
+        </tbody></table></div>
+    </section>
+</main>

@@ -57,6 +57,7 @@ namespace UniShare.Models
         public string About { get; set; }
         public string Status { get; set; }          // Pending (approved, awaiting handover) / Ongoing / Completed / Disputed
         public bool HandoverConfirmed { get; set; }
+        public bool CanReportNoShow { get; set; }
         public bool BorrowerHandoverConfirmed { get; set; }
         public bool OwnerHandoverConfirmed { get; set; }
         public bool CanConfirmHandover { get; set; }

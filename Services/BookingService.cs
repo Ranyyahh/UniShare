@@ -51,6 +51,8 @@ namespace UniShare.Services
                 { "createdAt", now }, { "expiresAt", now.AddHours(24) }, { "notes", (notes ?? "").Trim() }, { "itemName", item.Name }
             };
             MongoDatabase.Bookings.InsertOne(doc);
+            AdminAccountabilityService.LogActivity(renterId, "BOOKING_REQUESTED", "BOOKING", doc["_id"].AsObjectId,
+                new BsonDocument { { "requestId", doc["requestId"].AsString }, { "itemName", item.Name } });
             return doc;
             }
             finally { MongoDatabase.BookingLocks.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", item.Id) & Builders<BsonDocument>.Filter.Eq("token", lockToken)); }
@@ -125,7 +127,10 @@ namespace UniShare.Services
                 var update = accept
                     ? Builders<BsonDocument>.Update.Set("status", "ACCEPTED").Set("acceptedAt", DateTime.UtcNow)
                     : Builders<BsonDocument>.Update.Set("status", "DECLINED").Set("declinedAt", DateTime.UtcNow).Set("declineReason", (reason ?? "").Trim()).Set("declineNotes", (notes ?? "").Trim());
-                return MongoDatabase.Bookings.UpdateOne(ownerFilter, update).ModifiedCount == 1;
+                var changed = MongoDatabase.Bookings.UpdateOne(ownerFilter, update).ModifiedCount == 1;
+                if (changed) AdminAccountabilityService.LogActivity(ownerId, accept ? "BOOKING_ACCEPTED" : "BOOKING_DECLINED", "BOOKING", bookingId,
+                    new BsonDocument { { "reason", (reason ?? "").Trim() }, { "notes", (notes ?? "").Trim() } });
+                return changed;
             }
             finally { MongoDatabase.BookingLocks.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", itemId) & Builders<BsonDocument>.Filter.Eq("token", lockId)); }
         }
@@ -134,7 +139,9 @@ namespace UniShare.Services
         {
             var filter = Builders<BsonDocument>.Filter.Eq("_id", bookingId) & Builders<BsonDocument>.Filter.Eq("borrowerId", renterId) &
                 Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" });
-            return MongoDatabase.Bookings.UpdateOne(filter, Builders<BsonDocument>.Update.Set("status", "CANCELLED").Set("cancelledAt", DateTime.UtcNow)).ModifiedCount == 1;
+            var changed = MongoDatabase.Bookings.UpdateOne(filter, Builders<BsonDocument>.Update.Set("status", "CANCELLED").Set("cancelledAt", DateTime.UtcNow)).ModifiedCount == 1;
+            if (changed) AdminAccountabilityService.LogActivity(renterId, "BOOKING_CANCELLED", "BOOKING", bookingId, new BsonDocument());
+            return changed;
         }
 
         private static bool HasAcceptedConflict(ObjectId itemId, DateTime start, DateTime end, ObjectId? except = null)

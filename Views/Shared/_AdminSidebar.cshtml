@@ -20,7 +20,27 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4m0 3h.01"/></svg>
             <span>Dispute Management</span>
         </a>
-        <a class="admin-sidebar__link @(isVerification ? "is-active" : "")" href="@Url.Action("Index", "AdminStudentVerification")" @(isVerification ? "aria-current=page" : "")>
+        <a class="admin-sidebar__link @(activeController == "NoShowReports" ? "is-active" : "")" href="@Url.Action("Index", "NoShowReports")" @(activeController == "NoShowReports" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 9h.01M16 9h.01M8 16c1-1.2 2.3-1.8 4-1.8s3 .6 4 1.8"/></svg>
+            <span>No-Show Reports</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "UserManagement" ? "is-active" : "")" href="@Url.Action("Index", "UserManagement")" @(activeController == "UserManagement" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.4-3.5 2.6-5.3 6.5-5.3s6.1 1.8 6.5 5.3M17 8h5M19.5 5.5v5"/></svg>
+            <span>User Management</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "AccountRestriction" ? "is-active" : "")" href="@Url.Action("Index", "AccountRestriction")" @(activeController == "AccountRestriction" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg>
+            <span>Account Restrictions</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "RatingsReviews" ? "is-active" : "")" href="@Url.Action("Index", "RatingsReviews")" @(activeController == "RatingsReviews" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>
+            <span>Ratings &amp; Reviews</span>
+        </a>
+        <a class="admin-sidebar__link @(activeController == "AuditLogs" ? "is-active" : "")" href="@Url.Action("Index", "AuditLogs")" @(activeController == "AuditLogs" ? "aria-current=page" : "")>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg>
+            <span>Audit Logs</span>
+        </a>
+        <a class="admin-sidebar__link @(isVerification ? "is-active" : "")" href="@Url.Action("StudentVerification", "Admin")" @(isVerification ? "aria-current=page" : "")>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.4-3.4 2.6-5.2 6.5-5.2 2 0 3.5.5 4.6 1.4M16 19l2 2 4-5"/></svg>
             <span>Student Verification</span>
         </a>

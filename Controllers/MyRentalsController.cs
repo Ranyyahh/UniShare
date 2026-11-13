@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.IO;
+using System.Web;
 using System.Web.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -20,6 +22,7 @@ namespace UniShare.Controllers
             ViewBag.Title = "Rentals";
             ObjectId userId;
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
+            var model = new MyRentalsViewModel { Rentals = BookingService.ForOwner(userId).Select(MapBooking).ToList() };
             var model = new MyRentalsViewModel
             {
                 Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId))
@@ -67,12 +70,42 @@ namespace UniShare.Controllers
             return View(model);
         }
 
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ReportDispute(string id, string reason, string details, HttpPostedFileBase[] evidenceFiles)
+        {
+            ObjectId ownerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return Json(new { ok = false, message = "Please sign in again." });
+            if (String.IsNullOrWhiteSpace(reason) || reason.Length > 100 || (details ?? "").Length > 1000)
+                return Json(new { ok = false, message = "Select a reason and check the details." });
+            var files = (evidenceFiles ?? new HttpPostedFileBase[0]).Where(x => x != null && x.ContentLength > 0).ToList();
+            if (files.Count > 2) return Json(new { ok = false, message = "Upload no more than two evidence images." });
+            var savedUrls = new List<string>();
+            try
+            {
+                foreach (var file in files) savedUrls.Add(SaveDisputeEvidence(file));
+                var saved = BorrowedItemsService.SubmitDisputeByOwner(ownerId, id, reason, details, savedUrls);
+                if (!saved) { DeleteDisputeEvidence(savedUrls); return Json(new { ok = false, message = "This rental cannot be disputed in its current status." }); }
+                return Json(new { ok = true, message = "Dispute sent for admin review.", evidenceUrls = savedUrls });
+            }
+            catch (InvalidDataException ex)
+            {
+                DeleteDisputeEvidence(savedUrls);
+                return Json(new { ok = false, message = ex.Message });
+            }
+            catch (Exception ex) when (ex is MongoException || ex is IOException || ex is InvalidOperationException)
+            {
+                DeleteDisputeEvidence(savedUrls);
+                Response.StatusCode = 409;
+                return Json(new { ok = false, message = "The dispute could not be saved. Refresh and try again." });
+            }
+        }
+
         [HttpGet]
         public ActionResult History()
         {
             ObjectId userId;
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
-            var history = BookingService.ForRenter(userId).Where(x => new[] { "COMPLETED", "COMPLETE", "DECLINED", "CANCELLED", "CANCELED", "EXPIRED" }.Contains(x.GetValue("status", "").ToString().ToUpperInvariant())).ToList();
+            var history = BookingService.ForOwner(userId).Where(x => new[] { "COMPLETED", "COMPLETE", "DECLINED", "CANCELLED", "CANCELED", "EXPIRED" }.Contains(x.GetValue("status", "").ToString().ToUpperInvariant())).ToList();
             return View(history.Select(MapBooking).ToList());
         }
 
@@ -149,6 +182,8 @@ namespace UniShare.Controllers
                 RequestDateFormatted = booking.GetValue("createdAt", BsonDateTime.Create(DateTime.UtcNow)).ToUniversalTime().ToLocalTime().ToString("MMM d, yyyy"),
                 HandoverDate = start, HandoverDateFormatted = start.ToString("MMM d, yyyy"),
                 ExpectedReturnDate = start.AddHours(hours), ExpectedReturnFormatted = start.AddHours(hours).ToString("MMM d, yyyy h:mm tt"),
+                HandoverTimeFormatted = booking.GetValue("handoverTime", start.ToString("hh:mm tt")).ToString(),
+                HandoverScheduleFormatted = start.ToString("MMM d, yyyy") + " · " + booking.GetValue("handoverTime", start.ToString("hh:mm tt")),
                 HandoverTimeFormatted = start.ToString("hh:mm tt"),
                 HandoverScheduleFormatted = requestedStart.ToString("MMM d, yyyy") + " · " + booking.GetValue("handoverTime", requestedStart.ToString("hh:mm tt")),
                 Duration = hours + " hour" + (hours == 1 ? "" : "s"), DurationHours = hours,
@@ -162,8 +197,51 @@ namespace UniShare.Controllers
                 BorrowerHandoverConfirmedAt = FormatDate(booking, "borrowerHandoverConfirmedAt"),
                 OwnerHandoverConfirmedAt = FormatDate(booking, "ownerHandoverConfirmedAt"),
                 DeclineReason = booking.GetValue("declineReason", "").ToString(), DeclineNote = booking.GetValue("declineNotes", "").ToString(),
-                DeclinedAtFormatted = FormatDate(booking, "declinedAt"), AcceptedAtFormatted = FormatDate(booking, "acceptedAt")
+                DeclinedAtFormatted = FormatDate(booking, "declinedAt"), AcceptedAtFormatted = FormatDate(booking, "acceptedAt"),
+                ReturnedAtFormatted = FormatDate(booking, "returnedAt"), CompletedAtFormatted = FormatDate(booking, "completedAt"),
+                DisputeCategory = booking.GetValue("disputeCategory", "").ToString(), DisputeDescription = booking.GetValue("disputeDetails", "").ToString(),
+                DisputeSubmittedAtFormatted = FormatDate(booking, "disputedAt"), DisputeEvidenceUrls = ReadStringArray(booking, "disputeEvidenceUrls")
             };
+        }
+
+        private string SaveDisputeEvidence(HttpPostedFileBase file)
+        {
+            if (file.ContentLength > 5 * 1024 * 1024) throw new InvalidDataException("Each image must be 5 MB or smaller.");
+            var extension = Path.GetExtension(file.FileName ?? "").ToLowerInvariant();
+            if (!new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" }.Contains(extension) || !IsImageSignature(file, extension))
+                throw new InvalidDataException("Evidence must be a valid JPG, PNG, GIF, or WEBP image.");
+            var folder = Server.MapPath("~/Uploads/disputes");
+            Directory.CreateDirectory(folder);
+            var fileName = Guid.NewGuid().ToString("N") + extension;
+            file.SaveAs(Path.Combine(folder, fileName));
+            return "/Uploads/disputes/" + fileName;
+        }
+
+        private static bool IsImageSignature(HttpPostedFileBase file, string extension)
+        {
+            var bytes = new byte[12];
+            var read = file.InputStream.Read(bytes, 0, bytes.Length);
+            if (file.InputStream.CanSeek) file.InputStream.Position = 0;
+            if ((extension == ".jpg" || extension == ".jpeg") && read >= 3) return bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff;
+            if (extension == ".png" && read >= 8) return bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4e && bytes[3] == 0x47 && bytes[4] == 0x0d && bytes[5] == 0x0a && bytes[6] == 0x1a && bytes[7] == 0x0a;
+            if (extension == ".gif" && read >= 6) { var header = System.Text.Encoding.ASCII.GetString(bytes, 0, 6); return header == "GIF87a" || header == "GIF89a"; }
+            if (extension == ".webp" && read >= 12) return System.Text.Encoding.ASCII.GetString(bytes, 0, 4) == "RIFF" && System.Text.Encoding.ASCII.GetString(bytes, 8, 4) == "WEBP";
+            return false;
+        }
+
+        private void DeleteDisputeEvidence(IEnumerable<string> urls)
+        {
+            foreach (var url in urls ?? Enumerable.Empty<string>())
+            {
+                try { var path = Server.MapPath(url); if (System.IO.File.Exists(path)) System.IO.File.Delete(path); }
+                catch { }
+            }
+        }
+
+        private static List<string> ReadStringArray(BsonDocument doc, string key)
+        {
+            var value = doc.GetValue(key, BsonNull.Value);
+            return value.IsBsonArray ? value.AsBsonArray.Where(x => !x.IsBsonNull).Select(x => x.ToString()).ToList() : new List<string>();
         }
 
         private static string FormatDate(BsonDocument booking, string key)

@@ -14,6 +14,7 @@
         items = Model.Select(b => new
         {
             id = b.RecordId,
+            canReportNoShow = b.CanReportNoShow,
             ownerId = b.OwnerId,
             itemId = b.ItemId,
             name = b.ItemName,
@@ -66,6 +67,7 @@
      data-handover-url="@Url.Action("ConfirmHandover", "BorrowedItems")"
      data-return-url="@Url.Action("ReturnItem", "BorrowedItems")"
      data-dispute-url="@Url.Action("Dispute", "BorrowedItems")"
+     data-no-show-url="@Url.Action("Report", "NoShowReports")"
      data-rate-url="@Url.Action("Rate", "BorrowedItems")">
     @Html.AntiForgeryToken()
 
@@ -218,10 +220,25 @@
                     Details
                     <textarea name="details" rows="3" maxlength="400" placeholder="Describe the problem (optional)"></textarea>
                 </label>
+                <label class="bi-field">
+                    Supporting images <span class="text-muted">(up to 2 images, 5 MB each)</span>
+                    <input type="file" name="evidenceFiles" accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
+                </label>
                 <div class="bi-modal-actions">
                     <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
                     <button type="submit" class="us-btn us-btn--danger">Submit Dispute</button>
                 </div>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="bi-dialog bi-dialog--sm" id="bi-no-show" aria-labelledby="bi-no-show-title">
+        <form id="bi-no-show-form">
+            <header class="bi-dialog__head"><h2 id="bi-no-show-title">Report a no-show</h2><button type="button" class="bi-x" data-close aria-label="Close">&times;</button></header>
+            <div class="bi-dialog__pad">
+                <p>Report the owner if they did not arrive for the scheduled handover of <strong id="bi-no-show-item"></strong>. An administrator will review the report.</p>
+                <label class="bi-field">What happened?<textarea name="reason" rows="3" maxlength="500" required placeholder="Include the scheduled time and any steps taken to contact the owner."></textarea></label>
+                <div class="bi-modal-actions"><button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button><button type="submit" class="us-btn us-btn--danger">Submit report</button></div>
             </div>
         </form>
     </dialog>
