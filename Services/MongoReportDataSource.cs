@@ -37,12 +37,23 @@ namespace UniShare.Services
                                  Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId.ToString()) |
                                  Builders<BsonDocument>.Filter.Eq("renterId", borrowerId.ToString());
             var documents = MongoDatabase.Bookings.Find(borrowerFilter).ToList();
+            var bookingIds = documents.Select(b => b.GetValue("_id", BsonNull.Value)).Where(v => v.IsObjectId).Select(v => v.AsObjectId).ToList();
+            var payments = bookingIds.Count == 0 ? new List<BsonDocument>() : MongoDatabase.Payments.Find(
+                Builders<BsonDocument>.Filter.In("bookingId", bookingIds) &
+                Builders<BsonDocument>.Filter.In("status", new[] { "PAID", "DISPUTED" })).ToList();
+            var paymentsByBooking = payments.Where(p => p.GetValue("bookingId", BsonNull.Value).IsObjectId)
+                .GroupBy(p => p["bookingId"].AsObjectId.ToString(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => Date(p, "paidAt")).First(), StringComparer.OrdinalIgnoreCase);
             var itemIds = documents.Select(b => b.GetValue("itemId", BsonNull.Value))
                 .Where(v => v.IsObjectId).Select(v => v.AsObjectId).Distinct().ToList();
             var itemOwners = itemIds.Count == 0 ? new Dictionary<string, ObjectId>() :
                 MongoDatabase.Items.Find(Builders<UniShare.Models.ItemDocument>.Filter.In(x => x.Id, itemIds)).ToList()
                     .ToDictionary(x => x.Id.ToString(), x => x.OwnerId, StringComparer.OrdinalIgnoreCase);
-            return documents.Select(ToBorrowing)
+            return documents.Select(b =>
+                {
+                    BsonDocument payment;
+                    return ToBorrowing(b, paymentsByBooking.TryGetValue(b.GetValue("_id", BsonNull.Value).ToString(), out payment) ? payment : null);
+                })
                 .Where(x => itemOwners.ContainsKey(x.ItemId) && itemOwners[x.ItemId] != borrowerId)
                 .Where(x => InRange(x.RequestedAt, fromInclusive, toExclusive) ||
                             (x.PaidAt.HasValue && InRange(x.PaidAt.Value, fromInclusive, toExclusive)))
@@ -67,11 +78,11 @@ namespace UniShare.Services
             };
         }
 
-        private static BorrowingTransactionRecord ToBorrowing(BsonDocument booking)
+        private static BorrowingTransactionRecord ToBorrowing(BsonDocument booking, BsonDocument payment)
         {
             var borrowerId = booking.GetValue("borrowerId", booking.GetValue("renterId", BsonNull.Value));
-            var paidAt = Date(booking, "paidAt");
-            var paidAmount = Number(booking, "amountPaid", Number(booking, "paidAmount", double.NaN));
+            var paidAt = payment == null ? (DateTime?)null : Date(payment, "paidAt");
+            var paidAmount = payment == null ? double.NaN : Number(payment, "amount", double.NaN);
             return new BorrowingTransactionRecord
             {
                 TransactionId = Id(booking),

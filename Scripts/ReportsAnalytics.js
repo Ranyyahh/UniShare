@@ -763,7 +763,7 @@
         if (sum(data.borrowingExpenses.values) > 0) {
             lineChart(el.chartExpenses, data.borrowingExpenses, { height: 260, money: true, color: COLORS.expenses, gran: gran, years: years, name: 'Spent', detailKind: 'expense', lowerIsBetter: true, aria: 'Borrowing expenses' });
         } else {
-            emptyState(el.chartExpenses, failure ? none : 'No payments recorded', failure || 'Expenses appear here once a payment for a borrowed item is recorded.');
+            emptyState(el.chartExpenses, failure ? none : 'No confirmed Cash payments recorded', failure || 'Expenses appear after the item owner confirms receiving Cash.');
         }
         var unpaid = data.borrowingsWithoutPayment;
         el.expensesFootnote.textContent = unpaid > 0
@@ -788,12 +788,12 @@
         if (!rows.length) {
             var empty = htmlEl('tr', '', null, el.transactions);
             var cell = htmlEl('td', 'reports-table__empty', 'No transactions in this period.', empty);
-            cell.colSpan = 6;
+            cell.colSpan = 7;
             return;
         }
         rows.forEach(function (r) {
             var tr = htmlEl('tr', '', null, el.transactions);
-            [r.itemName, r.transactionType, r.date, formatMoney(r.amount), r.status, r.transactionId].forEach(function (v) { htmlEl('td', '', v || '—', tr); });
+            [r.itemName, r.transactionType, r.date, formatMoney(r.amount), r.paymentMethod || 'Cash', r.status, r.transactionId].forEach(function (v) { htmlEl('td', '', v || '—', tr); });
         });
     }
 

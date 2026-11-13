@@ -149,31 +149,6 @@ $(document).ready(function () {
         filterRecords();
     });
 
-    // 4. Copy GCash Reference Number to Clipboard
-    $(document).on("click", "#btnCopyGcashRef", function (e) {
-        e.preventDefault();
-        var refText = $("#modalGcashRefText").text().trim();
-        var $btn = $(this);
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(refText).then(function () {
-                $btn.html('<i class="glyphicon glyphicon-ok"></i> Copied!');
-                setTimeout(function () {
-                    $btn.html('<i class="glyphicon glyphicon-copy"></i> Copy');
-                }, 1800);
-            });
-        } else {
-            var $temp = $("<input>");
-            $("body").append($temp);
-            $temp.val(refText).select();
-            document.execCommand("copy");
-            $temp.remove();
-            $btn.html('<i class="glyphicon glyphicon-ok"></i> Copied!');
-            setTimeout(function () {
-                $btn.html('<i class="glyphicon glyphicon-copy"></i> Copy');
-            }, 1800);
-        }
-    });
 
     // 5. Modal Action Button Interactions
     $(document).on("click", "#btnMarkAudited", function (e) {

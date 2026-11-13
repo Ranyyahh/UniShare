@@ -65,9 +65,8 @@ namespace UniShare.Controllers
             ObjectId bookingObjectId;
             var lateFee = ObjectId.TryParse(id, out bookingObjectId)
                 ? MongoDatabase.LateFees.Find(Builders<BsonDocument>.Filter.Eq("bookingId", bookingObjectId)).FirstOrDefault() : null;
-            model.PaymentMethod = payment == null ? "" : payment.GetValue("paymentMethod", "").ToString();
+            model.PaymentMethod = "Cash";
             model.PaymentStatus = payment == null ? "UNPAID" : payment.GetValue("status", "UNPAID").ToString();
-            model.PaymentReference = payment == null ? "" : payment.GetValue("transactionReference", "").ToString();
             var amountValue = payment == null ? BsonNull.Value : payment.GetValue("amount", BsonNull.Value);
             model.PaymentAmount = amountValue.IsNumeric ? amountValue.ToDecimal() : model.RentalFee;
             model.EstimatedLateFee = lateFee != null && lateFee.GetValue("amount", BsonNull.Value).IsNumeric ? lateFee["amount"].ToDecimal() : 0m;
@@ -85,11 +84,11 @@ namespace UniShare.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
-        public ActionResult ChoosePayment(string bookingId, string method, string transactionReference)
+        public ActionResult ChoosePayment(string bookingId)
         {
             ObjectId borrowerId;
             if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return new HttpStatusCodeResult(401);
-            var saved = PaymentFeeService.SelectMethod(bookingId, borrowerId, method, transactionReference);
+            var saved = PaymentFeeService.SelectMethod(bookingId, borrowerId);
             TempData[saved ? "Success" : "Error"] = saved ? "Payment method saved. Ask the owner to confirm receipt after payment." : "Payment method could not be saved.";
             return RedirectToAction("Details", new { id = bookingId });
         }

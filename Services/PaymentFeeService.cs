@@ -25,13 +25,11 @@ namespace UniShare.Services
             return booking == null ? null : MongoDatabase.Payments.Find(Builders<BsonDocument>.Filter.Eq("bookingId", id)).FirstOrDefault();
         }
 
-        public static bool SelectMethod(string bookingId, ObjectId borrowerId, string method, string transactionReference)
+        public static bool SelectMethod(string bookingId, ObjectId borrowerId)
         {
             EnsureIndexes();
             ObjectId id;
-            method = (method ?? "").Trim().ToUpperInvariant();
-            if (!ObjectId.TryParse(bookingId, out id) || (method != "CASH" && method != "GCASH")) return false;
-            if (transactionReference != null && transactionReference.Trim().Length > 120) return false;
+            if (!ObjectId.TryParse(bookingId, out id)) return false;
             var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) &
                 Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId)).FirstOrDefault();
             if (booking == null || ClosedBookingStatuses.Contains(Status(booking))) return false;
@@ -42,13 +40,13 @@ namespace UniShare.Services
             if (existing != null && Status(existing) != "UNPAID" && Status(existing) != "PENDING") return false;
             var update = Builders<BsonDocument>.Update.Set("bookingId", id).Set("payerId", borrowerId)
                 .Set("ownerId", booking.GetValue("ownerId", BsonNull.Value)).Set("amount", amount)
-                .Set("paymentMethod", method).Set("transactionReference", (transactionReference ?? "").Trim())
+                .Set("paymentMethod", "CASH").Unset("transactionReference")
                 .Set("status", "UNPAID").Set("updatedAt", now).SetOnInsert("createdAt", now);
             MongoDatabase.Payments.UpdateOne(filter, update, new UpdateOptions { IsUpsert = true });
             MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id),
-                Builders<BsonDocument>.Update.Set("paymentMethod", method).Set("updatedAt", now));
+                Builders<BsonDocument>.Update.Set("paymentMethod", "CASH").Set("updatedAt", now));
             AdminAccountabilityService.LogActivity(borrowerId, "PAYMENT_METHOD_SELECTED", "PAYMENT", id,
-                new BsonDocument { { "method", method }, { "referenceProvided", !String.IsNullOrWhiteSpace(transactionReference) } });
+                new BsonDocument { { "method", "CASH" } });
             return true;
         }
 

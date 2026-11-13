@@ -158,7 +158,7 @@
                 <header class="reports-panel__header">
                     <div>
                         <h3 class="reports-panel__title">Borrowing Expenses</h3>
-                        <p class="reports-panel__subtitle">Recorded payments only</p>
+                        <p class="reports-panel__subtitle">Owner-confirmed Cash payments only</p>
                     </div>
                     <div class="reports-panel__stats" id="statsExpenses"></div>
                 </header>
@@ -187,12 +187,12 @@
         <article class="reports-panel reports-history-panel">
             <div class="reports-table-wrap">
                 <table class="reports-table">
-                    <thead><tr><th>Item</th><th>Role</th><th>Date</th><th>Amount</th><th>Status</th><th>Transaction</th></tr></thead>
-                    <tbody id="reportsTransactions"><tr><td colspan="6" class="reports-table__empty">Loading your transactions…</td></tr></tbody>
+                    <thead><tr><th>Item</th><th>Role</th><th>Date</th><th>Amount</th><th>Mode of Payment</th><th>Status</th><th>Transaction</th></tr></thead>
+                    <tbody id="reportsTransactions"><tr><td colspan="7" class="reports-table__empty">Loading your transactions…</td></tr></tbody>
                 </table>
             </div>
         </article>
-        <p class="reports-data-note">The application records rental requests and estimated rental fees. It does not currently store sale transactions or confirmed payment records, so no sales or paid-expense figures are included.</p>
+        <p class="reports-data-note">Payments are Cash only. Borrowing expenses include rental payments confirmed by the item owner; refunded payments are excluded. UniShare does not record sales transactions.</p>
     </section>
 
     <div class="reports-tooltip" id="reportsTooltip" role="tooltip" hidden></div>

@@ -22,7 +22,6 @@ namespace UniShare.Models
         public string BaseFee { get; set; }
         public string LateFee { get; set; }
         public string TotalAmount { get; set; }
-        public string GCashRef { get; set; }
         public string Method { get; set; }
         public string Status { get; set; }
     }

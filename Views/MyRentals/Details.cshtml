@@ -21,17 +21,14 @@
     <h2 style="margin-top:0">Payment</h2>
     <p>Rental fee: <strong>₱@Model.PaymentAmount.ToString("N2")</strong></p>
     <p>Status: <strong>@Model.PaymentStatus</strong></p>
-    @if (!string.IsNullOrWhiteSpace(Model.PaymentMethod)) { <p>Method: @Model.PaymentMethod</p> }
-    @if (!string.IsNullOrWhiteSpace(Model.PaymentReference)) { <p>GCash reference: @Model.PaymentReference</p> }
+    <p>Mode of payment: <strong>Cash</strong></p>
     @if (Model.CanChoosePayment)
     {
         using (Html.BeginForm("ChoosePayment", "MyRentals", FormMethod.Post))
         {
             @Html.AntiForgeryToken()
             <input type="hidden" name="bookingId" value="@Model.BookingObjectId" />
-            <div class="form-group"><label for="paymentMethod">Payment method</label><select class="form-control" id="paymentMethod" name="method" required><option value="">Choose method</option><option value="CASH">Cash</option><option value="GCASH">GCash</option></select></div>
-            <div class="form-group"><label for="transactionReference">GCash reference (optional)</label><input class="form-control" id="transactionReference" name="transactionReference" maxlength="120" /></div>
-            <button class="btn btn-primary" type="submit">Save payment method</button>
+            <button class="btn btn-primary" type="submit">Confirm Cash payment</button>
         }
     }
     @if (Model.CanConfirmPayment)

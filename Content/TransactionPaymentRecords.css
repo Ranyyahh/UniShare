@@ -65,16 +65,10 @@
     line-height: 1.2;
 }
 
-.badge-method-gcash {
+.badge-method-cash {
     background: #eff6ff;
     color: #1d4ed8;
     border: 1px solid #bfdbfe;
-}
-
-.badge-method-maya {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
 }
 
 /* Dense Table Elements */
@@ -278,7 +272,7 @@
     font-size: 14px;
 }
 
-.gcash-box {
+.payment-method-box {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -289,22 +283,6 @@
     font-size: 12px;
     font-weight: 600;
     margin-top: 10px;
-}
-
-.btn-copy-ref {
-    font-size: 11px;
-    font-weight: 600;
-    color: #1d4ed8;
-    background: #ffffff;
-    border: 1px solid #bfdbfe;
-    border-radius: 4px;
-    padding: 2px 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.btn-copy-ref:hover {
-    background: #dbeafe;
 }
 
 /* Audit Handshake Timeline */

@@ -65,7 +65,6 @@ namespace UniShare.Models
         public string CompletedAtFormatted { get; set; }
         public string PaymentMethod { get; set; }
         public string PaymentStatus { get; set; }
-        public string PaymentReference { get; set; }
         public decimal PaymentAmount { get; set; }
         public decimal EstimatedLateFee { get; set; }
         public decimal? FinalLateFee { get; set; }

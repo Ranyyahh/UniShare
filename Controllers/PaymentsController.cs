@@ -21,9 +21,8 @@ namespace UniShare.Controllers
                 id = x.GetValue("_id", BsonNull.Value).ToString(),
                 bookingId = x.GetValue("bookingId", BsonNull.Value).ToString(),
                 amount = x.GetValue("amount", BsonNull.Value).IsNumeric ? x["amount"].ToDouble() : 0d,
-                method = x.GetValue("paymentMethod", "").ToString(),
+                method = "CASH",
                 status = x.GetValue("voidedAt", BsonNull.Value).IsValidDateTime ? "CANCELLED" : x.GetValue("status", "UNPAID").ToString(),
-                reference = x.GetValue("transactionReference", "").ToString(),
                 paidAt = x.GetValue("paidAt", BsonNull.Value).ToString()
             }), JsonRequestBehavior.AllowGet);
         }
@@ -40,8 +39,7 @@ namespace UniShare.Controllers
             var lateFee = MongoDatabase.LateFees.Find(Builders<BsonDocument>.Filter.Eq("bookingId", id)).FirstOrDefault();
             return Json(new {
                 bookingId = id.ToString(), status = payment.GetValue("status", "UNPAID").ToString(),
-                method = payment.GetValue("paymentMethod", "").ToString(), amount = payment.GetValue("amount", 0).ToDouble(),
-                transactionReference = payment.GetValue("transactionReference", "").ToString(),
+                method = "CASH", amount = payment.GetValue("amount", 0).ToDouble(),
                 paidAt = payment.GetValue("paidAt", BsonNull.Value).ToString(),
                 lateFee = lateFee == null ? (object)null : new {
                     estimatedAmount = lateFee.GetValue("amount", 0).ToDouble(),
@@ -52,13 +50,13 @@ namespace UniShare.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
-        public ActionResult SelectMethod(string bookingId, string method, string transactionReference)
+        public ActionResult SelectMethod(string bookingId)
         {
             ObjectId borrowerId;
             if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return new HttpStatusCodeResult(401);
             try
             {
-                var saved = PaymentFeeService.SelectMethod(bookingId, borrowerId, method, transactionReference);
+                var saved = PaymentFeeService.SelectMethod(bookingId, borrowerId);
                 return Json(new { ok = saved, message = saved ? "Payment method saved. Payment remains unpaid until the owner confirms receipt." : "Payment method could not be saved for this booking." });
             }
             catch (MongoException) { Response.StatusCode = 503; return Json(new { ok = false, message = "Payment details are temporarily unavailable." }); }

@@ -452,7 +452,7 @@ namespace UniShare.Services
                 RecordId = idValue.ToString(), OwnerId = !ratingOwnerId.Equals(ObjectId.Empty) ? ratingOwnerId.ToString() : "", ItemId = itemIdValue.IsObjectId ? itemIdValue.AsObjectId.ToString() : itemIdValue.ToString(), ItemName = itemName, Category = item == null ? doc.GetValue("category", "Other Items").ToString() : item.Category,
                 Lender = ownerName, LenderInitials = Initials(ownerName), LenderProgram = owner == null ? doc.GetValue("ownerProgram", "").ToString() : ((owner.Program ?? "") + (string.IsNullOrWhiteSpace(owner.YearLevel) ? "" : " " + owner.YearLevel)),
                 PricePerHour = (decimal)price, PaidAmount = (decimal)fee, Start = start.ToLocalTime(), End = end.ToLocalTime(), PickupPoint = doc.GetValue("handoverLocation", location).ToString(),
-                PaymentMethod = doc.GetValue("paymentMethod", "—").ToString(), TransactionId = tx, About = item == null ? doc.GetValue("description", "").ToString() : item.Description,
+                PaymentMethod = "Cash", TransactionId = tx, About = item == null ? doc.GetValue("description", "").ToString() : item.Description,
                 Status = displayStatus, HandoverConfirmed = handoverConfirmed,
                 BorrowerHandoverConfirmed = borrowerHandoverConfirmed, OwnerHandoverConfirmed = ownerHandoverConfirmed,
                 CanConfirmHandover = (AwaitingHandover.Contains(status) || legacyAcceptedPending) && !borrowerHandoverConfirmed && !handoverConfirmed,

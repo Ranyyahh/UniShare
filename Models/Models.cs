@@ -231,8 +231,8 @@ namespace UniShare.Models
 
         public static List<SaleRecord> Sales = new List<SaleRecord>
         {
-            new SaleRecord { Id = 1, ItemName = "Data Structures Book", Renter = "Ana Cruz", Date = DateTime.Today.AddDays(-1), Amount = 60, PaymentMethod = "GCash", Status = "Paid" },
-            new SaleRecord { Id = 2, ItemName = "Arduino Starter Kit", Renter = "Kevin Lim", Date = DateTime.Today.AddDays(-6), Amount = 220, PaymentMethod = "GCash", Status = "Paid" },
+            new SaleRecord { Id = 1, ItemName = "Data Structures Book", Renter = "Ana Cruz", Date = DateTime.Today.AddDays(-1), Amount = 60, PaymentMethod = "Cash", Status = "Paid" },
+            new SaleRecord { Id = 2, ItemName = "Arduino Starter Kit", Renter = "Kevin Lim", Date = DateTime.Today.AddDays(-6), Amount = 220, PaymentMethod = "Cash", Status = "Paid" },
             new SaleRecord { Id = 3, ItemName = "USB-C Hub", Renter = "Leah Mendoza", Date = DateTime.Today.AddDays(-9), Amount = 40, PaymentMethod = "Cash", Status = "Pending" }
         };
 

@@ -72,8 +72,7 @@ namespace UniShare.Controllers
                 OwnerCourse = owner == null ? "" : String.Join(" ", new[] { owner.Program, owner.YearLevel }.Where(x => !String.IsNullOrWhiteSpace(x))),
                 OwnerRating = "—",
                 BaseFee = Money(amount), LateFee = Money(lateAmount), TotalAmount = Money(amount + lateAmount),
-                GCashRef = payment.GetValue("transactionReference", "").ToString(),
-                Method = DisplayMethod(payment.GetValue("paymentMethod", "").ToString()),
+                Method = "Cash",
                 Status = bookingClosed ? "Cancelled" : status == "PAID" ? "Confirmed" : status == "DISPUTED" ? "Disputed" : status == "REFUNDED" ? "Refunded" : "Awaiting Owner Confirmation",
                 RefundAvailable = status == "PAID" || status == "DISPUTED"
             };
@@ -98,11 +97,5 @@ namespace UniShare.Controllers
             return value.IsValidDateTime ? (DateTime?)value.ToUniversalTime() : null;
         }
         private static string Money(double amount) { return "PHP " + amount.ToString("N2", CultureInfo.InvariantCulture); }
-        private static string DisplayMethod(string method)
-        {
-            if (String.Equals(method, "GCASH", StringComparison.OrdinalIgnoreCase)) return "GCash";
-            if (String.Equals(method, "CASH", StringComparison.OrdinalIgnoreCase)) return "Cash";
-            return String.IsNullOrWhiteSpace(method) ? "—" : method;
-        }
     }
 }

@@ -58,9 +58,11 @@ namespace UniShare.Services
             // booking state stay linked from the start of the transaction.
             MongoDatabase.Payments.InsertOne(new BsonDocument {
                 { "_id", ObjectId.GenerateNewId() }, { "bookingId", doc["_id"] }, { "payerId", renterId },
-                { "ownerId", item.OwnerId }, { "amount", doc["estimatedFee"] }, { "paymentMethod", "" },
-                { "transactionReference", "" }, { "status", "UNPAID" }, { "createdAt", now }, { "updatedAt", now }
+                { "ownerId", item.OwnerId }, { "amount", doc["estimatedFee"] }, { "paymentMethod", "CASH" },
+                { "status", "UNPAID" }, { "createdAt", now }, { "updatedAt", now }
             });
+            MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]),
+                Builders<BsonDocument>.Update.Set("paymentMethod", "CASH"));
             return doc;
             }
             finally { MongoDatabase.BookingLocks.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", item.Id) & Builders<BsonDocument>.Filter.Eq("token", lockToken)); }

@@ -13,12 +13,8 @@ namespace UniShare.Controllers
 {
     // ------------------------------------------------------------------------------------
     // Data access seam.
-    // The project currently has NO transaction store (no DbContext, no connection string,
-    // no rental/borrowing/payment tables; MyRentals and Dashboard run on hard-coded sample
-    // data). To keep this report free of invented numbers, all reads go through this
-    // interface. Implement it against the real store and pass it to the second controller
-    // constructor (or return it from the parameterless one). Implementations MUST filter
-    // by the user key in the query itself and return only the rows described below.
+    // Reports read real booking and payment records through this interface. Implementations
+    // must filter by the user key in the query itself and return only the described rows.
     // ------------------------------------------------------------------------------------
     public interface IReportDataSource
     {
@@ -553,7 +549,7 @@ namespace UniShare.Controllers
             report.Transactions.AddRange(rentalsInRange.Select(r => new ReportHistoryRow
             {
                 TransactionId = r.TransactionId, ItemName = r.ItemName, TransactionType = "Rental received",
-                Date = r.RequestedAt.ToString(DateFormat, CultureInfo.InvariantCulture), Amount = r.Amount, Status = r.Status
+                Date = r.RequestedAt.ToString(DateFormat, CultureInfo.InvariantCulture), Amount = r.Amount, Status = r.Status, PaymentMethod = "Cash"
             }));
 
             // ---- Borrowing: the user is the BORROWER. Kept entirely separate from renting. ----
@@ -580,7 +576,7 @@ namespace UniShare.Controllers
             report.Transactions.AddRange(borrowingsInRange.Select(b => new ReportHistoryRow
             {
                 TransactionId = b.TransactionId, ItemName = b.ItemName, TransactionType = "Rental requested",
-                Date = b.RequestedAt.ToString(DateFormat, CultureInfo.InvariantCulture), Amount = b.EstimatedAmount, Status = b.Status
+                Date = b.RequestedAt.ToString(DateFormat, CultureInfo.InvariantCulture), Amount = b.AmountPaid ?? b.EstimatedAmount, Status = b.Status, PaymentMethod = "Cash"
             }));
             report.Transactions = report.Transactions.OrderByDescending(t => t.Date, StringComparer.Ordinal).ThenBy(t => t.TransactionId, StringComparer.Ordinal).ToList();
 
@@ -665,9 +661,9 @@ namespace UniShare.Controllers
             for (int i = 0; i < r.BorrowingExpenses.Labels.Count; i++)
                 row(new object[] { "", r.BorrowingExpenses.Labels[i], Money(r.BorrowingExpenses.Values[i]) });
             row(new object[] { });
-            row(new object[] { "TRANSACTION HISTORY", "Item", "Role", "Date", "Estimated Amount (PHP)", "Status", "Transaction" });
+            row(new object[] { "TRANSACTION HISTORY", "Item", "Role", "Date", "Amount (PHP)", "Mode of Payment", "Status", "Transaction" });
             foreach (var transaction in r.Transactions)
-                row(new object[] { "", transaction.ItemName, transaction.TransactionType, transaction.Date, Money(transaction.Amount), transaction.Status, transaction.TransactionId });
+                row(new object[] { "", transaction.ItemName, transaction.TransactionType, transaction.Date, Money(transaction.Amount), transaction.PaymentMethod, transaction.Status, transaction.TransactionId });
 
             return sb.ToString();
         }

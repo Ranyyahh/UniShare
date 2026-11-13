@@ -386,10 +386,9 @@ db.payments.insertOne({
 
     amount: 100,
 
-    paymentMethod: "GCASH",
+    paymentMethod: "CASH",
 
     ownerId: ownerId,
-    transactionReference: "GCASH-SEED-001",
 
     status: "UNPAID",
 
@@ -724,11 +723,6 @@ db.payments.createIndex({
     payerId: 1
 });
 
-db.payments.createIndex({
-    transactionReference: 1
-});
-
-
 // HANDOVERS
 db.handovers.createIndex(
     { bookingId: 1 },
@@ -740,6 +734,14 @@ db.handovers.createIndex(
 db.rentals.createIndex({
     bookingId: 1
 });
+
+// CASH-ONLY PAYMENT MIGRATION
+// Normalize records created before Cash became the sole supported method.
+db.payments.updateMany({}, {
+    $set: { paymentMethod: "CASH" },
+    $unset: { transactionReference: "" }
+});
+db.bookings.updateMany({}, { $set: { paymentMethod: "CASH" } });
 
 db.rentals.createIndex({
     borrowerId: 1
