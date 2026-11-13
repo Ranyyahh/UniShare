@@ -198,8 +198,13 @@ namespace UniShare.Services
             var dayAbbreviation = start.ToString("ddd", CultureInfo.InvariantCulture);
             var dayName = start.ToString("dddd", CultureInfo.InvariantCulture);
             if (availableDays.Count > 0 && !availableDays.Any(x =>
+<<<<<<< HEAD
                 String.Equals(x, dayAbbreviation, StringComparison.OrdinalIgnoreCase) ||
                 String.Equals(x, dayName, StringComparison.OrdinalIgnoreCase))) return false;
+=======
+                String.Equals((x ?? "").Trim(), dayAbbreviation, StringComparison.OrdinalIgnoreCase) ||
+                String.Equals((x ?? "").Trim(), dayName, StringComparison.OrdinalIgnoreCase))) return false;
+>>>>>>> 162b2c2f89b6ec2bf2327455fa53407249f2ce7e
             DateTime earliest, latest;
             if (!String.IsNullOrWhiteSpace(item.EarliestHandoverTime) &&
                 DateTime.TryParseExact(item.EarliestHandoverTime, new[] { "HH:mm", "H:mm", "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out earliest) &&
