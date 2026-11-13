@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 using MongoDB.Bson;
-using MongoDB.Driver;
 using UniShare.Models;
 using UniShare.Services;
 
@@ -83,71 +79,13 @@ namespace UniShare.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Dispute(string id, string reason, string details, HttpPostedFileBase[] evidenceFiles)
+        public ActionResult Dispute(string id, string reason, string details)
         {
             ObjectId borrowerId;
             if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
             if (string.IsNullOrWhiteSpace(reason) || reason.Length > 100 || (details ?? "").Length > 400)
                 return Json(new { ok = false, message = "Select a reason and check the details." });
-            var files = (evidenceFiles ?? new HttpPostedFileBase[0]).Where(x => x != null && x.ContentLength > 0).ToList();
-            if (files.Count > 2) return Json(new { ok = false, message = "Upload no more than two evidence images." });
-            var savedUrls = new List<string>();
-            try
-            {
-                foreach (var file in files) savedUrls.Add(SaveEvidence(file));
-                var saved = BorrowedItemsService.SubmitDispute(borrowerId, id, reason, details, savedUrls);
-                if (!saved) { DeleteEvidence(savedUrls); return Json(new { ok = false, message = "A dispute cannot be submitted for this rental." }); }
-                return Json(new { ok = true, message = "Dispute sent for admin review." });
-            }
-            catch (InvalidDataException ex)
-            {
-                DeleteEvidence(savedUrls);
-                return Json(new { ok = false, message = ex.Message });
-            }
-            catch (Exception ex) when (ex is MongoException || ex is IOException || ex is InvalidOperationException)
-            {
-                DeleteEvidence(savedUrls);
-                Response.StatusCode = 409;
-                return Json(new { ok = false, message = "The dispute could not be saved. Refresh and try again." });
-            }
-        }
-
-        private string SaveEvidence(HttpPostedFileBase file)
-        {
-            if (file.ContentLength > 5 * 1024 * 1024) throw new InvalidDataException("Each image must be 5 MB or smaller.");
-            var extension = Path.GetExtension(file.FileName ?? "").ToLowerInvariant();
-            if (!new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" }.Contains(extension) || !IsImageSignature(file, extension))
-                throw new InvalidDataException("Evidence must be a valid JPG, PNG, GIF, or WEBP image.");
-            var folder = Server.MapPath("~/Uploads/disputes");
-            Directory.CreateDirectory(folder);
-            var name = Guid.NewGuid().ToString("N") + extension;
-            file.SaveAs(Path.Combine(folder, name));
-            return "/Uploads/disputes/" + name;
-        }
-
-        private static bool IsImageSignature(HttpPostedFileBase file, string extension)
-        {
-            var bytes = new byte[12];
-            var read = file.InputStream.Read(bytes, 0, bytes.Length);
-            if (file.InputStream.CanSeek) file.InputStream.Position = 0;
-            if ((extension == ".jpg" || extension == ".jpeg") && read >= 3) return bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff;
-            if (extension == ".png" && read >= 8) return bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4e && bytes[3] == 0x47 && bytes[4] == 0x0d && bytes[5] == 0x0a && bytes[6] == 0x1a && bytes[7] == 0x0a;
-            if (extension == ".gif" && read >= 6) return System.Text.Encoding.ASCII.GetString(bytes, 0, 6) == "GIF87a" || System.Text.Encoding.ASCII.GetString(bytes, 0, 6) == "GIF89a";
-            if (extension == ".webp" && read >= 12) return System.Text.Encoding.ASCII.GetString(bytes, 0, 4) == "RIFF" && System.Text.Encoding.ASCII.GetString(bytes, 8, 4) == "WEBP";
-            return false;
-        }
-
-        private void DeleteEvidence(IEnumerable<string> urls)
-        {
-            foreach (var url in urls ?? Enumerable.Empty<string>())
-            {
-                try
-                {
-                    var path = Server.MapPath(url);
-                    if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
-                }
-                catch { }
-            }
+            return Run(() => BorrowedItemsService.SubmitDispute(borrowerId, id, reason, details), "Dispute sent for review.", "A dispute cannot be submitted for this rental.");
         }
 
         private JsonResult Run(Func<bool> action, string success, string failure)

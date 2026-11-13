@@ -50,7 +50,7 @@
             <label class="form-section-title">Parties Involved</label>
             <div class="parties-form-grid">
                 <div class="party-form-box party-form-reporter">
-                    <div class="party-role-tag role-reporter">REPORTER (@details.ReporterRole)</div>
+                    <div class="party-role-tag role-reporter">REPORTER (Lender)</div>
                     <div class="form-group form-group-compact">
                         <label class="form-field-label">Full Name</label>
                         <div class="form-input-display">@details.ReporterName</div>
@@ -62,7 +62,7 @@
                 </div>
 
                 <div class="party-form-box party-form-respondent">
-                    <div class="party-role-tag role-respondent">RESPONDENT (@details.RespondentRole)</div>
+                    <div class="party-role-tag role-respondent">RESPONDENT (Borrower)</div>
                     <div class="form-group form-group-compact">
                         <label class="form-field-label">Full Name</label>
                         <div class="form-input-display">@details.RespondentName</div>
@@ -83,40 +83,40 @@
             </div>
         </div>
 
-        <!-- Evidence persisted with this report -->
+        <!-- Photo Evidence Section (Simulate Owner's Uploaded Photo of Damage) -->
         <div class="modal-section">
-            <label class="form-section-title">Supporting evidence</label>
+            <label class="form-section-title">Photo Evidence (Submitted by Reporter)</label>
             <div class="photo-evidence-container">
-                @if (details.EvidenceUrls != null && details.EvidenceUrls.Count > 0)
-                {
-                    foreach (var evidence in details.EvidenceUrls)
-                    {
-                        <a href="@Url.Content(evidence)" target="_blank" rel="noopener"><img src="@Url.Content(evidence)" alt="Dispute evidence image" style="max-width:180px;max-height:140px;object-fit:cover;border-radius:8px;margin:4px;" /></a>
-                    }
-                }
-                else { <p class="text-muted">No supporting images were submitted.</p> }
+                <div class="photo-evidence-box">
+                    <div class="photo-evidence-placeholder">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span class="photo-evidence-caption">damage_inspection_proof_01.jpg</span>
+                        <span class="photo-evidence-meta">Captured at Item Handover &bull; Verified QCU Guardhouse Log</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        @using (Html.BeginForm("UpdateDispute", "DisputeManagement", FormMethod.Post))
-        {
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="id" value="@details.Id" />
-            <div class="modal-section" style="margin-bottom: 8px;">
-                <div class="form-group form-group-compact" style="margin-bottom: 0;">
-                    <label class="form-section-title" for="adminDisputeNotes">Admin notes</label>
-                    <textarea id="adminDisputeNotes" name="notes" class="form-control form-textarea admin-remarks-textarea" maxlength="1500" rows="3">@details.AdminNotes</textarea>
-                </div>
+        <!-- Admin Remarks Section (Mediation Notes) -->
+        <div class="modal-section" style="margin-bottom: 8px;">
+            <div class="form-group form-group-compact" style="margin-bottom: 0;">
+                <label class="form-section-title">Admin Remarks</label>
+                <textarea class="form-control form-textarea admin-remarks-textarea" rows="3" placeholder="Enter administrative mediation notes, verified campus inspection logs, or settlement terms prior to dispute resolution..."></textarea>
             </div>
-            <div class="modal-actions-bar">
-                @if (details.Status != "Resolved")
-                {
-                    <button type="submit" name="decision" value="UNDER_REVIEW" class="btn btn-request-info">Mark under review</button>
-                    <button type="submit" name="decision" value="INFO_REQUESTED" class="btn btn-request-info">Request information</button>
-                    <button type="submit" name="decision" value="RESOLVED" class="btn btn-resolve" onclick="return confirm('Resolve this dispute and complete the affected rental?');">Resolve</button>
-                }
-                else { <span class="text-muted">Resolved @details.DateReported</span> }
-            </div>
-        }
+        </div>
+    </div>
+
+    <!-- Bottom Bar with Resolve (Purple) and Request Info (White) Action Buttons -->
+    <div class="modal-actions-bar">
+        <button type="button" class="btn btn-resolve" id="btnResolveModal">
+            <i class="glyphicon glyphicon-ok"></i> Resolve
+        </button>
+        <button type="button" class="btn btn-request-info" id="btnRequestInfoModal">
+            <i class="glyphicon glyphicon-question-sign"></i> Request Info
+        </button>
     </div>
 </div>

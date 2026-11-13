@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" href="~/Content/MyRentals.css" />
 
-<div class="my-rentals-page" data-dispute-url="@Url.Action("ReportDispute", "MyRentals")">
+<div class="my-rentals-page" data-history-url="@Url.Action("HistoryData", "MyRentals")" data-handover-url="@Url.Action("ConfirmHandover", "MyRentals")" data-return-url="@Url.Action("ConfirmReturn", "MyRentals")">
     @Html.AntiForgeryToken()
     <!-- A. Page Header -->
     <header class="my-rentals-header">
@@ -1140,9 +1140,8 @@
                 <!-- Warning notice -->
                 <div class="rm-warning-notice rm-warning-notice--danger" role="note">
                     <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 1.5 17h17L10 2zm0 5.5v4m0 2.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
-                    <span><strong>Submitting changes the rental status.</strong> This issue will be added to the admin review queue and the rental will be marked <em>Disputed</em>.</span>
+                    <span><strong>Submitting changes the rental status.</strong> Submitting this dispute will change the rental status to <em>Disputed</em> and the QCU Admin will be notified.</span>
                 </div>
-                <span id="disputeSubmitError" class="rm-field-error" role="alert" style="display:none;"></span>
             </div>
             <footer class="my-rentals-modal__footer">
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnDisputeCancel">Cancel</button>
@@ -1604,7 +1603,6 @@
                 </dl>
             </div>
             <footer class="my-rentals-modal__footer">
-                <button type="button" class="my-rentals-btn rm-btn-decline-confirm" id="btnCompletedReportDispute">Report damage or loss</button>
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnCompletedClose">Close</button>
             </footer>
         </div>

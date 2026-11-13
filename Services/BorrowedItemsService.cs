@@ -116,8 +116,6 @@ namespace UniShare.Services
             var now = DateTime.UtcNow;
             UpdateRecord(doc, isBooking, borrowerId, Builders<BsonDocument>.Update.Set("status", "RETURN_REQUESTED").Set("returnRequestedAt", now).Set("updatedAt", now));
             UpdateLinkedRental(doc, borrowerId, Builders<BsonDocument>.Update.Set("status", "RETURN_REQUESTED").Set("returnRequestedAt", now).Set("updatedAt", now));
-            var bookingIdValue = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
-            if (bookingIdValue.IsObjectId) AdminAccountabilityService.LogActivity(borrowerId, "RETURN_REQUESTED", "BOOKING", bookingIdValue.AsObjectId, new BsonDocument());
             return true;
         }
 
@@ -135,12 +133,10 @@ namespace UniShare.Services
             var result = isBooking ? MongoDatabase.Bookings.UpdateOne(filter, update) : MongoDatabase.Rentals.UpdateOne(filter, update);
             if (result.ModifiedCount != 1) return false;
             UpdateLinkedRental(doc, ownerId, update);
-            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
-            if (bookingId.IsObjectId) AdminAccountabilityService.LogActivity(ownerId, "RETURN_CONFIRMED", "BOOKING", bookingId.AsObjectId, new BsonDocument());
             return true;
         }
 
-        public static bool SubmitDispute(ObjectId borrowerId, string recordId, string reason, string details, IList<string> evidenceUrls = null)
+        public static bool SubmitDispute(ObjectId borrowerId, string recordId, string reason, string details)
         {
             BsonDocument doc; bool isBooking;
             if (!TryFind(borrowerId, recordId, out doc, out isBooking)) return false;
@@ -149,31 +145,9 @@ namespace UniShare.Services
             var now = DateTime.UtcNow;
             var text = string.IsNullOrWhiteSpace(details) ? reason.Trim() : reason.Trim() + ": " + details.Trim();
             var update = Builders<BsonDocument>.Update.Set("status", "DISPUTED").Set("disputeReason", text)
-                .Set("disputeCategory", reason.Trim()).Set("disputeDetails", (details ?? "").Trim())
-                .Set("disputeEvidenceUrls", new BsonArray((evidenceUrls ?? new List<string>()).Select(x => (BsonValue)x)))
-                .Set("disputedAt", now).Set("updatedAt", now);
+                .Set("disputeCategory", reason.Trim()).Set("disputeDetails", (details ?? "").Trim()).Set("disputedAt", now).Set("updatedAt", now);
             UpdateRecord(doc, isBooking, borrowerId, update);
             UpdateLinkedRental(doc, borrowerId, update);
-            AdminAccountabilityService.RecordDispute(doc, borrowerId, reason.Trim(), (details ?? "").Trim(), evidenceUrls);
-            return true;
-        }
-
-        public static bool SubmitDisputeByOwner(ObjectId ownerId, string recordId, string reason, string details, IList<string> evidenceUrls = null)
-        {
-            ObjectId bookingId;
-            if (!ObjectId.TryParse(recordId, out bookingId) || String.IsNullOrWhiteSpace(reason)) return false;
-            var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", bookingId) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId)).FirstOrDefault();
-            if (booking == null || MongoDatabase.Disputes.Find(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) & Builders<BsonDocument>.Filter.In("status", new[] { "OPEN", "UNDER_REVIEW", "INFO_REQUESTED" })).Limit(1).Any()) return false;
-            var status = Status(booking);
-            if (!new[] { "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED" }.Contains(status)) return false;
-            if (reason.Length > 100 || (details ?? "").Length > 1000) return false;
-            var now = DateTime.UtcNow;
-            var evidence = new BsonArray((evidenceUrls ?? new List<string>()).Select(x => (BsonValue)x));
-            var update = Builders<BsonDocument>.Update.Set("status", "DISPUTED").Set("disputeReason", String.IsNullOrWhiteSpace(details) ? reason.Trim() : reason.Trim() + ": " + details.Trim())
-                .Set("disputeCategory", reason.Trim()).Set("disputeDetails", (details ?? "").Trim()).Set("disputeEvidenceUrls", evidence).Set("disputedAt", now).Set("updatedAt", now);
-            if (MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", bookingId) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", booking.GetValue("status", "")), update).ModifiedCount != 1) return false;
-            MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId), update);
-            AdminAccountabilityService.RecordDispute(booking, ownerId, reason.Trim(), (details ?? "").Trim(), evidenceUrls);
             return true;
         }
 
@@ -200,7 +174,6 @@ namespace UniShare.Services
                 { "ownerRating", ownerRating }, { "rating", ownerRating }, { "review", (review ?? "").Trim() }, { "createdAt", now } };
             MongoDatabase.Ratings.InsertOne(rating);
             UpdateLinkedRental(doc, borrowerId, update);
-            if (bookingId.IsObjectId) AdminAccountabilityService.LogActivity(borrowerId, "REVIEW_SUBMITTED", "RATING", rating["_id"].AsObjectId, new BsonDocument { { "bookingId", bookingId.AsObjectId } });
             return true;
         }
 

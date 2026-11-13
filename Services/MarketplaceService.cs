@@ -39,8 +39,7 @@ namespace UniShare.Services
 
         public static Tuple<double?, int> GetOwnerRatingSummary(ObjectId ownerId)
         {
-            var filter = Builders<BsonDocument>.Filter.Eq("reviewedUserId", ownerId) & Builders<BsonDocument>.Filter.Ne("isHidden", true);
-            var documents = MongoDatabase.Ratings.Find(filter).ToList();
+            var documents = MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Eq("reviewedUserId", ownerId)).ToList();
             var values = documents.Select(x => x.GetValue("rating", BsonNull.Value))
                 .Where(x => x.IsNumeric).Select(x => x.ToDouble()).ToList();
             return Tuple.Create(values.Count == 0 ? (double?)null : values.Average(), values.Count);

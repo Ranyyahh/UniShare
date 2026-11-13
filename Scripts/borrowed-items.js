@@ -182,9 +182,6 @@
         var tag = '<span class="bi-duration">' + SVG_CLOCK + it.hours + ' hrs</span>';
         var foot = '';
 
-        if (isAwaiting(it)) {
-            foot = '<button type="button" class="us-btn us-btn--primary us-btn--block" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button>' +
-                (it.canReportNoShow && !it.noShowReported ? '<button type="button" class="us-btn us-btn--outline us-btn--block" data-act="no-show" data-id="' + it.id + '">Report no-show</button>' : '');
         if (it.status === 'Pending' && it.borrowerHandoverConfirmed) {
             foot = '<div class="bi-notice">' + SVG_CLOCK + ' Waiting for the lender to confirm handover</div>';
         } else if (it.status === 'Pending' && !it.canConfirmHandover) {
@@ -272,7 +269,6 @@
         } else if (isAwaiting(it)) {
             actions = '<div class="bi-modal-actions"><button type="button" class="us-btn us-btn--danger" data-act="report" data-id="' + it.id + '">Report a problem</button>' +
                 '<button type="button" class="us-btn us-btn--primary" data-act="handover" data-id="' + it.id + '">' + SVG_CHECK + ' Confirm Handover</button></div>';
-            if (it.canReportNoShow && !it.noShowReported) actions += '<button type="button" class="us-btn us-btn--outline us-btn--block" data-act="no-show" data-id="' + it.id + '">Report owner no-show</button>';
         } else if (it.returnRequested) {
             actions = '<div class="bi-notice bi-notice--block">' + SVG_RETURN + ' Return request sent to the lender' + (it.returnRequestedOn ? ' on ' + esc(it.returnRequestedOn) : '') + '. Completion is recorded after lender confirmation.</div>';
         } else if (isInUse(it)) {
@@ -439,23 +435,12 @@
     function openDialog(d) { if (d && typeof d.showModal === 'function' && !d.open) { d.showModal(); } }
     function closeDialog(d) { if (d && d.open) { d.close(); } }
 
-    function postAction(url, values, callback, files) {
+    function postAction(url, values, callback) {
         var token = root.querySelector('input[name="__RequestVerificationToken"]');
-        var body, options = { method: 'POST', credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
-        if (files && files.length) {
-            body = new FormData();
-            body.append('__RequestVerificationToken', token ? token.value : '');
-            Object.keys(values).forEach(function (key) { body.append(key, values[key] === null || values[key] === undefined ? '' : values[key]); });
-            Array.prototype.forEach.call(files, function (file) { body.append('evidenceFiles', file); });
-            options.body = body;
-        } else {
-            body = new URLSearchParams();
-            body.append('__RequestVerificationToken', token ? token.value : '');
-            Object.keys(values).forEach(function (key) { body.append(key, values[key] === null || values[key] === undefined ? '' : values[key]); });
-            options.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
-            options.body = body.toString();
-        }
-        fetch(url, options)
+        var body = new URLSearchParams();
+        body.append('__RequestVerificationToken', token ? token.value : '');
+        Object.keys(values).forEach(function (key) { body.append(key, values[key] === null || values[key] === undefined ? '' : values[key]); });
+        fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
             .then(function (response) { return response.json().then(function (result) { if (!response.ok) { throw new Error(result.message || 'The request could not be completed.'); } return result; }); })
             .then(function (result) { if (!result.ok) { throw new Error(result.message || 'The request could not be completed.'); } callback(result); })
             .catch(function (error) { toast(error.message || 'The request could not be completed. Refresh and try again.'); });
@@ -495,20 +480,12 @@
         });
     }
 
-    function doDispute(id, reason, details, files) {
+    function doDispute(id, reason, details) {
         var it = byId(id);
         if (!it || it.status === 'Disputed' || it.status === 'Completed' || it.returnRequested) { return; }
         postAction(root.getAttribute('data-dispute-url'), { id: id, reason: reason, details: details }, function (result) {
             if (it.endsAt !== null) { var left = it.endsAt - Date.now(); it.pausedMs = left >= 0 ? left : 0; if (left < 0) it.lateMs = -left; it.endsAt = null; }
             it.status = 'Disputed'; it.dispute = details ? reason + ': ' + details : reason; render(); toast(result.message);
-        }, files);
-    }
-
-    function doNoShow(id, reason) {
-        var it = byId(id);
-        if (!it || !it.canReportNoShow || it.noShowReported) return;
-        postAction(root.getAttribute('data-no-show-url'), { bookingId: id, reason: reason, returnUrl: window.location.pathname }, function (result) {
-            it.noShowReported = true; render(); toast(result.message);
         });
     }
 
@@ -524,7 +501,6 @@
         if (name === 'handover') { openAsk('bi-confirm', 'bi-confirm-form', id, [['bi-confirm-item', function (i) { return i.name; }], ['bi-confirm-lender', function (i) { return i.lender; }]]); }
         else if (name === 'return') { openAsk('bi-return', 'bi-return-form', id, [['bi-return-item', function (i) { return i.name; }], ['bi-return-lender', function (i) { return i.lender; }]]); }
         else if (name === 'report') { openAsk('bi-report', 'bi-report-form', id, [['bi-report-item', function (i) { return i.name; }]]); }
-        else if (name === 'no-show') { openAsk('bi-no-show', 'bi-no-show-form', id, [['bi-no-show-item', function (i) { return i.name; }]]); }
         else if (name === 'rate') {
             var it = byId(id);
             if (!it) return;
@@ -573,15 +549,7 @@
         e.preventDefault();
         var f = e.target;
         closeDialog($('bi-report'));
-        doDispute(state.pendingId, f.elements.reason.value, f.elements.details.value.trim(), f.elements.evidenceFiles.files);
-    });
-
-    $('bi-no-show-form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        var f = e.target, reason = f.elements.reason.value.trim();
-        if (!reason) { f.elements.reason.focus(); return; }
-        closeDialog($('bi-no-show'));
-        doNoShow(state.pendingId, reason);
+        doDispute(state.pendingId, f.elements.reason.value, f.elements.details.value.trim());
     });
 
     $('bi-rate-form').addEventListener('submit', function (e) {

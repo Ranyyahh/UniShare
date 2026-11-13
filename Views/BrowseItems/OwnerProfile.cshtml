@@ -11,10 +11,8 @@
 
 <main class="owner-profile-page">
     <a class="text-decoration-none" href="@Url.Action("Index", "BrowseItems")">&larr; Browse items</a>
-    @if (TempData["Success"] != null) { <div class="alert alert-success mt-3">@TempData["Success"]</div> }
-    @if (TempData["Error"] != null) { <div class="alert alert-danger mt-3">@TempData["Error"]</div> }
-    <section class="card border-0 shadow-sm mt-4 p-4 p-md-5">
-        <div class="d-flex align-items-center gap-3">
+    <section class="owner-profile-hero mt-3">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
             @if (!string.IsNullOrWhiteSpace(Model.ProfilePhoto))
             {
                 <img src="@Url.Content(Model.ProfilePhoto)" alt="@Model.Name" class="rounded-circle" style="width:104px;height:104px;object-fit:cover" />
