@@ -1,89 +1,68 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isPending = document.body.dataset.userStatus === 'PENDING' || document.body.dataset.verificationStatus === 'PENDING';
     
-    if (!isPending) return; // If not pending, allow everything
+    if (!isPending) return; // Allow everything if not pending
 
-    // Modal Logic
     window.showPendingModal = function(e) {
         if (e) {
             e.preventDefault();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
             e.stopPropagation();
         }
         const modal = document.getElementById('pendingModal');
         if (modal) modal.style.display = 'flex';
     };
 
-    // Intercept Clicks (Event Delegation)
     document.body.addEventListener('click', function(e) {
-        // Patch: Block "Message Owner" in Item Details
-        var clickedBtn = e.target.closest('button, a');
-        if (clickedBtn) {
-            var btnText = (clickedBtn.innerText || "").toLowerCase();
-            var btnId = (clickedBtn.id || "").toLowerCase();
-            var btnClass = (clickedBtn.className || "").toLowerCase();
-
-            // Check if it's the Message Owner button
-            if (btnText.includes('message owner') || 
-                btnText.includes('contact owner') ||
-                btnId.includes('messageowner') || 
-                btnId === 'd-msg' ||
-                clickedBtn.hasAttribute('data-msg-lender') ||
-                btnClass.includes('message-owner') || 
-                btnClass.includes('contact-owner')) {
-                
-                showPendingModal(e);
-                return;
-            }
-        }
-
-        // Patch: Block "Borrow / Rent" buttons
-        var clickedActionBtn = e.target.closest('button, a');
-        if (clickedActionBtn) {
-            var actionText = (clickedActionBtn.innerText || "").toLowerCase();
-            var actionId = (clickedActionBtn.id || "").toLowerCase();
-            var actionClass = (clickedActionBtn.className || "").toLowerCase();
-
-            if (actionText.includes('borrow') || 
-                actionText.includes('rent') || 
-                actionText.includes('request') ||
-                actionId.includes('borrow') || 
-                actionId.includes('rent') ||
-                actionClass.includes('btn-borrow') || 
-                actionClass.includes('btn-rent') ||
-                actionClass.includes('btn-request')) {
-                
-                showPendingModal(e);
-                return;
-            }
-        }
-
-        const target = e.target.closest('a, button');
+        const target = e.target.closest('button, a');
         if (!target) return;
 
-        const text = target.innerText || "";
-        const href = target.getAttribute('href') || "";
-        const id = target.id || "";
+        const text = (target.innerText || "").toLowerCase();
+        const href = (target.getAttribute('href') || "").toLowerCase();
+        const id = (target.id || "").toLowerCase();
+        const className = (target.className || "").toLowerCase();
 
-        // 1. Block Navbar Links
-        if (text.includes('My Listings') || 
-            text.includes('My Rentals') || 
-            text.includes('Borrowed Items') || 
-            text.includes('Reports & Analytics') ||
-            text.includes('Account Settings')) {
+        // 1. Block Navbar Links & Account Settings & Message Icon
+        if (text.includes('my listings') || 
+            text.includes('my rentals') || 
+            text.includes('borrowed items') || 
+            text.includes('reports & analytics') ||
+            text.includes('account settings') ||
+            href.includes('/messages') || 
+            href.includes('/account/settings') ||
+            className.includes('message-button')) {
             showPendingModal(e);
             return;
         }
 
-        // 2. Block Message Icon
-        if (href.includes('/Messages') || target.classList.contains('message-button')) {
+        // 2. Block "List an Item" button
+        if (text.includes('list an item') || id.includes('btnlistanitem')) {
             showPendingModal(e);
             return;
         }
 
-        // 3. Block Dashboard "List an Item" Button
-        if (text.includes('List an Item') || id === 'btnListAnItem') {
+        // 3. Block "Message Owner" button (Item Details)
+        if (text.includes('message owner') || text.includes('contact owner') || id.includes('messageowner') || id === 'd-msg' || className.includes('message-owner') || className.includes('contact-owner')) {
             showPendingModal(e);
             return;
         }
-    }, true); // Use capture phase to intercept before the actual click
+
+        // 4. Block "Borrow / Rent" buttons
+        if (text.includes('borrow') || text.includes('rent') || text.includes('request') || id.includes('borrow') || id.includes('rent') || className.includes('btn-borrow') || className.includes('btn-rent') || className.includes('btn-request')) {
+            showPendingModal(e);
+            return;
+        }
+
+        // 5. Block "View Profile" button
+        if (text.includes('view profile') || id.includes('viewprofile') || className.includes('view-profile')) {
+            showPendingModal(e);
+            return;
+        }
+
+        // 6. Block "Leave a Review" button
+        if (text.includes('leave a review') || text.includes('write a review') || id.includes('leavreview') || className.includes('leave-review') || className.includes('btn-review')) {
+            showPendingModal(e);
+            return;
+        }
+    }, true); 
 });
