@@ -1,7 +1,6 @@
 ﻿@model UniShare.Models.ReportsAnalyticsViewModel
 @{
     ViewBag.Title = "Reports & Analytics";
-    ViewBag.ShowAdminSidebar = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
     string noticeClass = string.IsNullOrWhiteSpace(Model.DataSourceNote) ? "reports-notice" : "reports-notice is-visible";
 }
@@ -21,16 +20,12 @@
     <header class="reports-header">
         <div class="reports-header__title-group">
             <h1 class="reports-header__title">Reports &amp; Analytics</h1>
-            <p class="reports-header__description">A summary of the rental income earned from your listed items and the items you have borrowed from other students.</p>
+            <p class="reports-header__description">Your lending income and borrowing activity from your own rental transactions.</p>
         </div>
         <div class="reports-header__actions">
             <button type="button" id="btnExportReport" class="reports-btn reports-btn--secondary" title="Download this report as a CSV file">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 <span>Export</span>
-            </button>
-            <button type="button" id="btnRefreshReport" class="reports-btn reports-btn--secondary reports-btn--refresh" title="Reload the report for the selected dates">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                <span>Refresh</span>
             </button>
         </div>
     </header>
@@ -109,7 +104,7 @@
 
     <!-- D. Renting charts -->
     <section class="reports-section" aria-labelledby="rentingHeading">
-        <h2 class="reports-section__title" id="rentingHeading">Renting <span>items you own</span></h2>
+        <h2 class="reports-section__title" id="rentingHeading">Rentals</h2>
 
         <article class="reports-panel reports-panel--featured">
             <header class="reports-panel__header">
@@ -171,6 +166,33 @@
                 <p class="reports-panel__footnote" id="expensesFootnote"></p>
             </article>
         </div>
+    </section>
+
+    <section class="reports-section" aria-labelledby="requestActivityHeading">
+        <h2 class="reports-section__title" id="requestActivityHeading">Rental Request Activity <span>received vs submitted</span></h2>
+        <div class="reports-grid-2">
+            <article class="reports-panel">
+                <header class="reports-panel__header"><div><h3 class="reports-panel__title">Requests Received</h3><p class="reports-panel__subtitle">For items you own</p></div></header>
+                <div class="reports-chart" id="chartRequestsReceived"></div>
+            </article>
+            <article class="reports-panel">
+                <header class="reports-panel__header"><div><h3 class="reports-panel__title">Requests Submitted</h3><p class="reports-panel__subtitle">For items you borrowed</p></div></header>
+                <div class="reports-chart" id="chartRequestsSubmitted"></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="reports-section" aria-labelledby="transactionsHeading">
+        <h2 class="reports-section__title" id="transactionsHeading">Transaction History</h2>
+        <article class="reports-panel reports-history-panel">
+            <div class="reports-table-wrap">
+                <table class="reports-table">
+                    <thead><tr><th>Item</th><th>Role</th><th>Date</th><th>Amount</th><th>Status</th><th>Transaction</th></tr></thead>
+                    <tbody id="reportsTransactions"><tr><td colspan="6" class="reports-table__empty">Loading your transactions…</td></tr></tbody>
+                </table>
+            </div>
+        </article>
+        <p class="reports-data-note">The application records rental requests and estimated rental fees. It does not currently store sale transactions or confirmed payment records, so no sales or paid-expense figures are included.</p>
     </section>
 
     <div class="reports-tooltip" id="reportsTooltip" role="tooltip" hidden></div>

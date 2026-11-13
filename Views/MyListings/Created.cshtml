@@ -1,6 +1,6 @@
 @model UniShare.Models.ListingCreatedViewModel
 @{
-    ViewBag.Title = "Listing Created";
+    ViewBag.Title = "Listing Submitted";
 }
 
 @* ===== Page-scoped assets (loaded only on this page) ===== *@
@@ -28,17 +28,17 @@
             <div class="mx-auto w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
                 <i data-lucide="circle-check" class="w-8 h-8"></i>
             </div>
-            <h1 class="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-slate-800">Listing Created Successfully!</h1>
+            <h1 class="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-slate-800">Listing Submitted for Review</h1>
             <p class="mt-3 text-slate-600 leading-relaxed max-w-xl mx-auto">
-                Your <strong class="font-semibold text-slate-900">@Model.ItemName</strong> has been published to the UniShare campus catalog and is now discoverable by verified QCU students.
+                Your <strong class="font-semibold text-slate-900">@Model.ItemName</strong> is saved and waiting for admin approval. It will not appear in Browse Items until it is approved.
             </p>
 
             <div class="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-indigo-100 bg-indigo-50/60 px-4 py-1.5 text-xs">
                 <span class="inline-flex items-center gap-1.5 font-semibold text-slate-700">
                     <i data-lucide="hash" class="w-3.5 h-3.5 text-brand"></i>Listing ID: @Model.ListingCode
                 </span>
-                <span class="inline-flex items-center gap-1.5 font-medium text-emerald-600">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Published just now
+                    <span class="inline-flex items-center gap-1.5 font-medium text-amber-700">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending approval
                 </span>
             </div>
         </div>
@@ -83,7 +83,7 @@
                 <span class="w-9 h-9 shrink-0 rounded-lg bg-indigo-100 text-brand flex items-center justify-center"><i data-lucide="bell-ring" class="w-4 h-4"></i></span>
                 <div>
                     <h3 class="text-sm font-semibold text-slate-900">1. Alerts On</h3>
-                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">You'll receive push alerts when a classmate requests this item.</p>
+                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">After approval, classmates can find this item and send rental requests.</p>
                 </div>
             </div>
             <div class="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 flex items-start gap-3">
@@ -97,7 +97,7 @@
                 <span class="w-9 h-9 shrink-0 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></span>
                 <div>
                     <h3 class="text-sm font-semibold text-slate-900">3. Manage Anytime</h3>
-                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">Adjust rates, pause availability, or mark rented from My Listings.</p>
+                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">You can follow review status or update your listing from My Listings.</p>
                 </div>
             </div>
         </div>

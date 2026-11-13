@@ -102,17 +102,21 @@ namespace UniShare.Controllers
             { return View("Status", new VerificationReviewViewModel { Status = "UNAVAILABLE" }); }
         }
 
-        [HttpGet, Authorize(Roles = "ADMIN")]
+        [HttpGet, Authorize(Roles = "ADMIN"), OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
         public ActionResult Document(string id, string kind)
         {
             ObjectId objectId;
             if (!ObjectId.TryParse(id, out objectId) || (kind != "id" && kind != "photo" && kind != "form")) return HttpNotFound();
             var application = MongoDatabase.Verifications.Find(x => x.Id == objectId).FirstOrDefault();
             if (application == null) return HttpNotFound();
-            var name = kind == "id" ? application.SchoolIdPath : kind == "photo" ? application.OneByOnePhotoPath : application.RegistrationFormPath;
+            var user = MongoDatabase.Users.Find(x => x.Id == application.UserId).FirstOrDefault();
+            var name = kind == "id" ? (application.SchoolIdPath ?? (user == null ? null : user.SchoolIdPhoto))
+                : kind == "photo" ? (application.OneByOnePhotoPath ?? (user == null ? null : user.OneByOnePhoto))
+                : (application.RegistrationFormPath ?? application.SubmittedDocument ?? (user == null ? null : user.RegistrationForm));
             var path = Server.MapPath("~/App_Data/Verification/" + Path.GetFileName(name ?? ""));
             if (!System.IO.File.Exists(path)) return HttpNotFound();
             var ext = Path.GetExtension(path).ToLowerInvariant();
+            if (ext != ".pdf" && ext != ".png" && ext != ".jpg" && ext != ".jpeg") return HttpNotFound();
             var contentType = ext == ".pdf" ? "application/pdf" : ext == ".png" ? "image/png" : "image/jpeg";
             return File(path, contentType);
         }

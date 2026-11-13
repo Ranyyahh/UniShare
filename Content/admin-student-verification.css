@@ -1,27 +1,11 @@
-﻿/* =========================================
-   LOCAL FONTS - OFFLINE SUPPORT
-   ========================================= */
-
-@font-face {
-    font-family: "Inter";
-    src: url("fonts/InterVariable.ttf") format("truetype");
-    font-style: normal;
-    font-weight: 100 900;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Plus Jakarta Sans";
-    src: url("fonts/PlusJakartaSans-Variable.ttf") format("truetype");
-    font-style: normal;
-    font-weight: 200 800;
-    font-display: swap;
-}
-
-/* ==========================================================================
+﻿/* ==========================================================================
    UniShare - Admin Student Verification Styles
-   Strict Modern Design System Specification (design.md) Compliance
+   Design System Compliance
    ========================================================================== */
+
+/* OFFLINE FONTS - Add your @font-face rules here */
+/* @font-face { font-family: 'Inter'; src: url('../Content/fonts/Inter-Regular.ttf') format('truetype'); font-weight: 400; } */
+/* @font-face { font-family: 'Plus Jakarta Sans'; src: url('../Content/fonts/PlusJakartaSans-Regular.ttf') format('truetype'); font-weight: 400; } */
 
 /* Automatically hide the default generic template footer & hr */
 .body-content > hr,
@@ -30,7 +14,7 @@
 }
 
 .asv-page {
-    /* 2. COLOR PALETTE & TOKEN SYSTEM */
+    /* TOKENS */
     --primary-50: #EEF2FF;
     --primary-100: #E0E7FF;
     --primary-500: #6366F1;
@@ -56,7 +40,6 @@
     --error-subtle: #FEF2F2;
     --info: #3B82F6;
     --info-subtle: #EFF6FF;
-    /* 5. ELEVATION & RADIUS TOKENS */
     --rounded-xs: 4px;
     --rounded-sm: 6px;
     --rounded-md: 10px;
@@ -68,18 +51,25 @@
     --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
     --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
     --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
-    /* 7. MOTION */
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --duration-fast: 180ms;
-    /* TYPOGRAPHY FAMILY */
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    /* TYPOGRAPHY */
+    --font-family-base: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-heading-lg: 32px;
+    --font-heading-md: 24px;
+    --font-heading-sm: 18px;
+    --font-body-base: 15px;
+    --font-body-sm: 13px;
+    --font-caption: 11px;
+    font-family: var(--font-family-base);
+    font-size: var(--font-body-base);
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     color: var(--text-primary);
     background-color: var(--surface-canvas);
-    /* 4. LAYOUT RHYTHM */
     display: flex;
     flex-direction: column;
-    gap: 24px; /* space-6 */
+    gap: 24px;
     width: 100%;
     max-width: 1440px;
     margin: 0 auto;
@@ -93,7 +83,14 @@
         box-sizing: border-box;
     }
 
-/* PAGE HEADER (heading-lg & body-base) */
+    .asv-page button,
+    .asv-page input,
+    .asv-page select,
+    .asv-page textarea {
+        font-family: var(--font-family-base);
+    }
+
+/* HEADER */
 .asv-header {
     display: flex;
     flex-direction: column;
@@ -101,7 +98,7 @@
 
 .asv-header__title {
     margin: 0;
-    font-size: 32px;
+    font-size: var(--font-heading-lg);
     line-height: 1.2;
     letter-spacing: -0.015em;
     font-weight: 700;
@@ -110,14 +107,13 @@
 
 .asv-header__subtitle {
     margin: 8px 0 0 0;
-    font-size: 15px;
+    font-size: var(--font-body-base);
     line-height: 1.5;
-    letter-spacing: 0;
     font-weight: 400;
     color: var(--text-secondary);
 }
 
-/* SECTION 1: KPI STAT CARDS */
+/* KPI CARDS */
 .asv-kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -147,7 +143,7 @@
 }
 
 .asv-kpi-card__label {
-    font-size: 11px;
+    font-size: var(--font-caption);
     line-height: 1.35;
     letter-spacing: 0.02em;
     font-weight: 600;
@@ -191,48 +187,19 @@
 
 .asv-kpi-card__value {
     margin-top: 12px;
-    font-size: 32px;
+    font-size: var(--font-heading-lg);
     line-height: 1.2;
     letter-spacing: -0.015em;
     font-weight: 700;
     color: var(--text-primary);
 }
 
-.asv-kpi-card__unit {
-    margin-left: 4px;
-    font-size: 13px;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.asv-kpi-card__footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 16px;
-    font-size: 13px;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-    color: var(--text-secondary);
-}
-
-.asv-kpi-card__badge-text--success {
-    font-weight: 600;
-    color: var(--success);
-}
-
-.asv-kpi-card__divider {
-    color: var(--text-muted);
-}
-
-/* STATUS PILLS (caption: 11px / 600) */
+/* PILLS */
 .asv-pill {
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--font-caption);
     line-height: 1.35;
     letter-spacing: 0.02em;
     font-weight: 600;
@@ -270,32 +237,31 @@
     color: #B91C1C;
 }
 
-
-/* SECTION 2: STREAMLINED SINGLE-ROW TOOLBAR */
+/* TOOLBAR */
 .asv-toolbar {
     background: var(--surface-card);
     border: 1px solid var(--border-default);
     border-radius: var(--rounded-lg);
-    padding: 16px 24px;
+    padding: 12px 16px;
     box-shadow: var(--shadow-sm);
 }
 
 .asv-toolbar__top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 12px;
+    flex-wrap: nowrap;
 }
 
 .asv-search {
     position: relative;
-    flex: 1 1 320px;
+    flex: 1 1 auto;
+    min-width: 200px;
 }
 
 .asv-search__icon {
     position: absolute;
-    left: 14px;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
@@ -310,15 +276,12 @@
 
 .asv-search__input {
     width: 100%;
-    max-width: 100% !important;
-    height: 40px;
-    padding: 0 16px 0 40px;
+    height: 38px;
+    padding: 0 12px 0 36px;
     background: #FFFFFF;
     border: 1px solid var(--border-strong);
     border-radius: var(--rounded-md);
-    font-size: 13px;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
+    font-size: var(--font-body-sm);
     color: var(--text-primary);
     outline: none;
     transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
@@ -332,8 +295,8 @@
 .asv-toolbar__actions {
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .asv-select-wrapper {
@@ -344,7 +307,7 @@
 
 .asv-select-icon {
     position: absolute;
-    left: 12px;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
     display: inline-flex;
@@ -355,31 +318,32 @@
 }
 
     .asv-select-icon svg {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
     }
 
 .asv-select {
-    height: 40px;
-    padding: 0 36px 0 36px;
+    height: 38px;
+    width: 150px;
+    padding: 0 26px 0 32px;
     background-color: #FFFFFF;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 16px 16px;
+    background-position: right 8px center;
+    background-size: 14px 14px;
     border: 1px solid var(--border-strong);
     border-radius: var(--rounded-md);
     font-family: inherit;
-    font-size: 13px;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
+    font-size: var(--font-body-sm);
     font-weight: 500;
     color: var(--text-primary);
     cursor: pointer;
     outline: none;
     appearance: none;
     -webkit-appearance: none;
-    -moz-appearance: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
@@ -393,36 +357,29 @@
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.20);
     }
 
-.asv-clear-link {
-    font-size: 13px;
-    line-height: 1.45;
-    font-weight: 500;
+.asv-btn-clear {
+    height: 38px;
+    padding: 0 14px;
+    background: #FFFFFF;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--rounded-md);
+    font-size: var(--font-body-sm);
+    font-weight: 600;
     color: var(--text-secondary);
-    text-decoration: underline;
     cursor: pointer;
-    padding: 6px 4px;
     white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
 }
 
-    .asv-clear-link:hover {
-        color: var(--primary-600);
+    .asv-btn-clear:hover {
+        background: var(--surface-subtle);
+        border-color: var(--text-muted);
+        color: var(--text-primary);
     }
 
-/* Monospace Chip for IDs */
-.asv-chip--subtle {
-    font-family: "JetBrains Mono", "Fira Code", monospace;
-    height: 24px;
-    padding: 0 8px;
-    font-size: 11px;
-    font-weight: 600;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border-default);
-    color: var(--text-secondary);
-    border-radius: var(--rounded-xs);
-}
-
-/* SECTION 3: FULL-WIDTH QUEUE TABLE */
-.asv-queue-card--fullwidth {
+/* QUEUE TABLE */
+.asv-queue-card {
     width: 100%;
     background: var(--surface-card);
     border: 1px solid var(--border-default);
@@ -441,24 +398,20 @@
 
 .asv-queue-card__title {
     margin: 0;
-    font-size: 18px;
+    font-size: var(--font-heading-sm);
     line-height: 1.4;
-    letter-spacing: -0.005em;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .asv-queue-card__subtitle {
     margin: 4px 0 0 0;
-    font-size: 13px;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-    font-weight: 400;
+    font-size: var(--font-body-sm);
     color: var(--text-secondary);
 }
 
 .asv-queue-card__selected-count {
-    font-size: 13px;
+    font-size: var(--font-body-sm);
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -478,7 +431,7 @@
         padding: 12px 18px;
         background: var(--surface-canvas);
         border-bottom: 1px solid var(--border-default);
-        font-size: 11px;
+        font-size: var(--font-caption);
         line-height: 1.35;
         letter-spacing: 0.02em;
         font-weight: 600;
@@ -487,14 +440,7 @@
         white-space: nowrap;
     }
 
-.asv-th--checkbox,
-.asv-td--checkbox {
-    width: 44px;
-    padding-left: 20px !important;
-}
-
-.asv-th--right,
-.asv-td--right {
+.asv-th--right {
     text-align: right;
     padding-right: 20px !important;
 }
@@ -518,17 +464,15 @@
 
 .asv-table tbody td {
     padding: 14px 18px;
-    font-size: 13px;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
+    font-size: var(--font-body-sm);
     color: var(--text-primary);
     vertical-align: middle;
 }
 
 .asv-td--id {
-    font-family: "JetBrains Mono", "Fira Code", monospace;
-    font-size: 13px;
-    font-weight: 500;
+    font-family: 'Plus Jakarta Sans', var(--font-family-base);
+    font-size: var(--font-body-sm);
+    font-weight: 600;
     color: var(--primary-600);
     white-space: nowrap;
 }
@@ -538,50 +482,27 @@
     white-space: nowrap;
 }
 
-.asv-table__checkbox {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--primary-600);
-    cursor: pointer;
-}
-
 .asv-student-cell {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
+.asv-student-cell__details {
+    max-width: 220px;
+}
+
 .asv-student-cell__name {
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: var(--font-body-sm);
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .asv-student-cell__course {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: var(--font-body-sm);
     color: var(--text-secondary);
 }
 
-.asv-btn-open-dossier {
-    background: transparent;
-    border: none;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--primary-600);
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: var(--rounded-sm);
-    transition: all var(--duration-fast) var(--ease-out);
-}
-
-    .asv-btn-open-dossier:hover {
-        background: var(--primary-50);
-        color: var(--primary-700);
-    }
-
-/* AVATARS */
 .asv-avatar {
     display: inline-flex;
     align-items: center;
@@ -589,7 +510,7 @@
     width: 36px;
     height: 36px;
     border-radius: var(--rounded-full);
-    font-size: 13px;
+    font-size: var(--font-body-sm);
     font-weight: 600;
     flex-shrink: 0;
 }
@@ -597,7 +518,7 @@
 .asv-avatar--lg {
     width: 56px;
     height: 56px;
-    font-size: 18px;
+    font-size: var(--font-heading-sm);
     font-weight: 700;
 }
 
@@ -606,45 +527,37 @@
     color: var(--primary-600);
 }
 
-.asv-avatar--blue {
-    background: var(--info-subtle);
-    color: var(--info);
+.asv-btn-open-dossier {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 14px;
+    background: var(--primary-600);
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--rounded-sm);
+    font-size: var(--font-body-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
 }
 
-.asv-avatar--amber {
-    background: var(--warning-subtle);
-    color: var(--warning);
-}
+    .asv-btn-open-dossier:hover {
+        background: var(--primary-700);
+    }
 
-.asv-avatar--green {
-    background: var(--success-subtle);
-    color: var(--success);
-}
-
-.asv-avatar--purple {
-    background: #F5F3FF;
-    color: var(--accent-violet);
-}
-
-.asv-avatar--red {
-    background: var(--error-subtle);
-    color: var(--error);
-}
-
-/* PAGINATION FOOTER */
+/* PAGINATION */
 .asv-queue-card__footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
     border-top: 1px solid var(--border-default);
-    flex-wrap: wrap;
-    gap: 12px;
 }
 
 .asv-pagination-info {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: var(--font-body-sm);
     color: var(--text-secondary);
 }
 
@@ -664,7 +577,7 @@
     background: #FFFFFF;
     border: 1px solid var(--border-default);
     border-radius: var(--rounded-sm);
-    font-size: 13px;
+    font-size: var(--font-body-sm);
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
@@ -692,9 +605,7 @@
     background: transparent;
 }
 
-/* ==========================================================================
-   CENTERED MODAL OVERLAY & ACTIVE VERIFICATION DOSSIER
-   ========================================================================== */
+/* MODAL */
 .asv-modal-overlay {
     position: fixed;
     top: 0;
@@ -725,7 +636,7 @@
     flex-direction: column;
 }
 
-.asv-dossier--modal {
+.asv-dossier {
     display: flex;
     flex-direction: column;
     max-height: 90vh;
@@ -766,17 +677,15 @@
 
 .asv-dossier__label {
     display: block;
-    font-size: 11px;
-    line-height: 1.35;
-    letter-spacing: 0.02em;
+    font-size: var(--font-caption);
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text-muted);
 }
 
 .asv-dossier__kyc-id {
-    font-family: "JetBrains Mono", "Fira Code", monospace;
-    font-size: 14px;
+    font-family: 'Plus Jakarta Sans', var(--font-family-base);
+    font-size: var(--font-body-sm);
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -828,17 +737,14 @@
 
 .asv-dossier__name {
     margin: 0;
-    font-size: 18px;
-    line-height: 1.4;
-    letter-spacing: -0.005em;
+    font-size: var(--font-heading-sm);
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .asv-dossier__subtitle {
     margin: 4px 0 0 0;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: var(--font-body-sm);
     color: var(--text-secondary);
 }
 
@@ -850,7 +756,7 @@
 }
 
 .asv-dossier__campus {
-    font-size: 13px;
+    font-size: var(--font-body-sm);
     color: var(--text-secondary);
 }
 
@@ -866,9 +772,7 @@
 }
 
 .asv-meta-item__label {
-    font-size: 11px;
-    line-height: 1.35;
-    letter-spacing: 0.02em;
+    font-size: var(--font-caption);
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -879,16 +783,9 @@
     align-items: center;
     gap: 6px;
     margin-top: 4px;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: var(--font-body-sm);
     font-weight: 500;
     color: var(--text-primary);
-}
-
-.asv-meta-item__icon svg {
-    width: 14px;
-    height: 14px;
-    color: var(--text-muted);
 }
 
 /* TABS */
@@ -909,7 +806,7 @@
     height: 44px;
     background: transparent;
     border: none;
-    font-size: 13px;
+    font-size: var(--font-body-sm);
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
@@ -949,7 +846,7 @@
         display: block;
     }
 
-/* MOCK ID CARD */
+/* DOC PREVIEW */
 .asv-doc-preview {
     display: flex;
     flex-direction: column;
@@ -995,9 +892,7 @@
     }
 
 .asv-doc-preview__univ {
-    font-size: 11px;
-    line-height: 1.35;
-    letter-spacing: 0.02em;
+    font-size: var(--font-caption);
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-primary);
@@ -1056,7 +951,7 @@
 }
 
 .asv-doc-preview__field-value {
-    font-size: 11px;
+    font-size: var(--font-caption);
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -1067,7 +962,7 @@
 }
 
 .asv-doc-preview__id-tag {
-    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-family: 'Plus Jakarta Sans', var(--font-family-base);
     font-size: 10px;
     font-weight: 600;
     color: var(--text-secondary);
@@ -1078,19 +973,6 @@
     justify-content: space-between;
     align-items: flex-end;
     margin-top: 8px;
-}
-
-.asv-doc-preview__barcode {
-    width: 70px;
-    height: 16px;
-    color: #334155;
-}
-
-.asv-doc-preview__barcode-num {
-    font-family: "JetBrains Mono", "Fira Code", monospace;
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--text-secondary);
 }
 
 /* COR PREVIEW */
@@ -1114,7 +996,7 @@
 }
 
 .asv-cor-preview__univ {
-    font-size: 11px;
+    font-size: var(--font-caption);
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -1131,7 +1013,7 @@
 }
 
 .asv-cor-preview__info-grid {
-    font-size: 11px;
+    font-size: var(--font-caption);
     display: grid;
     gap: 4px;
 }
@@ -1153,8 +1035,7 @@
 }
 
 .asv-doc-meta__text {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: var(--font-body-sm);
     color: var(--text-secondary);
 }
 
@@ -1174,7 +1055,7 @@
     border: 1px solid var(--border-strong);
     border-radius: var(--rounded-sm);
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: var(--font-caption);
     font-weight: 600;
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-out);
@@ -1193,35 +1074,8 @@
     stroke: currentColor;
 }
 
-.asv-modal-alert {
-    padding: 10px 14px;
-    margin: 12px 24px;
-    border-radius: var(--rounded-sm);
-    font-size: 13px;
-    line-height: 1.45;
-    font-weight: 500;
-}
-
-.asv-modal-alert-success {
-    background: var(--success-subtle);
-    border: 1px solid #A7F3D0;
-    color: #065F46;
-}
-
-.asv-modal-alert-danger {
-    background: var(--error-subtle);
-    border: 1px solid #FECDD3;
-    color: #9F1239;
-}
-
-.asv-modal-alert-warning {
-    background: var(--warning-subtle);
-    border: 1px solid #FDE68A;
-    color: #92400E;
-}
-
 /* ACTION BAR */
-.asv-action-row--modal {
+.asv-action-row {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1231,28 +1085,27 @@
     flex-shrink: 0;
 }
 
-    .asv-action-row--modal .asv-btn {
-        flex: 1 1 0;
-        min-width: 0;
-        height: 40px;
-        padding: 0 14px;
-        border-radius: var(--rounded-md);
-        font-size: 13px;
-        line-height: 1.45;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        cursor: pointer;
-        white-space: nowrap;
-        outline: none;
-        transition: all var(--duration-fast) var(--ease-out);
-    }
+.asv-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: var(--rounded-md);
+    font-size: var(--font-body-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    outline: none;
+    transition: all var(--duration-fast) var(--ease-out);
+}
 
-        .asv-action-row--modal .asv-btn:active {
-            transform: scale(0.98);
-        }
+    .asv-btn:active {
+        transform: scale(0.98);
+    }
 
 .asv-btn__icon svg {
     width: 16px;
@@ -1271,17 +1124,6 @@
         border-color: var(--primary-700);
     }
 
-.asv-btn--outline {
-    background: #FFFFFF;
-    border: 1px solid var(--border-strong);
-    color: var(--text-primary);
-}
-
-    .asv-btn--outline:hover {
-        background: var(--surface-subtle);
-        border-color: var(--text-muted);
-    }
-
 .asv-btn--danger {
     background: #FFFFFF;
     border: 1px solid #FECACA;
@@ -1293,9 +1135,7 @@
         border-color: #F87171;
     }
 
-/* ==========================================================================
-   FULL-RESOLUTION DOCUMENT LIGHTBOX INSPECTION MODAL (EXPAND FEATURE)
-   ========================================================================== */
+/* LIGHTBOX */
 .asv-lightbox-overlay {
     position: fixed;
     top: 0;
@@ -1385,7 +1225,6 @@
     overflow-y: auto;
 }
 
-    /* Lightbox scaled version */
     .asv-lightbox-body .asv-doc-preview {
         max-width: 580px;
         width: 100%;
@@ -1444,13 +1283,27 @@
     .asv-toolbar__actions {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
     }
 
-    .asv-action-row--modal {
+    .asv-select {
+        width: 100%;
+    }
+
+    .asv-select-wrapper {
+        flex: 1 1 100%;
+    }
+
+    .asv-btn-clear {
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .asv-action-row {
         flex-direction: column;
     }
 
-        .asv-action-row--modal .asv-btn {
+        .asv-action-row .asv-btn {
             width: 100%;
         }
 
@@ -1464,348 +1317,16 @@
     }
 }
 
-/* ==========================================================================
-   DESIGN.MD TYPOGRAPHY ALIGNMENT
-   Shared type scale used by the Admin Dashboard.
-   Document preview text is kept readable at the 11px caption minimum.
-   ========================================================================== */
-
-.asv-page {
-    --font-family-base: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-display-2xl: 72px;
-    --font-display-xl: 56px;
-    --font-heading-lg: 32px;
-    --font-heading-md: 24px;
-    --font-heading-sm: 18px;
-    --font-body-base: 15px;
-    --font-body-sm: 13px;
-    --font-caption: 11px;
-    font-family: var(--font-family-base);
-    font-size: var(--font-body-base);
-    line-height: 1.5;
-    letter-spacing: 0;
-}
-
-    .asv-page button,
-    .asv-page input,
-    .asv-page select,
-    .asv-page textarea {
-        font-family: var(--font-family-base);
-    }
-
-/* Page title */
-.asv-header__title {
-    font-size: var(--font-heading-lg);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
-}
-
-/* Main section and panel headings */
-.asv-section-title,
-.asv-queue-card__title,
-.asv-dossier__title,
-.asv-modal-title,
-.asv-toolbar__title {
-    font-size: var(--font-heading-md);
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.01em;
-}
-
-/* Card and subsection headings */
-.asv-kpi-card__heading,
-.asv-queue-card__heading,
-.asv-dossier__section-title,
-.asv-lightbox-title {
-    font-size: var(--font-heading-sm);
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.005em;
-}
-
-/* KPI values */
-.asv-kpi-card__value {
-    font-size: var(--font-heading-lg);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
-}
-
-/* Body copy */
-.asv-header__subtitle,
-.asv-page p,
-.asv-page td,
-.asv-page th,
-.asv-page label,
-.asv-page input,
-.asv-page select,
-.asv-page textarea,
-.asv-doc-meta__text {
-    font-size: var(--font-body-base);
-    line-height: 1.5;
-    letter-spacing: 0;
-}
-
-/* Compact supporting text */
-.asv-kpi-card__subtext,
-.asv-kpi-card__badge-text,
-.asv-td--muted,
-.asv-student-cell__course,
-.asv-pagination-info,
-.asv-pagination__btn,
-.asv-btn,
-.asv-btn-tool,
-.asv-btn-open-dossier,
-.asv-doc-preview__field-value,
-.asv-doc-preview__id-tag,
-.asv-cor-preview__info-grid,
-.asv-lightbox-hint {
-    font-size: var(--font-body-sm);
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-}
-
-/* Caption scale: labels, status pills, metadata */
-.asv-kpi-card__label,
-.asv-pill,
-.asv-status,
-.asv-doc-preview__univ,
-.asv-doc-preview__type,
-.asv-doc-preview__sy,
-.asv-doc-preview__field-label,
-.asv-doc-preview__barcode-num,
-.asv-cor-preview__univ,
-.asv-cor-preview__doc-title,
-.asv-cor-preview__term,
-.asv-doc-meta__label {
-    font-size: var(--font-caption);
-    line-height: 1.35;
-    letter-spacing: 0.02em;
-    font-weight: 600;
-}
-
-/* Avoid undersized text inside document mockups.
-   This is a deliberate readability rule; the document preview is still a UI
-   representation, not a pixel-accurate reproduction of a physical ID. */
-.asv-doc-preview *,
-.asv-cor-preview * {
-    font-size: max(11px, 1em);
-}
-
-.asv-doc-preview__univ,
-.asv-doc-preview__type,
-.asv-doc-preview__sy,
-.asv-doc-preview__field-label,
-.asv-doc-preview__field-value,
-.asv-doc-preview__id-tag,
-.asv-doc-preview__barcode-num,
-.asv-cor-preview__univ,
-.asv-cor-preview__doc-title,
-.asv-cor-preview__term,
-.asv-cor-preview__info-grid {
-    font-size: var(--font-caption);
-    line-height: 1.35;
-    letter-spacing: 0.02em;
-}
-
-/* Keep the same heading tokens on narrow screens */
-@media (max-width: 767px) {
-    .asv-header__title {
-        font-size: var(--font-heading-lg);
-        line-height: 1.2;
-        letter-spacing: -0.015em;
-    }
-}
-
-/* ==========================================================================
-   FINAL DESIGN.MD TYPOGRAPHY OVERRIDE
-   Uses the exact selectors present in the Student Verification .cshtml.
-   Typography only: preserves existing layout, colors, spacing and behavior.
-   ========================================================================== */
-
-.asv-page {
-    --font-family-base: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-display-2xl: 72px;
-    --font-display-xl: 56px;
-    --font-heading-lg: 32px;
-    --font-heading-md: 24px;
-    --font-heading-sm: 18px;
-    --font-body-base: 15px;
-    --font-body-sm: 13px;
-    --font-caption: 11px;
-    font-family: var(--font-family-base);
-    font-size: var(--font-body-base);
-    line-height: 1.5;
-    letter-spacing: 0;
-}
-
-    .asv-page button,
-    .asv-page input,
-    .asv-page select,
-    .asv-page textarea {
-        font-family: var(--font-family-base);
-    }
-
-/* Heading LG: page title */
-.asv-header__title {
-    font-size: var(--font-heading-lg);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
-}
-
-/* Heading MD: primary panels and modal titles */
-.asv-section-title,
-.asv-queue-card__title,
-.asv-dossier__title,
-.asv-modal-title,
-.asv-toolbar__title {
-    font-size: var(--font-heading-md);
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.01em;
-}
-
-/* Heading SM: card and subsection titles */
-.asv-kpi-card__heading,
-.asv-queue-card__heading,
-.asv-dossier__section-title,
-.asv-lightbox-title {
-    font-size: var(--font-heading-sm);
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.005em;
-}
-
-/* Identity name */
-.asv-dossier__name {
-    font-size: var(--font-heading-sm);
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.005em;
-}
-
-/* KPI values */
-.asv-kpi-card__value {
-    font-size: var(--font-heading-lg);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
-}
-
-/* Body Base: main explanatory copy and form controls */
-.asv-header__subtitle,
-.asv-page p,
-.asv-page td,
-.asv-page label,
-.asv-search__input,
-.asv-select,
-.asv-doc-meta__text {
-    font-size: var(--font-body-base);
-    font-weight: 400;
-    line-height: 1.5;
-    letter-spacing: 0;
-}
-
-/* Body SM: supporting information, buttons, table headings and metadata */
-.asv-kpi-card__unit,
-.asv-kpi-card__footer,
-.asv-kpi-card__subtext,
-.asv-kpi-card__badge-text,
-.asv-queue-card__subtitle,
-.asv-queue-card__selected-count,
-.asv-table thead th,
-.asv-table tbody td,
-.asv-td--id,
-.asv-td--muted,
-.asv-student-cell__name,
-.asv-student-cell__course,
-.asv-btn-open-dossier,
-.asv-clear-link,
-.asv-pagination-info,
-.asv-pagination__btn,
-.asv-dossier__subtitle,
-.asv-dossier__campus,
-.asv-dossier__kyc-id,
-.asv-meta-item__value,
-.asv-tab,
-.asv-btn,
-.asv-btn-tool,
-.asv-modal-alert,
-.asv-lightbox-hint {
-    font-size: var(--font-body-sm);
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-}
-
-/* Preserve emphasis for student names and interactive controls */
-.asv-student-cell__name,
-.asv-btn-open-dossier,
-.asv-btn,
-.asv-btn-tool,
-.asv-pagination__btn {
-    font-weight: 600;
-}
-
-/* Caption: labels, status pills, table column labels and compact metadata */
-.asv-kpi-card__label,
-.asv-pill,
-.asv-status,
-.asv-dossier__label,
-.asv-meta-item__label,
-.asv-doc-meta__label,
-.asv-chip--subtle {
-    font-size: var(--font-caption);
-    font-weight: 600;
-    line-height: 1.35;
-    letter-spacing: 0.02em;
-}
-
-/* Document previews: keep all small simulated document text readable.
-   Specific field values are one step above captions for legibility. */
-.asv-doc-preview *,
-.asv-cor-preview * {
-    font-size: var(--font-caption);
-    line-height: 1.35;
-    letter-spacing: 0.02em;
-}
-
-.asv-doc-preview__field-value,
-.asv-doc-preview__id-tag,
-.asv-cor-preview__info-grid {
-    font-size: var(--font-body-sm);
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-}
-
-.asv-doc-preview__field-label,
-.asv-doc-preview__univ,
-.asv-doc-preview__type,
-.asv-doc-preview__sy,
-.asv-doc-preview__barcode-num,
-.asv-cor-preview__univ,
-.asv-cor-preview__doc-title,
-.asv-cor-preview__term {
-    font-size: var(--font-caption);
-    line-height: 1.35;
-    letter-spacing: 0.02em;
-    font-weight: 600;
-}
-
-/* Decorative initials and close icons are not body text */
-.asv-avatar,
-.asv-avatar--lg,
-.asv-modal-close,
-.asv-lightbox-close {
-    line-height: 1;
-}
-
-/* Keep the exact same title scale at mobile widths */
-@media (max-width: 767px) {
-    .asv-header__title {
-        font-size: var(--font-heading-lg);
-        line-height: 1.2;
-        letter-spacing: -0.015em;
-    }
-}
+/* Live database states and submitted document previews */
+.asv-feedback{margin:0 0 16px;padding:12px 16px;border:1px solid #bbf7d0;border-radius:10px;background:#ecfdf5;color:#166534;font-size:13px}
+.asv-feedback.is-error{border-color:#fecaca;background:#fef2f2;color:#991b1b}
+.asv-table__state{padding:32px!important;text-align:center;color:#64748b}
+.asv-real-document{display:flex;flex-direction:column;align-items:center;gap:10px;margin:14px 0 22px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+.asv-real-document h4{align-self:flex-start;margin:0;color:#334155;font-size:14px}
+.asv-real-document__preview{display:block;max-width:100%;max-height:440px;object-fit:contain;background:white;border-radius:6px}
+iframe.asv-real-document__preview{width:100%;height:440px;border:0}
+.asv-real-document a{color:#4f46e5;font-size:13px;font-weight:600}
+.asv-document-message{margin:8px 0;color:#64748b;font-size:13px}
+.asv-action-row [hidden]{display:none!important}
+.asv-pagination__btn:disabled{opacity:.5;cursor:not-allowed}
+.asv-pagination__btn.is-active{background:#4f46e5;color:#fff;border-color:#4f46e5}

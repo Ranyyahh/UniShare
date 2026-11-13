@@ -1,0 +1,71 @@
+@model UniShare.Controllers.RentalRecordsPageViewModel
+@{
+    ViewBag.Title = Model.Title;
+}
+<link rel="stylesheet" href="~/Content/RentalRecords.css" />
+<main class="rental-records">
+    <div class="rental-records__inner">
+        <header class="rental-records__header">
+            <p class="rental-records__eyebrow">RENTAL MANAGEMENT</p>
+            <h1>@Model.Title</h1>
+            <p class="rental-records__description">Review rental activity for the items you have listed.</p>
+        </header>
+        <nav class="rental-records__nav" aria-label="Listing sections">
+        <div class="rental-records__tabs">
+            <a class="rental-records__tab @(Model.ActiveTab == "items" ? "is-active" : "")" href="@Url.Action("ItemListings", "MyListings")">My Items</a>
+            <a class="rental-records__tab @(Model.ActiveTab == "requests" ? "is-active" : "")" href="@Url.Action("Index", "RentalRequests")">Rental Requests</a>
+            <a class="rental-records__tab @(Model.ActiveTab == "ongoing" ? "is-active" : "")" href="@Url.Action("Ongoing", "MyListings")">Ongoing Rentals</a>
+            <a class="rental-records__tab @(Model.ActiveTab == "past" ? "is-active" : "")" href="@Url.Action("PastTransactions", "MyListings")">Past Transactions</a>
+        </div>
+    </nav>
+    @if (TempData["Error"] != null) { <div class="rental-records__notice rental-records__notice--error" role="alert">@TempData["Error"]</div> }
+    @if (TempData["Success"] != null) { <div class="rental-records__notice rental-records__notice--success" role="status">@TempData["Success"]</div> }
+    @if (Model.Rentals == null || Model.Rentals.Count == 0)
+    {
+        <section class="rental-records__empty">
+            <span class="rental-records__empty-icon" aria-hidden="true">↻</span>
+            <h2>No @Model.Title.ToLowerInvariant() yet</h2>
+            <p>Rental activity will appear here when a transaction matches this section.</p>
+        </section>
+    }
+    else
+    {
+        <section class="rental-records__panel">
+        <div class="rental-records__table-wrap">
+            <table class="rental-records__table">
+                <thead><tr><th>REQUEST</th><th>ITEM</th><th>RENTER</th><th>HANDOVER SCHEDULE</th><th>DURATION</th><th>FEE</th><th>STATUS</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var rental in Model.Rentals)
+                    {
+                        <tr>
+                            <td><strong>@rental.RequestId</strong><small>@rental.RequestDateFormatted</small></td>
+                            <td><strong>@rental.ItemName</strong><small>@rental.Category</small></td>
+                            <td><strong>@rental.BorrowerName</strong><small>@rental.BorrowerProgram</small></td>
+                            <td>@rental.HandoverScheduleFormatted</td>
+                            <td>@rental.Duration</td>
+                            <td>@rental.RentalFeeFormatted</td>
+                            <td><span class="rental-records__status">@rental.Status</span></td>
+                            <td>
+                                @if (Model.ActiveTab == "ongoing" && rental.BorrowerHandoverConfirmed && !rental.OwnerHandoverConfirmed)
+                                {
+                                    using (Html.BeginForm("ConfirmHandoverByOwner", "BorrowedItems", new { id = rental.BookingObjectId }, FormMethod.Post, new { @class = "rental-records__owner-confirm-form" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="rental-records__owner-confirm">Confirm handover</button>
+                                    }
+                                }
+                                else if (Model.ActiveTab == "ongoing" && rental.OwnerHandoverConfirmed && !rental.BorrowerHandoverConfirmed)
+                                {
+                                    <span class="rental-records__waiting">Waiting for borrower</span>
+                                }
+                                <a class="rental-records__details" href="@Url.Action("Details", "MyRentals", new { id = rental.BookingObjectId })">View details <span aria-hidden="true">→</span></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        </section>
+    }
+    </div>
+</main>

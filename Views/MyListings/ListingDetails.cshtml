@@ -1,0 +1,41 @@
+@model UniShare.Models.ListingItemViewModel
+@using System.Linq
+@{
+    ViewBag.Title = "Listing Details";
+    var approval = (Model.ApprovalStatus ?? "PENDING").ToUpperInvariant();
+    var statusLabel = approval == "APPROVED" ? "Approved" : approval == "REJECTED" ? "Rejected" : "Pending review";
+}
+<link rel="stylesheet" href="@Url.Content("~/Content/MyListings.css")" />
+<main class="listing-details-page">
+    <p><a href="@Url.Action("ItemListings", "MyListings")">← Back to My Listings</a></p>
+    <article class="listing-details-card">
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <img class="listing-details-photo" src="@Url.Content(Model.ImageUrl)" alt="@Model.Title" />
+        }
+        <div class="listing-details-body">
+            <span class="my-listings-status is-@approval.ToLowerInvariant()">@statusLabel</span>
+            <h1>@Model.Title</h1>
+            <p>@Model.Description</p>
+            @if (approval == "REJECTED" && !string.IsNullOrWhiteSpace(Model.RejectionReason))
+            {
+                <div class="listing-details-reason"><strong>Admin feedback:</strong> @Model.RejectionReason</div>
+            }
+            <dl class="listing-details-grid">
+                <div><dt>Category</dt><dd>@Model.CategoryLabel</dd></div>
+                <div><dt>Price</dt><dd>&#8369;@Model.Price.ToString("N2") / @Model.PerHours hr@(Model.PerHours == 1 ? "" : "s")</dd></div>
+                <div><dt>Date submitted</dt><dd>@(Model.CreatedAt == default(DateTime) ? "-" : Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy"))</dd></div>
+                <div><dt>Availability</dt><dd>@Model.Status</dd></div>
+                <div><dt>Handover location</dt><dd>@Model.Location</dd></div>
+                <div><dt>Available days</dt><dd>@(Model.AvailableDays == null || !Model.AvailableDays.Any() ? "Not specified" : string.Join(", ", Model.AvailableDays))</dd></div>
+            </dl>
+            <div class="listing-details-actions">
+                @if (Model.Status != UniShare.Models.ListingStatus.Rented)
+                {
+                    <a href="@Url.Action("Edit", "MyListings", new { id = Model.Id })">Edit Listing</a>
+                }
+                <a class="secondary" href="@Url.Action("ItemListings", "MyListings")">Back to listings</a>
+            </div>
+        </div>
+    </article>
+</main>

@@ -37,6 +37,7 @@ namespace UniShare.Models
         public string Id { get; set; }
         public string Name { get; set; }
         public string Subtitle { get; set; }
+        public string Campus { get; set; }
         public string Condition { get; set; }
         public string ConditionBadgeClasses { get; set; } = "bg-slate-100 text-slate-700";
         public decimal PricePerHour { get; set; }

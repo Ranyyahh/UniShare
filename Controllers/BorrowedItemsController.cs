@@ -39,7 +39,19 @@ namespace UniShare.Controllers
             if (!received) return Json(new { ok = false, message = "Confirm that you received the item before continuing." });
             ObjectId borrowerId;
             if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
-            return Run(() => BorrowedItemsService.ConfirmHandover(borrowerId, id), "Handover confirmed. Your rental timer has started.", "This handover is no longer awaiting your confirmation.");
+            return Run(() => BorrowedItemsService.ConfirmHandover(borrowerId, id), "Your handover confirmation has been recorded.", "This handover is no longer awaiting your confirmation.");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ConfirmHandoverByOwner(string id)
+        {
+            ObjectId ownerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return new HttpStatusCodeResult(401);
+            var confirmed = BorrowedItemsService.ConfirmHandoverByOwner(ownerId, id);
+            TempData[confirmed ? "Success" : "Error"] = confirmed
+                ? "Your handover confirmation has been recorded. The rental is active once both parties confirm."
+                : "This rental is no longer awaiting your handover confirmation.";
+            return RedirectToAction("Ongoing", "MyListings");
         }
 
         [HttpPost, ValidateAntiForgeryToken]

@@ -1,5 +1,5 @@
 /* UniShare - availability calendar modal + toast.
-   Reads config from #avail-modal (data-item-id, data-item-name, data-booked). */
+   Reads item and owner schedule from #avail-modal. Slot-level reservations are shown on the request form. */
 (function () {
     "use strict";
 
@@ -9,8 +9,6 @@
     function $(id) { return document.getElementById(id); }
 
     var cfg = modal.dataset;
-    var booked = {};
-    (cfg.booked || "").split(",").forEach(function (k) { if (k) booked[k] = true; });
 
     var dayNumbers = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
     var availableDays = (cfg.availableDays || "").split(",").map(function (d) { return dayNumbers[d]; }).filter(function (d) { return d !== undefined; });
@@ -57,7 +55,7 @@
         if (!cal.sel) {
             for (var n = 0; n < 120 && !cal.sel; n++) {
                 var c = new Date(today); c.setDate(c.getDate() + n);
-                if (!booked[dkey(c)] && availableDays.indexOf(c.getDay()) >= 0) cal.sel = dkey(c);
+                if (availableDays.indexOf(c.getDay()) >= 0) cal.sel = dkey(c);
             }
         }
         var sd = parseKey(cal.sel || dkey(today));
@@ -77,7 +75,7 @@
 
         for (var n = 0; n < total; n++) {
             var d = new Date(cal.y, cal.m, 1 - first.getDay() + n), k = dkey(d);
-            var cls = (d.getMonth() !== cal.m || d < today) ? "off" : booked[k] ? "booked" : availableDays.indexOf(d.getDay()) < 0 ? "off" : "free";
+            var cls = (d.getMonth() !== cal.m || d < today || availableDays.indexOf(d.getDay()) < 0) ? "off" : "free";
             if (k === cal.sel && cls === "free") cls += " sel";
             html += '<button type="button" class="cal-cell ' + cls + '" data-date="' + k + '"' +
                 (cls.indexOf("free") === 0 ? "" : " disabled") + '><span>' + d.getDate() + '</span><i class="cal-dot"></i></button>';

@@ -58,6 +58,9 @@ namespace UniShare.Models
         public string Status { get; set; }          // Pending (approved, awaiting handover) / Ongoing / Completed / Disputed
         public bool HandoverConfirmed { get; set; }
         public bool CanReportNoShow { get; set; }
+        public bool BorrowerHandoverConfirmed { get; set; }
+        public bool OwnerHandoverConfirmed { get; set; }
+        public bool CanConfirmHandover { get; set; }
         public int? Rating { get; set; }
         public string Review { get; set; }
         public string DisputeReason { get; set; }
@@ -117,6 +120,8 @@ namespace UniShare.Models
         public string Body { get; set; }
         public string Time { get; set; }
         public bool Unread { get; set; }
+        public string EventKey { get; set; }
+        public string LinkUrl { get; set; }
     }
 
     public class ListingForm

@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 @{
     var showAdminSidebar = ViewBag.ShowAdminSidebar != null && (bool)ViewBag.ShowAdminSidebar;
+    var popupNotifications = new System.Collections.Generic.List<UniShare.Models.NotificationItem>();
+    MongoDB.Bson.ObjectId popupUserId;
+    if (User != null && User.Identity != null && User.Identity.IsAuthenticated && MongoDB.Bson.ObjectId.TryParse(User.Identity.Name, out popupUserId))
+    {
+        popupNotifications = UniShare.Services.NotificationService.GetForUser(popupUserId);
+    }
     var popupPayload = new
     {
         conversations = UniShare.Models.SampleData.Conversations.Select(c => new
@@ -14,13 +20,14 @@
             unread = c.Unread,
             messages = c.Messages.Select(m => new { mine = m.Mine, text = m.Text, time = m.Time })
         }),
-        notifications = UniShare.Models.SampleData.Notifications.Select(n => new
+        notifications = popupNotifications.Select(n => new
         {
             id = n.Id,
             title = n.Title,
             body = n.Body,
             time = n.Time,
-            unread = n.Unread
+            unread = n.Unread,
+            url = n.LinkUrl
         })
     };
     var popupJson = System.Web.Helpers.Json.Encode(popupPayload).Replace("<", "\\u003c");
@@ -39,7 +46,7 @@
     {
     <header class="site-header">
         <div class="site-header__inner">
-            <a class="brand" href="@Url.Action("Index", "Home")" aria-label="UniShare home">
+            <a class="brand" href="@(Request.IsAuthenticated ? Url.Action("Index", "Dashboard") : Url.Action("Index", "Home"))" aria-label="UniShare home">
                 <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3" /></svg></span>
                 <span class="brand__copy"><span class="brand__name">UniShare</span><span class="brand__school">Quezon City University</span></span>
             </a>
@@ -65,7 +72,7 @@
 @if (User != null && User.IsInRole("ADMIN"))
 {
     <a class="site-navigation__link" href="@Url.Action("Index", "AdminDashboard")">Admin Dashboard</a>
-    <a class="site-navigation__link" href="@Url.Action("StudentVerification", "Admin")">Admin Verification</a>
+    <a class="site-navigation__link" href="@Url.Action("Index", "AdminStudentVerification")">Admin Verification</a>
 }
                 </div>
                 <div class="site-navigation__actions">
@@ -88,7 +95,7 @@
                                 </a>
                                 @if (User != null && User.IsInRole("ADMIN"))
                                 {
-                                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("StudentVerification", "Admin")">
+                                    <a class="account-dropdown__item" role="menuitem" href="@Url.Action("Index", "AdminStudentVerification")">
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Admin Verification
                                     </a>
                                 }
@@ -141,7 +148,7 @@
             </div>
         </div>
     }
-    <main class="site-main @(showAdminSidebar ? "site-main--admin" : "")" id="main-content">
+    <main  class="site-main @(showAdminSidebar ? "site-main--admin" : "")" id="main-content">
         @if (showAdminSidebar)
         {
             <div class="admin-workspace">
@@ -187,7 +194,11 @@
         </header>
         <div class="pm-dialog__toolbar">
             <p>Latest updates about your rentals and messages.</p>
-            <button id="pm-notes-readall" class="pm-readall" type="button">Mark all as read</button>
+            @using (Html.BeginForm("MarkAllRead", "Notifications", FormMethod.Post, new { id = "pm-notes-readall-form" }))
+            {
+                @Html.AntiForgeryToken()
+                <button id="pm-notes-readall" class="pm-readall" type="submit">Mark all as read</button>
+            }
         </div>
         <ul class="pm-notes-list" id="pm-notes-list"></ul>
     </dialog>

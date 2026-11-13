@@ -29,7 +29,6 @@
         reset: document.getElementById('btnResetFilter'),
         apply: document.getElementById('btnApplyFilter'),
         error: document.getElementById('filterError'),
-        refresh: document.getElementById('btnRefreshReport'),
         exportBtn: document.getElementById('btnExportReport'),
         notice: document.getElementById('reportsNotice'),
         tooltip: document.getElementById('reportsTooltip'),
@@ -46,6 +45,9 @@
         chartStatus: document.getElementById('chartStatus'),
         chartActivity: document.getElementById('chartActivity'),
         chartExpenses: document.getElementById('chartExpenses'),
+        chartRequestsReceived: document.getElementById('chartRequestsReceived'),
+        chartRequestsSubmitted: document.getElementById('chartRequestsSubmitted'),
+        transactions: document.getElementById('reportsTransactions'),
         statsRevenue: document.getElementById('statsRevenue'),
         statsActivity: document.getElementById('statsActivity'),
         statsExpenses: document.getElementById('statsExpenses'),
@@ -503,7 +505,7 @@
                 showTip(item.name, [{
                     label: 'Quantity rented', value: formatInt(item.quantity),
                     note: total > 0 ? Math.round((item.quantity / total) * 100) + '% of the top ' + items.length + ' \u00B7 rank #' + rank : null
-                }], e);
+                }, { label: 'Completed rental fees', value: formatMoney(item.revenue || 0) }], e);
             }
             li.addEventListener('mousemove', over);
             li.addEventListener('mouseleave', hideTip);
@@ -538,11 +540,15 @@
     function donutChart(box, s) {
         clear(box);
         var parts = [
+            { label: 'Pending', value: s.pending || 0, color: '#f59e0b' },
+            { label: 'Accepted', value: s.accepted || 0, color: '#7c3aed' },
             { label: 'Active', value: s.active, color: COLORS.active },
             { label: 'Completed', value: s.completed, color: COLORS.completed },
-            { label: 'Disputed', value: s.disputed, color: COLORS.disputed }
-        ];
-        var total = parts[0].value + parts[1].value + parts[2].value;
+            { label: 'Disputed', value: s.disputed, color: COLORS.disputed },
+            { label: 'Cancelled', value: s.cancelled || 0, color: '#64748b' },
+            { label: 'Rejected', value: s.rejected || 0, color: COLORS.disputed }
+        ].filter(function (part) { return part.value > 0; });
+        var total = parts.reduce(function (acc, part) { return acc + part.value; }, 0);
         var wrap = htmlEl('div', 'reports-donut', null, box);
         var R = 70, C = 2 * Math.PI * R, GAP = 2, offset = 0, i;
         var segNodes = [], legendNodes = [], pending = [];
@@ -692,9 +698,9 @@
     function emptyPayload() {
         return {
             from: applied.from, to: applied.to, granularity: 'day',
-            cards: { totalRevenue: 0, totalRentals: 0, itemsRented: 0, totalBorrowings: 0 },
-            rentalRevenue: { labels: [], values: [] }, mostRentedItems: [],
-            rentalStatus: { active: 0, completed: 0, disputed: 0, notCounted: 0 },
+            cards: { totalRevenue: 0, totalRentals: 0, itemsRented: 0, totalBorrowings: 0, pendingTransactions: 0, activeRentals: 0, completedRentals: 0, rejectedOrCancelledTransactions: 0, pendingBorrowingRequests: 0, activeBorrowedRentals: 0, completedBorrowedRentals: 0, cancelledOrRejectedBorrowings: 0 },
+            rentalRevenue: { labels: [], values: [] }, rentalRequestsReceived: { labels: [], values: [] }, rentalRequestsSubmitted: { labels: [], values: [] }, mostRentedItems: [],
+            rentalStatus: { pending: 0, accepted: 0, active: 0, completed: 0, disputed: 0, cancelled: 0, rejected: 0, notCounted: 0 }, transactions: [],
             borrowingActivity: { labels: [], values: [], details: [] }, borrowingExpenses: { labels: [], values: [], details: [] },
             borrowingsWithoutPayment: 0, borrowingsNotCounted: 0
         };
@@ -737,13 +743,13 @@
 
         // C. Status distribution
         var st = data.rentalStatus;
-        if (st.active + st.completed + st.disputed > 0) {
+        if (st.pending + st.accepted + st.active + st.completed + st.disputed + st.cancelled + st.rejected > 0) {
             donutChart(el.chartStatus, st);
         } else {
-            emptyState(el.chartStatus, failure ? none : 'No rental transactions', failure || 'Active, completed and disputed rentals will be shown here.');
+            emptyState(el.chartStatus, failure ? none : 'No rental transactions', failure || 'Requests and finalized rental statuses will be shown here.');
         }
         el.statusFootnote.textContent = st.notCounted > 0
-            ? formatInt(st.notCounted) + ' request' + (st.notCounted === 1 ? '' : 's') + ' not shown: still pending, accepted, declined or returned.'
+            ? formatInt(st.notCounted) + ' transaction' + (st.notCounted === 1 ? '' : 's') + ' with an unrecognized status not shown.'
             : '';
 
         // D. Borrowing activity
@@ -763,6 +769,32 @@
         el.expensesFootnote.textContent = unpaid > 0
             ? formatInt(unpaid) + ' borrowing' + (unpaid === 1 ? '' : 's') + ' in this period ' + (unpaid === 1 ? 'has' : 'have') + ' no payment recorded and ' + (unpaid === 1 ? 'is' : 'are') + ' not included.'
             : '';
+
+        renderRequestChart(el.chartRequestsReceived, data.rentalRequestsReceived, 'Requests received from borrowers', gran, years);
+        renderRequestChart(el.chartRequestsSubmitted, data.rentalRequestsSubmitted, 'Requests you submitted', gran, years);
+        renderTransactions(data.transactions || []);
+    }
+
+    function renderRequestChart(box, series, label, gran, years) {
+        if (!box) { return; }
+        if (sum(series.values) > 0) {
+            barChart(box, series, { height: 220, money: false, color: COLORS.activity, gran: gran, years: years, name: 'Requests', aria: label });
+        } else { emptyState(box, 'No requests in this period', label + ' will appear here.'); }
+    }
+
+    function renderTransactions(rows) {
+        if (!el.transactions) { return; }
+        clear(el.transactions);
+        if (!rows.length) {
+            var empty = htmlEl('tr', '', null, el.transactions);
+            var cell = htmlEl('td', 'reports-table__empty', 'No transactions in this period.', empty);
+            cell.colSpan = 6;
+            return;
+        }
+        rows.forEach(function (r) {
+            var tr = htmlEl('tr', '', null, el.transactions);
+            [r.itemName, r.transactionType, r.date, formatMoney(r.amount), r.status, r.transactionId].forEach(function (v) { htmlEl('td', '', v || '—', tr); });
+        });
     }
 
     /* ---------- notices, loading, validation ---------- */
@@ -785,12 +817,10 @@
     }
 
     function setLoading(on) {
-        var boxes = [el.chartRevenue, el.chartTopItems, el.chartStatus, el.chartActivity, el.chartExpenses], i;
+        var boxes = [el.chartRevenue, el.chartTopItems, el.chartStatus, el.chartActivity, el.chartExpenses, el.chartRequestsReceived, el.chartRequestsSubmitted], i;
         for (i = 0; i < boxes.length; i++) {
             boxes[i].className = boxes[i].className.replace(/\s*is-loading/g, '') + (on ? ' is-loading' : '');
         }
-        el.refresh.className = 'reports-btn reports-btn--secondary reports-btn--refresh' + (on ? ' is-loading' : '');
-        el.refresh.setAttribute('aria-busy', on ? 'true' : 'false');
     }
 
     function validateRange(from, to) {
@@ -864,7 +894,7 @@
                 setNotice(null);
             } else {
                 setNotice('The report could not be loaded. Please try again.', true);
-                render(null, 'Something went wrong while loading the report. Use Refresh to try again.');
+                render(null, 'Something went wrong while loading the report. Adjust the dates or apply the filters to try again.');
             }
         };
         xhr.send();
@@ -927,8 +957,6 @@
         el.to.value = defaultTo;
         load({ from: defaultFrom, to: defaultTo });
     });
-
-    el.refresh.addEventListener('click', function () { load(applied); });
 
     el.exportBtn.addEventListener('click', exportReport);
 

@@ -14,7 +14,7 @@
     <ul class="us-list">
         @foreach (var n in Model)
         {
-            <li class="@(n.Unread ? "is-unread" : "")"><div><strong>@n.Title</strong><p>@n.Body</p></div><small>@n.Time</small></li>
+            <li class="@(n.Unread ? "is-unread" : "")"><a href="@n.LinkUrl"><div><strong>@n.Title</strong><p>@n.Body</p></div><small>@n.Time</small></a></li>
         }
     </ul>
 </section>

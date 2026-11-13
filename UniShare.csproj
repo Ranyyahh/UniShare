@@ -111,6 +111,28 @@
     </Reference>
     <Reference Include="ZstdSharp">
       <HintPath>packages\ZstdSharp.Port.0.7.3\lib\net461\ZstdSharp.dll</HintPath>
+    <Reference Include="SharpCompress">
+      <HintPath>packages\SharpCompress.0.30.1\lib\net461\SharpCompress.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Snappier">
+      <HintPath>packages\Snappier.1.0.0\lib\netstandard2.0\Snappier.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ZstdSharp">
+      <HintPath>packages\ZstdSharp.Port.0.7.3\lib\net461\ZstdSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
@@ -213,11 +235,14 @@
     <Compile Include="Controllers\NotificationsController.cs" />
     <Compile Include="Controllers\Dispute Management\DisputeManagement.cs" />
     <Compile Include="Controllers\ReportsAnalyticsController.cs" />
+    <Compile Include="Controllers\AdminReportsAnalyticsController.cs" />
+    <Compile Include="Services\MongoReportDataSource.cs" />
     <Compile Include="Controllers\SalesReportController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Models.cs" />
+    <Compile Include="Models\ItemCategoryCatalog.cs" />
     <Compile Include="Models\BrowseItemsViewModel.cs" />
     <Compile Include="Models\AuthViewModels.cs" />
     <Compile Include="Models\AuthDocuments.cs" />
@@ -232,6 +257,7 @@
     <Compile Include="Services\MongoDatabase.cs" />
     <Compile Include="Services\AdminAccountabilityService.cs" />
     <Compile Include="Services\AccountRestrictionFilter.cs" />
+    <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\MarketplaceService.cs" />
     <Compile Include="Services\BookingService.cs" />
     <Compile Include="Services\BorrowedItemsService.cs" />
@@ -250,6 +276,7 @@
     <Content Include="Content\Site.css" />
     <Content Include="Content\MyRentals.css" />
     <Content Include="Content\ReportsAnalytics.css" />
+    <Content Include="Content\admin-reports-analytics.css" />
     <Content Include="Content\auth.css" />
     <Content Include="Content\chatroom.css" />
     <Content Include="Content\items.css" />
@@ -267,6 +294,7 @@
     <Content Include="Global.asax" />
     <Content Include="mongocrypt.dll" />
     <Content Include="Scripts\admin-dashboard.js" />
+    <Content Include="Scripts\admin-reports-analytics.js" />
     <Content Include="Scripts\admin-item-booking.js" />
     <Content Include="Scripts\admin-student-verification.js" />
     <Content Include="Scripts\bootstrap.js" />
@@ -277,6 +305,8 @@
     <Content Include="Content\fonts\PlusJakartaSans-Variable.ttf" />
     <Content Include="Scripts\auth-forms.js" />
     <Content Include="Scripts\availability.js" />
+    <Content Include="Scripts\MyRentals.js" />
+    <Content Include="Scripts\rental-request.js" />
     <Content Include="Scripts\jquery-3.5.0.js" />
     <Content Include="Scripts\jquery-3.5.0.min.js" />
     <Content Include="Scripts\jquery-3.5.0.slim.js" />
@@ -308,8 +338,6 @@
     <Content Include="Views\BrowseItems\OwnerProfile.cshtml" />
     <Content Include="Views\BrowseItems\RequestSubmitted.cshtml" />
     <Content Include="Views\BrowseItems\RequestToRent.cshtml" />
-    <Content Include="Views\MyRentals\Details.cshtml" />
-    <Content Include="Views\MyRentals\History.cshtml" />
     <Content Include="Views\RentalRequests\Index.cshtml" />
     <Content Include="Views\Chatroom\Chatroom.cshtml" />
     <Content Include="Views\Dashboard\Index.cshtml" />
@@ -324,9 +352,14 @@
     <Content Include="Views\MyListings\EditListing.cshtml" />
     <Content Include="Views\MyListings\Index.cshtml" />
     <Content Include="Views\MyListings\ItemListings.cshtml" />
+    <Content Include="Views\MyListings\ListingDetails.cshtml" />
+    <Content Include="Views\MyListings\RentalRecords.cshtml" />
+    <Content Include="Content\RentalRecords.css" />
+    <Content Include="Content\MyListings.css" />
     <Content Include="Views\MyListings\_DeleteListingModal.cshtml" />
     <Content Include="Views\MyRentals\Index.cshtml" />
     <Content Include="Views\ReportsAnalytics\Index.cshtml" />
+    <Content Include="Views\AdminReportsAnalytics\Index.cshtml" />
     <Content Include="Views\Notifications\Index.cshtml" />
     <Content Include="Views\SalesReport\Index.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
@@ -394,6 +427,7 @@
     <Compile Include="Controllers\Transaction &amp; Payment Records\TransactionPaymentRecords.cs" />
     <Compile Include="Models\DisputeViewModel.cs" />
     <Compile Include="Models\TransactionViewModel.cs" />
+    <Compile Include="Models\MyRentalsViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

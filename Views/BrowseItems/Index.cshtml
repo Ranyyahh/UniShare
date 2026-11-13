@@ -63,7 +63,7 @@
         <div class="d-flex align-items-center gap-3 flex-wrap">
             <span class="small text-secondary">
                 <span id="showing-text">Showing <strong>8</strong> items</span>
-                <span id="avail-badge" class="results-badge ms-1">All Available</span>
+                <span id="avail-badge" class="results-badge ms-1">All Items</span>
             </span>
 
             <label class="sort-box mb-0">
@@ -89,19 +89,6 @@
                     <button type="button" id="clear-all" class="clear-all">Clear All</button>
                 </div>
 
-                <!-- Availability -->
-                <div class="filter-group">
-                    <h3>Availability</h3>
-                    <div class="filter-row">
-                        <input class="form-check-input" type="radio" name="availability" id="av-available" value="available" checked>
-                        <label for="av-available"><span class="dot dot-green"></span>Available Now</label>
-                    </div>
-                    <div class="filter-row">
-                        <input class="form-check-input" type="radio" name="availability" id="av-all" value="all">
-                        <label for="av-all"><span class="dot dot-grey"></span>Include Currently Rented</label>
-                    </div>
-                </div>
-
                 <!-- Campus -->
                 <div class="filter-group">
                     <h3>Campus Handover</h3>
@@ -124,7 +111,7 @@
                 <div class="filter-group">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h3 class="mb-0">Rental Rate (PHP)</h3>
-                        <span id="price-label" class="price-range-label">₱0 – ₱100 / day</span>
+                        <span id="price-label" class="price-range-label">₱0 – ₱100 / hr</span>
                     </div>
 
                     <div class="dual-range">
@@ -190,15 +177,19 @@
             /* ===================== DATA ===================== */
             var DETAILS_URL = "@Url.Action("ItemDetails", "BrowseItems")?id=__ID__";
             var PAGE_SIZE = 8;
-            var PRICE_MIN = 0, PRICE_MAX = @(Model.Items.Count == 0 ? 100 : Math.Max(100, Math.Ceiling((double)Model.Items.Max(i => i.DailyRate) / 100) * 100));
+            var PRICE_MIN = 0, PRICE_MAX = @(Model.Items.Count == 0 ? 100 : Math.Max(100, Math.Ceiling((double)Model.Items.Max(i => i.HourlyRate) / 100) * 100));
+            document.getElementById("range-min").max = PRICE_MAX;
+            document.getElementById("range-max").max = PRICE_MAX;
+            document.getElementById("min-price").max = PRICE_MAX;
+            document.getElementById("max-price").max = PRICE_MAX;
 
-            var CATEGORIES = @Html.Raw(Json.Encode(Model.Categories.Select(c => new { key = c, label = c })));
+            var CATEGORIES = @Html.Raw(Json.Encode(new[] { "Electronics & Gadgets", "Books & Learning Materials", "School Supplies", "Clothing & Uniforms", "Sports & Recreation", "Others" }.Select(c => new { key = c, label = c })));
 
-            var CAMPUSES = @Html.Raw(Json.Encode(Model.Campuses.Select(c => new { key = c, label = c })));
+            var CAMPUSES = @Html.Raw(Json.Encode(new[] { "San Bartolome", "San Francisco", "Batasan" }.Select(c => new { key = c, label = c })));
 
-            var CONDITIONS = @Html.Raw(Json.Encode(Model.Conditions));
+            var CONDITIONS = ["Like New", "Good", "Fair", "Heavy Use"];
 
-            var ITEMS = @Html.Raw(Json.Encode(Model.Items.Select(i => new { id = i.ItemId, name = i.ItemName, category = i.Category, campus = i.Campus, condition = i.Condition, hour4 = i.HourlyRate * 4, day = i.DailyRate, rating = i.Rating, reviews = i.ReviewCount, available = i.IsAvailable, popular = i.BookingCount, newest = i.CreatedAtTicks, keywords = (i.ItemName + " " + i.Category + " " + i.Description), desc = i.Description, img = i.ImageUrl })));
+            var ITEMS = @Html.Raw(Json.Encode(Model.Items.Select(i => new { id = i.ItemId, name = i.ItemName, category = i.Category, campus = i.Campus, condition = i.Condition, rate = Math.Round(i.HourlyRate, 0), rating = i.Rating, reviews = i.ReviewCount, available = i.IsAvailable, popular = i.BookingCount, newest = i.CreatedAtTicks, keywords = (i.ItemName + " " + i.Category + " " + i.Description), desc = i.Description, img = i.ImageUrl })));
 
             /* ===================== STATE ===================== */
             var initialCategory = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Request.QueryString["category"] ?? ""));
@@ -215,7 +206,7 @@
             };
 
             function defaultApplied() {
-                return { availability: "available", categories: [], campuses: [], conditions: [], min: PRICE_MIN, max: PRICE_MAX };
+                return { categories: [], campuses: [], conditions: [], min: PRICE_MIN, max: PRICE_MAX };
             }
 
             /* ===================== HELPERS ===================== */
@@ -238,7 +229,7 @@
             }
 
             function priceText(i) {
-                return "₱" + i.hour4 + " / 4 hrs • ₱" + i.day + " / day";
+                return "₱" + Number(i.rate).toFixed(0) + " / hr";
             }
 
 
@@ -265,18 +256,17 @@
             function matches(i, skip) {
                 var a = state.applied;
                 if (!matchesSearch(i)) return false;
-                if (a.availability === "available" && !i.available) return false;
                 if (skip !== "category" && a.categories.length && a.categories.indexOf(i.category) === -1) return false;
                 if (a.campuses.length && a.campuses.indexOf(i.campus) === -1) return false;
                 if (a.conditions.length && a.conditions.indexOf(i.condition) === -1) return false;
-                if (i.day < a.min || i.day > a.max) return false;
+                if (i.rate < a.min || i.rate > a.max) return false;
                 return true;
             }
 
             function sortItems(list) {
                 var s = state.sort;
                 return list.slice().sort(function (a, b) {
-                    if (s === "price") return a.day - b.day;
+                    if (s === "price") return a.rate - b.rate;
                     if (s === "rating") return (b.rating - a.rating) || (b.reviews - a.reviews);
                     if (s === "newest") return b.newest - a.newest;
                     if (s === "relevance") return (relevance(b) - relevance(a)) || (a.popular - b.popular);
@@ -290,7 +280,6 @@
                 a.campuses.forEach(function (c) { chips.push({ label: "Campus: " + campusLabel(c), type: "campuses", value: c }); });
                 a.conditions.forEach(function (c) { chips.push({ label: "Condition: " + c, type: "conditions", value: c }); });
                 if (a.min > PRICE_MIN || a.max < PRICE_MAX) chips.push({ label: "Rate: ₱" + a.min + " – ₱" + a.max, type: "price" });
-                if (a.availability === "all") chips.push({ label: "Including rented", type: "availability" });
                 return chips;
             }
 
@@ -346,7 +335,6 @@
                 hi = Math.max(PRICE_MIN, Math.min(hi, PRICE_MAX));
                 if (lo > hi) { var t = lo; lo = hi; hi = t; }
                 return {
-                    availability: document.querySelector('input[name="availability"]:checked').value,
                     categories: checkedValues("category-filter"),
                     campuses: checkedValues("campus-filter"),
                     conditions: checkedValues("condition-filter"),
@@ -357,7 +345,6 @@
 
             function writeSidebar() {
                 var a = state.applied;
-                document.querySelector('input[name="availability"][value="' + a.availability + '"]').checked = true;
                 ["category-filter", "campus-filter", "condition-filter"].forEach(function (cls) {
                     var list = cls === "category-filter" ? a.categories : cls === "campus-filter" ? a.campuses : a.conditions;
                     Array.prototype.forEach.call(document.querySelectorAll("." + cls), function (el) {
@@ -372,7 +359,7 @@
                 $("max-price").value = hi;
                 $("range-min").value = lo;
                 $("range-max").value = hi;
-                $("price-label").textContent = "₱" + lo + " – ₱" + hi + " / day";
+                $("price-label").textContent = "₱" + lo + " – ₱" + hi + " / hr";
                 var span = PRICE_MAX - PRICE_MIN;
                 $("range-fill").style.left = ((lo - PRICE_MIN) / span * 100) + "%";
                 $("range-fill").style.width = ((hi - lo) / span * 100) + "%";
@@ -407,7 +394,7 @@
                 $("filter-label").textContent = state.filtersOpen ? "Hide Filters" : "Show Filters";
                 $("filter-state").textContent = state.filtersOpen ? "Expanded" : "Collapsed";
                 $("showing-text").innerHTML = "Showing <strong>" + results.length + "</strong> " + (searching ? "matching " : "") + (results.length === 1 ? "item" : "items");
-                $("avail-badge").textContent = a.availability === "available" ? "All Available" : "Incl. Rented";
+                $("avail-badge").textContent = "All Items";
 
                 renderSortOptions(searching);
                 updateSidebarCounts();
@@ -450,6 +437,7 @@
                     '<div class="item-body">' +
                     '<h3 class="item-title">' + esc(i.name) + '</h3>' +
                     '<div class="item-price">' + priceText(i) + '</div>' +
+                    '<div class="item-campus"><i class="bi bi-geo-alt-fill"></i> ' + esc(i.campus) + ' Campus</div>' +
                     '<div class="item-rating">' + (i.rating == null ? '<span class="text-secondary">No owner ratings yet</span>' : '<i class="bi bi-star-fill"></i> <strong>' + Number(i.rating).toFixed(1) + '</strong> (' + i.reviews + ' reviews)') + '</div>' +
                     '<a class="btn btn-soft view-details" href="' + DETAILS_URL.replace("__ID__", i.id) + '">View Details <i class="bi bi-arrow-right"></i></a>' +
                     '</div></article></div>';
@@ -616,7 +604,6 @@
                 var chip = getChips()[parseInt(btn.getAttribute("data-chip"), 10)];
                 var a = state.applied;
                 if (chip.type === "price") { a.min = PRICE_MIN; a.max = PRICE_MAX; }
-                else if (chip.type === "availability") { a.availability = "available"; }
                 else { a[chip.type] = a[chip.type].filter(function (v) { return v !== chip.value; }); }
                 state.page = 1;
                 writeSidebar();

@@ -6,7 +6,7 @@
     @if (ViewBag.DatabaseUnavailable == true) { <div class="alert alert-danger" role="alert">Verification records are unavailable. Check the MongoDB connection.</div> }
     @if (TempData["ReviewError"] != null) { <div class="alert alert-danger" role="alert">@TempData["ReviewError"]</div> }
     <nav class="verification-filters" aria-label="Filter applications">
-        @foreach (var status in new[] { "PENDING", "APPROVED", "REJECTED", "RETURNED_FOR_CORRECTION", "ALL" })
+        @foreach (var status in new[] { "PENDING", "APPROVED", "REJECTED", "ALL" })
         { <a class="btn btn-default" href="@Url.Action("StudentVerification", new { status = status })">@status.Replace("_", " ")</a> }
     </nav>
     @if (!Model.Any()) { <p class="alert alert-info">No applications found for this status.</p> }
@@ -26,7 +26,6 @@
                     <label for="notes-@item.Id">Review notes / correction request</label>
                     <textarea id="notes-@item.Id" name="reviewNotes" class="form-control" rows="2" maxlength="1000">@item.ReviewNotes</textarea>
                     <button class="btn btn-success" name="decision" value="APPROVED" type="submit">Approve</button>
-                    <button class="btn btn-warning" name="decision" value="RETURNED_FOR_CORRECTION" type="submit">Return for correction</button>
                     <button class="btn btn-danger" name="decision" value="REJECTED" type="submit">Reject</button>
                 }
             </div>

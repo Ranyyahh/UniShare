@@ -21,7 +21,7 @@ namespace UniShare.Services
         {
             ObjectId objectId;
             if (!ObjectId.TryParse(id, out objectId)) return null;
-            return MongoDatabase.Items.Find(x => x.Id == objectId && x.ApprovalStatus == "APPROVED").FirstOrDefault();
+            return MongoDatabase.Items.Find(x => x.Id == objectId && x.ApprovalStatus == "APPROVED" && x.AvailabilityStatus == "AVAILABLE").FirstOrDefault();
         }
 
         public static List<ListingItemViewModel> GetOwnerListings(ObjectId ownerId)
@@ -53,23 +53,6 @@ namespace UniShare.Services
             return (int)MongoDatabase.Rentals.CountDocuments(filter);
         }
 
-        public static List<DateTime> GetBookedDates(ObjectId itemId)
-        {
-            var documents = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId)).ToList();
-            var dates = new HashSet<DateTime>();
-            foreach (var booking in documents)
-            {
-                var status = booking.GetValue("status", "").ToString().ToUpperInvariant();
-                if (status == "CANCELLED" || status == "CANCELED" || status == "DECLINED" || status == "EXPIRED" || status == "REJECTED") continue;
-                var start = ReadDate(booking, "startDate");
-                var end = ReadDate(booking, "endDate");
-                if (start == null) continue;
-                if (end == null || end.Value < start.Value) end = start;
-                for (var day = start.Value.Date; day <= end.Value.Date && day <= start.Value.Date.AddDays(365); day = day.AddDays(1)) dates.Add(day);
-            }
-            return dates.OrderBy(x => x).ToList();
-        }
-
         public static ListingItemViewModel ToListing(ItemDocument item)
         {
             var details = item.RentalDetails ?? new ItemRentalDetailsDocument();
@@ -79,7 +62,7 @@ namespace UniShare.Services
                 ? (decimal)details.HourlyRate * unitHours
                 : (decimal)(details.PricePerDay > 0 ? details.PricePerDay : details.DailyRate);
             if (unitHours <= 0) unitHours = 24;
-            var category = item.Category ?? "Other Items";
+            var category = ItemCategoryCatalog.Normalize(item.Category);
             var categoryId = CategoryId(category);
             var status = string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase)
                 ? ListingStatus.Rented
@@ -107,7 +90,10 @@ namespace UniShare.Services
                 AvailableDays = item.AvailableDays ?? new List<string>(),
                 ReplacementValue = (decimal)details.ReplacementValue,
                 SecurityDeposit = (decimal)details.SecurityDeposit,
-                Accessories = item.Accessories
+                Accessories = item.Accessories,
+                ApprovalStatus = string.IsNullOrWhiteSpace(item.ApprovalStatus) ? "PENDING" : item.ApprovalStatus,
+                RejectionReason = item.ApprovalRejectionReason,
+                CreatedAt = item.CreatedAt
             };
         }
 
@@ -128,8 +114,8 @@ namespace UniShare.Services
                 ItemCode = "QCU-" + item.Id.ToString().Substring(18).ToUpperInvariant(),
                 Name = item.Name,
                 Title = item.Name,
-                Category = item.Category,
-                CategoryLabel = item.Category,
+                Category = ItemCategoryCatalog.Normalize(item.Category),
+                CategoryLabel = ItemCategoryCatalog.Normalize(item.Category),
                 Subcategory = item.Category,
                 Condition = NormalizeCondition(item.Condition),
                 Campus = location.Campus,
@@ -150,7 +136,6 @@ namespace UniShare.Services
                 Rating = rating.Item1,
                 ReviewCount = rating.Item2,
                 AvailableDays = item.AvailableDays ?? new List<string>(),
-                BookedDates = GetBookedDates(item.Id),
                 Lender = new LenderViewModel
                 {
                     Name = ownerName,

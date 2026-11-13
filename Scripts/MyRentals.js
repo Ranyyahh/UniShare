@@ -147,6 +147,9 @@
 
     var detailsTrigger = null; // the View Details button that opened the details modal
     var isRefreshing = false;
+    var detailsTimer = null;
+    var activeDetailRental = null;
+    var historyModal = document.getElementById('myRentalsHistoryModal');
 
     // The rental currently open in the status modals (Pending / Accept / Decline / Ongoing /
     // Overdue / Return / Dispute).
@@ -369,6 +372,9 @@
         if (!val) return null;
         if (val instanceof Date) return val;
 
+        var dotNetDate = /^\/Date\((-?\d+)(?:[+-]\d{4})?\)\/$/.exec(String(val));
+        if (dotNetDate) return new Date(parseInt(dotNetDate[1], 10));
+
         var m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/.exec(String(val));
         if (!m) {
             var fallback = new Date(val);
@@ -547,6 +553,13 @@
     // Event Listeners
     // -------------------------------------------------------------------------
     function bindEvents() {
+        var historyButton = document.getElementById('btnRentalHistory');
+        var historyClose = document.getElementById('btnCloseRentalHistory');
+        var historyDone = document.getElementById('btnRentalHistoryDone');
+        if (historyButton) historyButton.addEventListener('click', openRentalHistory);
+        if (historyClose) historyClose.addEventListener('click', closeRentalHistory);
+        if (historyDone) historyDone.addEventListener('click', closeRentalHistory);
+        if (historyModal) historyModal.addEventListener('click', function (e) { if (e.target === historyModal) closeRentalHistory(); });
         // Modal Trigger
         elements.btnOpenFilterModal.addEventListener('click', function (e) {
             e.preventDefault();
@@ -574,6 +587,8 @@
                     dismissFlowModal(openFlowModal);
                 } else if (isModalOpen(elements.detailsModal)) {
                     closeDetailsModal();
+                } else if (historyModal && isModalOpen(historyModal)) {
+                    closeRentalHistory();
                 } else if (isModalOpen(elements.filterModal)) {
                     closeFilterModal();
                 }
@@ -756,7 +771,22 @@
         setText('detailsHandover', rental.HandoverScheduleFormatted);
         setText('detailsDuration', rental.Duration);
         setText('detailsFee', rental.RentalFeeFormatted);
+        setText('detailsRequestNote', rental.RequestNote || 'No note was included with the request.');
         setText('detailsStatusLabel', rental.Status);
+        var ownerConfirmed = !!rental.OwnerHandoverConfirmed;
+        var borrowerConfirmed = !!rental.BorrowerHandoverConfirmed;
+        var ownerState = document.getElementById('detailsOwnerConfirmation');
+        var borrowerState = document.getElementById('detailsBorrowerConfirmation');
+        setText('detailsOwnerConfirmation', 'Owner: ' + (ownerConfirmed ? 'Confirmed' : 'Awaiting Confirmation'));
+        setText('detailsBorrowerConfirmation', 'Borrower: ' + (borrowerConfirmed ? 'Confirmed' : 'Awaiting Confirmation'));
+        ownerState.className = ownerConfirmed ? 'is-confirmed' : 'is-awaiting';
+        borrowerState.className = borrowerConfirmed ? 'is-confirmed' : 'is-awaiting';
+        activeDetailRental = rental;
+        var timerField = document.getElementById('detailsTimerField');
+        if (timerField) timerField.hidden = !(ownerConfirmed && borrowerConfirmed && rental.HandoverDate);
+        updateDetailsTimer();
+        if (detailsTimer) clearInterval(detailsTimer);
+        if (timerField && !timerField.hidden) detailsTimer = setInterval(updateDetailsTimer, 1000);
 
         var badge = document.getElementById('detailsStatusBadge');
         if (badge) {
@@ -770,7 +800,35 @@
 
     function hideDetailsModal() {
         elements.detailsModal.classList.remove('is-open');
+        if (detailsTimer) clearInterval(detailsTimer);
+        detailsTimer = null;
     }
+
+    function updateDetailsTimer() {
+        var el = document.getElementById('detailsTimer');
+        if (!el || !activeDetailRental) return;
+        var start = parseIsoDate(activeDetailRental.HandoverDate);
+        var hours = Number(activeDetailRental.DurationHours) || 1;
+        if (!start) { el.textContent = 'Timer starts after both confirmations.'; return; }
+        var seconds = Math.max(0, Math.floor((start.getTime() + hours * 3600000 - Date.now()) / 1000));
+        el.textContent = seconds > 0 ? 'Time remaining: ' + formatClock(seconds * 1000) : 'Rental period ended';
+    }
+
+    function openRentalHistory() {
+        var content = document.getElementById('myRentalsHistoryContent');
+        historyModal.classList.add('is-open');
+        content.textContent = 'Loading history…';
+        var root = document.querySelector('.my-rentals-page');
+        fetch(root.getAttribute('data-history-url'), { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (rows) {
+            if (!rows.length) { content.innerHTML = '<p class="my-rentals-history-empty">No rental history yet.</p>'; return; }
+            var table = '<div class="my-rentals-history-table-wrap"><table class="my-rentals-history-table"><thead><tr><th>Request ID</th><th>Item</th><th>Participant</th><th>Your role</th><th>Request Date</th><th>Status</th><th>Fee</th></tr></thead><tbody>';
+            rows.forEach(function (r) { table += '<tr><td>' + esc(r.RequestId) + '</td><td>' + esc(r.ItemName) + '</td><td>' + esc(r.Participant) + '</td><td>' + esc(r.Role) + '</td><td>' + esc(r.RequestDateFormatted) + '</td><td>' + esc(r.Status) + '</td><td>' + esc(r.RentalFeeFormatted) + '</td></tr>'; });
+            content.innerHTML = table + '</tbody></table></div>';
+        }).catch(function () { content.textContent = 'History could not be loaded. Please try again.'; });
+        document.getElementById('btnCloseRentalHistory').focus();
+    }
+
+    function closeRentalHistory() { if (historyModal) historyModal.classList.remove('is-open'); }
 
     function closeDetailsModal() {
         hideDetailsModal();
@@ -940,28 +998,11 @@
         }
     }
 
-    // Counts up to the new value (same effect as the Reports & Analytics cards).
     function setSummaryCard(key, value) {
         var el = document.querySelector('[data-summary-value="' + key + '"]');
-        if (!el) { return; }
-        var target = Number(value) || 0;
-        if (el._raf && window.cancelAnimationFrame) { window.cancelAnimationFrame(el._raf); }
-        var current = (typeof el._val === 'number') ? el._val : (parseInt(el.textContent, 10) || 0);
-        var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-        if (reduce || !window.requestAnimationFrame || current === target) {
-            el._val = target;
-            el.textContent = String(target);
-            return;
+        if (el) {
+            el.textContent = String(value);
         }
-        var from = current, start = null;
-        function step(ts) {
-            if (start === null) { start = ts; }
-            var p = Math.min(1, (ts - start) / 700), e = 1 - Math.pow(1 - p, 3);
-            el._val = p === 1 ? target : from + (target - from) * e;
-            el.textContent = String(Math.round(el._val));
-            if (p < 1) { el._raf = window.requestAnimationFrame(step); }
-        }
-        el._raf = window.requestAnimationFrame(step);
     }
 
     // "Nov 09, 2026" and "Nov 09, 2026 • 4:30 PM", the same formats the controller produces
@@ -1173,22 +1214,32 @@
         if (!rental || rental.Status !== 'Accepted' || rental.OwnerHandoverConfirmed) {
             return;
         }
-
-        rental.OwnerHandoverConfirmed = true;
-        rental.OwnerHandoverConfirmedAt = formatDateTime(new Date());
-
-        if (!rental.BorrowerHandoverConfirmed) {
+        elements.btnAcceptedConfirmHandover.disabled = true;
+        postRentalAction('data-handover-url', rental.BookingObjectId, function (result) {
+            if (!result || !result.ok) {
+                elements.btnAcceptedConfirmHandover.disabled = false;
+                window.alert(result && result.message ? result.message : 'Handover confirmation could not be saved.');
+                return;
+            }
+            rental.OwnerHandoverConfirmed = !!result.ownerConfirmed;
+            rental.BorrowerHandoverConfirmed = !!result.borrowerConfirmed;
+            rental.Status = result.status === 'ONGOING' ? 'Ongoing' : 'Accepted';
+            rental.HandoverDate = result.handoverAt || rental.HandoverDate;
+            rental.OwnerHandoverConfirmedAt = formatDateTime(new Date());
             renderHandoverVerification(rental);
-            elements.btnCloseAcceptedModal.focus();
-            return;
-        }
+            if (result.ownerConfirmed && result.borrowerConfirmed) window.location.reload();
+        });
+    }
 
-        var requestId = rental.RequestId;
-        startRental(rental);
-        updateSummaryCards();
-        endFlow(false);
-        applyAllFiltersAndPaginate();
-        focusViewButton(requestId);
+    function postRentalAction(urlAttribute, bookingId, callback) {
+        var root = document.querySelector('.my-rentals-page');
+        var token = document.querySelector('input[name="__RequestVerificationToken"]');
+        var body = new URLSearchParams();
+        body.append('id', bookingId || '');
+        if (token) body.append('__RequestVerificationToken', token.value);
+        fetch(root.getAttribute(urlAttribute), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
+            .then(function (r) { return r.json(); }).then(callback)
+            .catch(function () { callback({ ok: false, message: 'The update could not be saved. Refresh the page and try again.' }); });
     }
 
     function startRental(rental) {
@@ -1451,6 +1502,7 @@
         fillRentalSummary(prefix, rental);
         setText(prefix + 'HandoverLocation', rental.HandoverLocation);
         setText(prefix + 'FeeBreakdown', rental.RentalFeeFormatted);
+        if (prefix === 'accepted') setText('acceptedRequestNote', rental.RequestNote || 'No note was included with the request.');
     }
 
     // Single source of truth for the late fee, used by the Overdue modal and the Return modal:
@@ -1566,15 +1618,8 @@
         showFlowModal(elements.returnModal, elements.btnCloseReturnModal);
     }
 
-    // --- Shared confirmation step (Mark as Returned / Mark as Completed / Mark as Resolved) ---
+    // --- Shared confirmation step (Mark as Completed / Mark as Resolved) ---
     var CONFIRM_STEPS = {
-        returned: {
-            title: 'Mark as Returned?',
-            text: 'Confirm that the borrower has handed the item back to you.',
-            result: 'The rental moves to Returned. You can then check the item and mark it as completed, or report a dispute.',
-            ok: '\u2713 Confirm Return',
-            from: ['Ongoing', 'Overdue']
-        },
         completed: {
             title: 'Mark as Completed?',
             text: 'Confirm that the item came back in good condition and the rental is finished.',
@@ -1622,28 +1667,14 @@
             return;
         }
 
-        if (confirmKind === 'returned') {
-            markReturned(rental);
-        } else if (confirmKind === 'completed') {
-            markCompleted(rental, false);
+        if (confirmKind === 'completed') {
+            postRentalAction('data-return-url', rental.BookingObjectId, function (result) {
+                if (!result || !result.ok) { window.alert(result && result.message ? result.message : 'Return confirmation could not be saved.'); return; }
+                window.location.reload();
+            });
         } else if (confirmKind === 'resolved') {
             markCompleted(rental, true);
         }
-    }
-
-    // Ongoing / Overdue -> Returned. The owner then checks the item in the Returned modal.
-    function markReturned(rental) {
-        var nowMs = new Date().getTime();
-        var calc = computeLateFee(rental, nowMs);
-        rental.WasOverdue = rental.Status === 'Overdue';
-        rental.ReturnOverdueMs = calc.overdueMs;
-        rental.LateFee = rental.WasOverdue ? calc.fee : 0;
-        rental.ReturnedAtFormatted = formatDateTime(new Date(nowMs));
-        rental.Status = 'Returned';
-        updateSummaryCards();
-        applyAllFiltersAndPaginate();
-        confirmKind = null;
-        openReturnModal(rental);
     }
 
     // Returned -> Completed (Mark as Completed) and Disputed -> Completed (Mark as Resolved)
@@ -1970,10 +2001,6 @@
             e.preventDefault();
             endFlow(true);
         });
-        elements.btnOngoingConfirmReturn.addEventListener('click', function (e) {
-            e.preventDefault();
-            openStatusConfirm('returned', elements.ongoingModal, elements.btnOngoingConfirmReturn);
-        });
 
         // Overdue
         elements.btnCloseOverdueModal.addEventListener('click', function (e) {
@@ -1983,10 +2010,6 @@
         elements.btnOverdueClose.addEventListener('click', function (e) {
             e.preventDefault();
             endFlow(true);
-        });
-        elements.btnOverdueProceedReturn.addEventListener('click', function (e) {
-            e.preventDefault();
-            openStatusConfirm('returned', elements.overdueModal, elements.btnOverdueProceedReturn);
         });
 
         // Return

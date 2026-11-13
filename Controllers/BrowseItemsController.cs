@@ -39,7 +39,7 @@ namespace UniShare.Controllers
                     ItemId = item.Id.ToString(),
                     ItemName = item.Name,
                     Description = item.Description,
-                    Category = item.Category,
+                    Category = ItemCategoryCatalog.Normalize(item.Category),
                     Condition = ToConditionLabel(item.Condition),
                     Campus = location.Campus,
                     ImageUrl = photo,
@@ -54,9 +54,9 @@ namespace UniShare.Controllers
                     CreatedAtTicks = item.CreatedAt.Ticks
                 };
             }).ToList();
-            model.Categories = model.Items.Select(x => x.Category).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x).ToList();
-            model.Conditions = model.Items.Select(x => x.Condition).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x).ToList();
-            model.Campuses = model.Items.Select(x => x.Campus).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x).ToList();
+            model.Categories = new System.Collections.Generic.List<string>(ItemCategoryCatalog.Names);
+            model.Conditions = new System.Collections.Generic.List<string> { "Like New", "Good", "Fair", "Heavy Use" };
+            model.Campuses = new System.Collections.Generic.List<string> { "San Bartolome", "San Francisco", "Batasan" };
             return View(model);
         }
 
@@ -144,14 +144,37 @@ namespace UniShare.Controllers
             return View(details);
         }
 
+        [HttpGet]
+        public ActionResult UnavailableHandoverSlots(string id, string date, int duration = 2)
+        {
+            ObjectId itemId;
+            DateTime selectedDate;
+            if (!ObjectId.TryParse(id, out itemId) || !DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
+                return new HttpStatusCodeResult(400);
+            if (MarketplaceService.GetItem(id) == null) return HttpNotFound();
+            try
+            {
+                return Json(new { unavailableSlots = BookingService.GetUnavailableHandoverSlots(itemId, selectedDate, duration) }, JsonRequestBehavior.AllowGet);
+            }
+            catch (BookingException ex) { return new HttpStatusCodeResult(400, ex.Message); }
+        }
+
         [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
-        public ActionResult RequestToRent(string id, DateTime handoverDate, string handoverTime, int duration, string notes)
+        public ActionResult RequestToRent(string id, string handoverDate, string handoverTime, int duration, string notes)
         {
             ObjectId renterId;
             if (!ObjectId.TryParse(User.Identity.Name, out renterId)) return new HttpStatusCodeResult(401);
+            DateTime selectedDate;
+            if (!DateTime.TryParseExact(handoverDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out selectedDate))
+            {
+                ModelState.AddModelError("handoverDate", "Choose a valid handover date.");
+                var invalidDateItem = MarketplaceService.GetItem(id);
+                if (invalidDateItem == null) return HttpNotFound();
+                return View(MarketplaceService.ToDetails(invalidDateItem, MongoDatabase.Users.Find(x => x.Id == invalidDateItem.OwnerId).FirstOrDefault()));
+            }
             try
             {
-                var booking = BookingService.Submit(renterId, id, handoverDate, handoverTime, duration, notes);
+                var booking = BookingService.Submit(renterId, id, selectedDate, handoverTime, duration, notes);
                 return RedirectToAction("RequestSubmitted", new { id = booking["_id"].AsObjectId.ToString() });
             }
             catch (BookingException ex)
@@ -196,7 +219,11 @@ namespace UniShare.Controllers
 
         private static string ToConditionLabel(string value)
         {
-            return string.IsNullOrWhiteSpace(value) ? "Good" : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.Replace('_', ' ').ToLowerInvariant());
+            if (string.IsNullOrWhiteSpace(value)) return "Good";
+            var normalized = value.Replace("_", " ").Replace("-", " ").Trim().ToLowerInvariant();
+            if (normalized == "like new" || normalized == "likenew") return "Like New";
+            if (normalized == "heavy use" || normalized == "heavyuse") return "Heavy Use";
+            return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized);
         }
     }
 }
