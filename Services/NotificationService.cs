@@ -71,6 +71,16 @@ namespace UniShare.Services
             }
         }
 
+        public static bool SetRead(ObjectId userId, string eventKey, bool isRead)
+        {
+            if (string.IsNullOrWhiteSpace(eventKey) || !GetForUser(userId).Any(x => string.Equals(x.EventKey, eventKey, StringComparison.Ordinal))) return false;
+            var filter = Builders<BsonDocument>.Filter.Eq("userId", userId.ToString()) &
+                         Builders<BsonDocument>.Filter.Eq("eventKey", eventKey);
+            var update = Builders<BsonDocument>.Update.Set("isRead", isRead).Set("readAt", isRead ? (BsonValue)DateTime.UtcNow : BsonNull.Value);
+            var result = MongoDatabase.NotificationReads.UpdateOne(filter, update, new UpdateOptions { IsUpsert = true });
+            return result.MatchedCount > 0 || result.UpsertedId != null;
+        }
+
         private static string EventKey(BsonDocument booking)
         {
             return booking.GetValue("_id", ObjectId.Empty).ToString() + ":" +

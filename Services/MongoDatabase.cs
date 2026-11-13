@@ -33,5 +33,7 @@ namespace UniShare.Services
         public static IMongoCollection<BsonDocument> Handovers { get { return Database.Value.GetCollection<BsonDocument>("handovers"); } }
         public static IMongoCollection<BsonDocument> Returns { get { return Database.Value.GetCollection<BsonDocument>("returns"); } }
         public static IMongoCollection<BsonDocument> ConditionRecords { get { return Database.Value.GetCollection<BsonDocument>("conditionRecords"); } }
+        public static IMongoCollection<BsonDocument> Conversations { get { return Database.Value.GetCollection<BsonDocument>("conversations"); } }
+        public static IMongoCollection<BsonDocument> Messages { get { return Database.Value.GetCollection<BsonDocument>("messages"); } }
     }
 }

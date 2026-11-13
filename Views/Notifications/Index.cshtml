@@ -14,7 +14,16 @@
     <ul class="us-list">
         @foreach (var n in Model)
         {
-            <li class="@(n.Unread ? "is-unread" : "")"><a href="@n.LinkUrl"><div><strong>@n.Title</strong><p>@n.Body</p></div><small>@n.Time</small></a></li>
+            <li class="@(n.Unread ? "is-unread" : "")">
+                <a href="@n.LinkUrl"><div><strong>@n.Title</strong><p>@n.Body</p></div><small>@n.Time</small></a>
+                @using (Html.BeginForm("SetRead", "Notifications", FormMethod.Post, new { @class = "notification-read-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("eventKey", n.EventKey)
+                    @Html.Hidden("isRead", n.Unread.ToString().ToLowerInvariant())
+                    <button type="submit" class="us-btn us-btn--outline">@(n.Unread ? "Mark as read" : "Mark as unread")</button>
+                }
+            </li>
         }
     </ul>
 </section>

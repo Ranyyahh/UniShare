@@ -1,37 +1,73 @@
+using System;
 using System.Web.Mvc;
-using System.Linq;
-using UniShare.Models;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using UniShare.Services;
 
 namespace UniShare.Controllers
 {
     [Authorize]
     public class MessagesController : Controller
     {
-        public ActionResult Index()
+        [HttpGet]
+        public ActionResult Index(string userId, string itemId, string conversationId)
         {
+            ObjectId currentUserId;
+            if (!ObjectId.TryParse(User.Identity.Name, out currentUserId)) return new HttpStatusCodeResult(401);
+            ViewBag.InitialConversationId = conversationId ?? "";
+            ViewBag.ChatNotice = "";
+            if (!string.IsNullOrWhiteSpace(userId) || !string.IsNullOrWhiteSpace(itemId))
+            {
+                ObjectId ownerId, listingId;
+                if (!ObjectId.TryParse(userId, out ownerId) || !ObjectId.TryParse(itemId, out listingId))
+                    ViewBag.ChatNotice = "This item's conversation could not be opened.";
+                else
+                {
+                    var started = ChatroomService.StartOrFind(currentUserId, ownerId, listingId);
+                    if (started.HasValue) ViewBag.InitialConversationId = started.Value.ToString();
+                    else ViewBag.ChatNotice = "You cannot start a conversation for this item.";
+                }
+            }
             return View("~/Views/Chatroom/Chatroom.cshtml");
         }
 
-        // Preserve the earlier message-send endpoint for existing clients.
-        [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Send(int id, string text)
+        [HttpGet]
+        public ActionResult Conversations()
         {
-            var convo = SampleData.Conversations.FirstOrDefault(c => c.Id == id);
-            if (convo == null) return HttpNotFound();
-            if (!string.IsNullOrWhiteSpace(text))
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return Json(new { ok = false, message = "Please sign in again." }, JsonRequestBehavior.AllowGet);
+            try { return Json(new { ok = true, conversations = ChatroomService.GetConversations(userId) }, JsonRequestBehavior.AllowGet); }
+            catch (MongoException) { Response.StatusCode = 503; return Json(new { ok = false, message = "Messages are temporarily unavailable." }, JsonRequestBehavior.AllowGet); }
+        }
+
+        [HttpGet]
+        public ActionResult Thread(string id)
+        {
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return Json(new { ok = false, message = "Please sign in again." }, JsonRequestBehavior.AllowGet);
+            try
             {
-                text = text.Trim();
-                if (text.Length > 500) return new HttpStatusCodeResult(400, "Messages are limited to 500 characters.");
-                convo.Messages.Add(new ChatMessage
-                {
-                    Mine = true,
-                    Text = text,
-                    Time = System.DateTime.Now.ToString("h:mm tt")
-                });
-                convo.LastMessage = text;
-                convo.Time = "Just now";
+                var thread = ChatroomService.GetThread(userId, id);
+                if (thread == null) { Response.StatusCode = 404; return Json(new { ok = false, message = "Conversation not found." }, JsonRequestBehavior.AllowGet); }
+                return Json(new { ok = true, thread }, JsonRequestBehavior.AllowGet);
             }
-            return RedirectToAction("Index", new { id = id });
+            catch (MongoException) { Response.StatusCode = 503; return Json(new { ok = false, message = "This conversation could not be loaded." }, JsonRequestBehavior.AllowGet); }
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Send(string id, string text)
+        {
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return Json(new { ok = false, message = "Please sign in again." });
+            text = (text ?? "").Trim();
+            if (text.Length == 0 || text.Length > 500) return Json(new { ok = false, message = "Write a message up to 500 characters." });
+            try
+            {
+                var message = ChatroomService.Send(userId, id, text);
+                if (message == null) { Response.StatusCode = 404; return Json(new { ok = false, message = "Conversation not found." }); }
+                return Json(new { ok = true, message });
+            }
+            catch (MongoException) { Response.StatusCode = 503; return Json(new { ok = false, message = "Your message could not be sent. Try again." }); }
         }
     }
 }

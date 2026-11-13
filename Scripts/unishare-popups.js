@@ -1,4 +1,4 @@
-/* UniShare - Messages and Notifications pop-up windows (navbar icons) */
+/* UniShare navbar notifications pop-up; the messages icon navigates to the chatroom. */
 (function () {
     'use strict';
 
@@ -36,6 +36,9 @@
         count.hidden = n === 0;
         count.textContent = n + ' new';
         $('pm-notes-readall').disabled = n === 0;
+        [].slice.call(document.querySelectorAll('.notification-button')).forEach(function (button) {
+            button.setAttribute('aria-label', n ? 'Notifications, ' + n + ' unread' : 'Notifications');
+        });
     }
 
     function renderNotes() {
@@ -43,32 +46,62 @@
         if (!notes.length) { list.innerHTML = '<li class="pm-empty">You have no notifications.</li>'; }
         else {
             list.innerHTML = notes.map(function (n) {
-                return '<li class="' + (n.unread ? 'is-unread' : '') + '" data-note="' + n.id + '" tabindex="0" data-url="' + esc(n.url || '/MyRentals/Index') + '">' +
-                       '<div><strong>' + esc(n.title) + '</strong><p>' + esc(n.body) + '</p></div><small>' + esc(n.time) + '</small></li>';
+                return '<li class="' + (n.unread ? 'is-unread' : '') + '" data-note="' + esc(n.id) + '" tabindex="0" data-url="' + esc(n.url || '/MyRentals/Index') + '">' +
+                       '<div><strong>' + esc(n.title) + '</strong><p>' + esc(n.body) + '</p></div>' +
+                       '<div class="pm-note-actions"><small>' + esc(n.time) + '</small>' +
+                       '<button type="button" class="pm-note-toggle" data-note-toggle="' + esc(n.id) + '" aria-label="' + (n.unread ? 'Mark notification as read' : 'Mark notification as unread') + '">' + (n.unread ? 'Mark read' : 'Mark unread') + '</button></div></li>';
             }).join('');
         }
         updateBell();
     }
 
-    function markRead(id) {
-        notes.forEach(function (n) { if (n.id === id) { n.unread = false; } });
-        renderNotes();
+    function setNoteRead(id, isRead, onSuccess, onFailure) {
+        var note = notes.filter(function (n) { return String(n.id) === String(id); })[0];
+        if (!note || note.unread === !isRead) return;
+        var form = $('pm-note-state-form');
+        var token = form && form.querySelector('input[name="__RequestVerificationToken"]');
+        var body = new URLSearchParams();
+        body.append('eventKey', note.id);
+        body.append('isRead', isRead ? 'true' : 'false');
+        if (token) body.append('__RequestVerificationToken', token.value);
+        fetch(form.action, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest' }, body: body.toString() })
+            .then(function (response) { return response.json().then(function (result) { if (!response.ok || !result.ok) throw new Error(result.message || 'Notification status could not be saved.'); return result; }); })
+            .then(function () { note.unread = !isRead; renderNotes(); if (onSuccess) onSuccess(); })
+            .catch(function () { if (onFailure) onFailure(); window.alert('Notification status could not be saved. Please try again.'); });
     }
 
     $('pm-notes-readall').addEventListener('click', function (event) {
         event.preventDefault();
-        notes.forEach(function (n) { n.unread = false; });
-        renderNotes();
         var form = $('pm-notes-readall-form');
-        if (form) fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+        if (form) fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) { return response.json().then(function (result) { if (!response.ok || !result.ok) throw new Error('Could not mark notifications as read.'); return result; }); })
+            .then(function () { notes.forEach(function (n) { n.unread = false; }); renderNotes(); })
+            .catch(function () { window.alert('Could not mark notifications as read. Please try again.'); });
     });
     $('pm-notes-list').addEventListener('click', function (e) {
+        var toggle = e.target.closest('[data-note-toggle]');
+        if (toggle) {
+            e.preventDefault(); e.stopPropagation();
+            var note = notes.filter(function (n) { return String(n.id) === String(toggle.getAttribute('data-note-toggle')); })[0];
+            if (note) setNoteRead(note.id, note.unread);
+            return;
+        }
         var li = e.target.closest('[data-note]');
-        if (li) { markRead(parseInt(li.getAttribute('data-note'), 10)); window.location.href = li.getAttribute('data-url'); }
+        if (li) {
+            var note = notes.filter(function (n) { return String(n.id) === String(li.getAttribute('data-note')); })[0];
+            if (note && note.unread) setNoteRead(note.id, true, function () { window.location.href = li.getAttribute('data-url'); });
+            else window.location.href = li.getAttribute('data-url');
+        }
     });
     $('pm-notes-list').addEventListener('keydown', function (e) {
+        if (e.target.closest('[data-note-toggle]')) return;
         var li = e.target.closest('[data-note]');
-        if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); markRead(parseInt(li.getAttribute('data-note'), 10)); window.location.href = li.getAttribute('data-url'); }
+        if (li && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            var note = notes.filter(function (n) { return String(n.id) === String(li.getAttribute('data-note')); })[0];
+            if (note && note.unread) setNoteRead(note.id, true, function () { window.location.href = li.getAttribute('data-url'); });
+            else window.location.href = li.getAttribute('data-url');
+        }
     });
 
     function openNotes() { renderNotes(); setTriggerState('.notification-button', true); open(notesDlg); }
@@ -156,8 +189,8 @@
 
     /* ------------------------------------------------------------ open / close */
     document.addEventListener('click', function (e) {
-        var msgBtn = e.target.closest('.message-button');
-        if (msgBtn) { e.preventDefault(); openMsgs(); return; }
+        // Keep the message icon's normal anchor navigation to the full MongoDB chatroom.
+        if (e.target.closest('.message-button')) { return; }
         var bell = e.target.closest('.notification-button');
         if (bell) { e.preventDefault(); openNotes(); return; }
         var lender = e.target.closest('[data-msg-lender]');

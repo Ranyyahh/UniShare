@@ -22,7 +22,7 @@
         }),
         notifications = popupNotifications.Select(n => new
         {
-            id = n.Id,
+            id = n.EventKey,
             title = n.Title,
             body = n.Body,
             time = n.Time,
@@ -191,6 +191,10 @@
         </header>
         <div class="pm-dialog__toolbar">
             <p>Latest updates about your rentals and messages.</p>
+            @using (Html.BeginForm("SetRead", "Notifications", FormMethod.Post, new { id = "pm-note-state-form", hidden = "hidden" }))
+            {
+                @Html.AntiForgeryToken()
+            }
             @using (Html.BeginForm("MarkAllRead", "Notifications", FormMethod.Post, new { id = "pm-notes-readall-form" }))
             {
                 @Html.AntiForgeryToken()

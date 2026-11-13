@@ -16,4 +16,8 @@ The marketplace reads approved, available documents from `items`, and listing ch
 
 Rental requests and their status transitions use `bookings`. Payment choices and owner receipt confirmations are stored in `payments`; late-fee estimates and owner/admin finalization are stored separately in `lateFees`. Confirmed handovers, return requests, and condition evidence are recorded in `handovers`, `returns`, and `conditionRecords`. Booking locks expire automatically through a TTL index. The seed script initializes these collections and indexes.
 
+The Messages page stores one `conversations` record per item and participant pair, with message bodies stored separately in `messages`. The inbox and thread APIs only return conversations to their two participants. The chat page refreshes new messages periodically; MongoDB indexes are created by the seed script and by the app when first used.
+
+Notification read state is stored per user and event in `notificationReads`. The navbar red dot reflects that user's unread notifications; individual read/unread changes and Mark all as read persist across page reloads.
+
 To provision the first administrator, have a trusted database operator register that person's account through the app, then change that account's role directly in MongoDB, for example `db.users.updateOne({ schoolEmail: "admin@unishare.qcu.edu.ph" }, { $set: { role: "ADMIN" } })`. Sign out and back in so the new role is placed in the auth cookie. Public registration creates `STUDENT` accounts; admin privileges cannot be self-assigned. The seeded admin account is only for local demo use.

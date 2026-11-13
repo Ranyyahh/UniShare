@@ -229,6 +229,7 @@
     <Compile Include="Models\ListingsviewModels.cs" />
     <Compile Include="Models\ReportsAnalyticsViewModel.cs" />
     <Compile Include="Services\MongoDatabase.cs" />
+    <Compile Include="Services\ChatroomService.cs" />
     <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\MarketplaceService.cs" />
     <Compile Include="Services\BookingService.cs" />
@@ -410,6 +411,7 @@
     <Compile Include="Models\DisputeViewModel.cs" />
     <Compile Include="Models\TransactionViewModel.cs" />
     <Compile Include="Models\MyRentalsViewModels.cs" />
+    <Compile Include="Models\ChatroomViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

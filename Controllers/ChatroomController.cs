@@ -2,16 +2,17 @@ using System.Web.Mvc;
 
 namespace UniShare.Controllers
 {
+    [Authorize]
     public class ChatroomController : Controller
     {
         public ActionResult Index()
         {
-            return View("Chatroom");
+            return RedirectToAction("Index", "Messages");
         }
 
         public ActionResult Chatroom()
         {
-            return View();
+            return RedirectToAction("Index", "Messages");
         }
 
     }

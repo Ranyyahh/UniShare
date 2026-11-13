@@ -118,7 +118,18 @@
     <p class="bi-result" id="bi-result" aria-live="polite"></p>
 
     <div class="bi-grid" id="bi-grid"></div>
-    <div class="us-empty" id="bi-empty" hidden>No borrowed items match your search or filters.</div>
+    <div class="us-empty" id="bi-empty" hidden>
+        @if (Model == null || Model.Count == 0)
+        {
+            <strong>You have not borrowed any items yet.</strong>
+            <p>Rentals for items you own are listed under My Rentals.</p>
+            <a class="us-btn us-btn--outline" href="@Url.Action("Index", "MyRentals")">View My Rentals</a>
+        }
+        else
+        {
+            <span>No borrowed items match your search or filters.</span>
+        }
+    </div>
 
     @* ===== Rental Details modal ===== *@
     <dialog class="bi-dialog" id="bi-detail" aria-labelledby="bi-detail-title">
@@ -167,7 +178,7 @@
                 <button type="button" class="bi-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button>
             </header>
             <div class="bi-dialog__pad">
-                <p>Confirm that you received <strong id="bi-confirm-item"></strong> from <strong id="bi-confirm-lender"></strong>. The rental timer starts after confirmation.</p>
+                <p>Confirm that you received <strong id="bi-confirm-item"></strong> from <strong id="bi-confirm-lender"></strong>. The rental timer starts after both you and the lender confirm the handover.</p>
                 <label class="bi-check"><input type="checkbox" name="received" value="true" required /> I received the item and it matches the listing.</label>
                 <label class="bi-field">Handover condition<select name="condition" required><option value="">Select condition</option><option>EXCELLENT</option><option>GOOD</option><option>FAIR</option><option>POOR</option><option>DAMAGED</option></select></label>
                 <label class="bi-field">Notes<textarea name="conditionNotes" rows="2" maxlength="1000"></textarea></label>

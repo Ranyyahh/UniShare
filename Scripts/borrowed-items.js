@@ -485,6 +485,7 @@
                 } else {
                     it.status = 'Pending'; it.endsAt = null;
                 }
+                closeDialog($('bi-confirm'));
                 render(); toast(result.message);
             });
         });
@@ -497,6 +498,7 @@
             postAction(root.getAttribute('data-return-url'), { id: id, returned: true }, function (result) {
                 it.status = 'Return Requested'; it.returnRequested = true;
                 it.returnRequestedOn = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                closeDialog($('bi-return'));
                 render(); toast(result.message);
             });
         });
@@ -565,8 +567,8 @@
         }
     });
 
-    $('bi-confirm-form').addEventListener('submit', function (e) { e.preventDefault(); closeDialog($('bi-confirm')); doHandover(state.pendingId); });
-    $('bi-return-form').addEventListener('submit', function (e) { e.preventDefault(); closeDialog($('bi-return')); doReturn(state.pendingId); });
+    $('bi-confirm-form').addEventListener('submit', function (e) { e.preventDefault(); doHandover(state.pendingId); });
+    $('bi-return-form').addEventListener('submit', function (e) { e.preventDefault(); doReturn(state.pendingId); });
     $('bi-report-form').addEventListener('submit', function (e) {
         e.preventDefault();
         var f = e.target;

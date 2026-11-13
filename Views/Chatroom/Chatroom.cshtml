@@ -6,7 +6,11 @@
 
 <link rel="stylesheet" href="@Url.Content("~/Content/chatroom.css")" />
 
-<main class="cr-page">
+<main class="cr-page"
+      data-conversations-url="@Url.Action("Conversations", "Messages")"
+      data-thread-url="@Url.Action("Thread", "Messages")"
+      data-send-url="@Url.Action("Send", "Messages")"
+      data-initial-id="@ViewBag.InitialConversationId">
 
     <!-- Page Heading -->
     <header class="cr-page-heading">
@@ -24,7 +28,7 @@
 
             <div class="cr-inbox-heading">
                 <h2>Conversations</h2>
-                <span id="cr-count">4</span>
+                <span id="cr-count">0</span>
             </div>
 
             <!-- Conversation Search -->
@@ -44,9 +48,10 @@
             </div>
 
             <!-- Conversation List -->
-            <div class="cr-list" id="cr-list">
+            <div class="cr-list" id="cr-list" aria-live="polite">
 
-                <button class="cr-conversation selected"
+                @* Populated from the signed-in user's MongoDB conversations by chatroom.js. *@
+                @*<button class="cr-conversation selected"
                         data-id="maya" data-unread="true">
 
                     <span class="cr-avatar lavender">MD</span>
@@ -110,13 +115,13 @@
                     </span>
                 </button>
 
-            </div>
+            </div>*@
 
             <!-- No Search Results -->
             <div class="cr-no-results" id="cr-no-results" hidden>
                 <span>⌕</span>
-                <b>No conversations found</b>
-                <small>Try searching another name or item.</small>
+                <b id="cr-empty-title">No conversations yet</b>
+                <small id="cr-empty-copy">Open an item and choose Message Lender to start a conversation.</small>
             </div>
 
         </aside>
@@ -129,16 +134,14 @@
             <!-- Conversation Header -->
             <header class="cr-thread-head">
 
-                <span class="cr-avatar lavender" id="cr-person-avatar">MD</span>
+                <span class="cr-avatar lavender" id="cr-person-avatar">—</span>
 
                 <div class="cr-person">
-                    <b id="cr-person">Mika Dela Rosa</b>
-                    <small id="cr-status">About: Casio fx-991EX ClassWiz</small>
+                    <b id="cr-person">Choose a conversation</b>
+                    <small id="cr-status">Messages about your campus rentals</small>
                 </div>
 
-                <span class="cr-request-status">
-                    <i></i> Request approved
-                </span>
+                <span class="cr-request-status"><i></i> UniShare Messages</span>
 
                 <button class="cr-back" id="cr-back">Back</button>
 
@@ -147,7 +150,8 @@
 
             <!-- Chat History -->
             <div class="cr-history" id="cr-history" aria-live="polite">
-
+                @* Messages are rendered from the selected MongoDB thread by chatroom.js. *@
+                @*
                 <div class="cr-date">
                     <span>Today</span>
                 </div>
@@ -189,6 +193,8 @@
                     </div>
                 </div>
 
+                *@
+                <div class="cr-no-results"><b>Select a conversation</b><small>Your messages will appear here.</small></div>
             </div>
 
 
@@ -214,11 +220,12 @@
 
             <!-- Message Composer -->
             <form class="cr-composer" id="cr-form">
+                @Html.AntiForgeryToken()
 
                 <textarea id="cr-input"
                           rows="1"
                           maxlength="500"
-                          placeholder="Type a message..."
+                          placeholder="Select a conversation first..."
                           aria-label="Write a message"></textarea>
 
                 <button type="submit" id="cr-send" disabled>
@@ -249,7 +256,7 @@
                 </div>
 
                 <div class="cr-detail-actions">
-                    <a href="@Url.Action("ItemDetails", "BrowseItems", new { id = 1 })" class="cr-outline-btn">View item</a>
+                    <a href="#" id="cr-item-link" class="cr-outline-btn" hidden>View item</a>
                     <a href="@Url.Action("Index", "BorrowedItems")" class="cr-outline-btn">View rental</a>
                 </div>
 

@@ -64,7 +64,7 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
                     <a class="btn btn-outline-soft btn-sm" href="@Url.Action("OwnerProfile", "BrowseItems", new { id = Model.OwnerId })">View profile</a>
-                    <a id="d-msg" class="btn btn-outline-soft btn-sm" href="@Url.Action("Index", "Messages")"><i class="bi bi-chat-left-text me-1"></i>Message</a>
+                    <a id="d-msg" class="btn btn-outline-soft btn-sm" href="@Url.Action("Index", "Messages", new { userId = Model.OwnerId, itemId = Model.ItemId })"><i class="bi bi-chat-left-text me-1"></i>Message Owner</a>
                     <span class="small text-secondary align-self-center ms-auto">@Model.Lender.CompletedRentals completed rentals</span>
                 </div>
             </div>

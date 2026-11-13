@@ -38,6 +38,9 @@
 .pm-notes-list li strong { display: block; margin-bottom: 3px; color: #1e293b; font-size: 13px; line-height: 1.4; font-weight: 650; }
 .pm-notes-list li p { margin: 0; color: #64748b; font-size: 12px; line-height: 1.5; }
 .pm-notes-list li small { flex: 0 0 auto; padding-top: 2px; color: #94a3b8; font-size: 10px; white-space: nowrap; }
+.pm-note-actions { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 8px; }
+.pm-note-toggle { padding: 4px 7px; border: 1px solid #dbe3f0; border-radius: 6px; color: #475569; background: #fff; font: inherit; font-size: 10px; font-weight: 600; cursor: pointer; }
+.pm-note-toggle:hover { border-color: #a5b4fc; color: #4338ca; background: #eef2ff; }
 .pm-empty { padding: 30px 18px; color: #94a3b8; font-size: 13px; text-align: center; }
 .pm-messages-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: 280px minmax(0,1fr); }
 .pm-messages-sidebar { min-width: 0; overflow: auto; border-right: 1px solid #e8edf5; background: #f8fafc; }

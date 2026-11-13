@@ -631,10 +631,9 @@ db.auditLogs.insertOne({
 });
 
 // Collections used by the marketplace and rental workflow that start empty.
-db.createCollection("lateFees");
-db.createCollection("conditionRecords");
-db.createCollection("bookingLocks");
-db.createCollection("notificationReads");
+["lateFees", "conditionRecords", "bookingLocks", "notificationReads"].forEach(function (name) {
+    if (!db.getCollectionNames().includes(name)) db.createCollection(name);
+});
 
 
 // ======================================================
@@ -769,6 +768,17 @@ db.lateFees.createIndex(
 db.conditionRecords.createIndex({ bookingId: 1, phase: 1, createdAt: -1 });
 db.bookingLocks.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 db.notificationReads.createIndex({ userId: 1 });
+db.notificationReads.createIndex({ userId: 1, eventKey: 1 }, { name: "user_event_read" });
+
+// CHATROOM
+db.conversations.createIndex(
+    { itemId: 1, participantA: 1, participantB: 1 },
+    { unique: true, name: "item_participants_unique" }
+);
+db.conversations.createIndex({ participantA: 1, updatedAt: -1 });
+db.conversations.createIndex({ participantB: 1, updatedAt: -1 });
+db.messages.createIndex({ conversationId: 1, createdAt: 1 }, { name: "conversation_created" });
+db.messages.createIndex({ conversationId: 1, readBy: 1 }, { name: "conversation_readby" });
 
 
 // DISPUTES
