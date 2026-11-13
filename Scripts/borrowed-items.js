@@ -209,7 +209,7 @@
             if (it.rating) {
                 foot = '<div class="bi-review"><span class="bi-review__label">Rating &amp; Review</span><div class="bi-review__row">' + starsStatic(it.rating) + '<span class="bi-review__done">Review submitted</span></div></div>';
             } else {
-                foot = '<button type="button" class="us-btn us-btn--primary us-btn--block" onclick="return showPendingModal(event)" data-act="rate" data-id="' + it.id + '">To Rate</button>';
+                foot = '<button type="button" class="us-btn us-btn--primary us-btn--block" data-act="rate" data-id="' + it.id + '">To Rate</button>';
             }
         } else {
             foot = '<div class="bi-notice bi-notice--danger">' + SVG_ALERT + ' Dispute under review by admin</div>';
@@ -291,7 +291,7 @@
                 actions += '<div class="bi-review__row">' + starsStatic(it.rating, true) + '<span class="bi-review__done">Review submitted</span></div>' +
                     (it.review ? '<p class="bi-review__text">&ldquo;' + esc(it.review) + '&rdquo;</p>' : '');
             } else {
-                actions += '<button type="button" class="us-btn us-btn--primary us-btn--block" onclick="return showPendingModal(event)" data-act="rate" data-id="' + it.id + '">To Rate</button>';
+                actions += '<button type="button" class="us-btn us-btn--primary us-btn--block" data-act="rate" data-id="' + it.id + '">To Rate</button>';
             }
         } else {
             actions = '<div class="bi-notice bi-notice--danger bi-notice--block"><strong>Dispute under review by admin</strong><p>' + esc(it.dispute) +
@@ -537,7 +537,6 @@
         else if (name === 'return') { openAsk('bi-return', 'bi-return-form', id, [['bi-return-item', function (i) { return i.name; }], ['bi-return-lender', function (i) { return i.lender; }]]); }
         else if (name === 'report') { openAsk('bi-report', 'bi-report-form', id, [['bi-report-item', function (i) { return i.name; }]]); }
         else if (name === 'rate') {
-            if (typeof showPendingModal === 'function' && !showPendingModal()) return;
             var it = byId(id);
             if (!it) return;
             state.pendingId = id;
@@ -589,7 +588,6 @@
     });
 
     $('bi-rate-form').addEventListener('submit', function (e) {
-        if (typeof showPendingModal === 'function' && !showPendingModal(e)) return;
         e.preventDefault();
         var f = e.target;
         var itemRating = f.querySelector('input[name="itemRating"]:checked');

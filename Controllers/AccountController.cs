@@ -20,6 +20,23 @@ namespace UniShare.Controllers
         [AllowAnonymous, HttpGet]
         public ActionResult Restricted() { return View(); }
 
+        public static void RefreshUserSession(HttpSessionStateBase session, string userIdString)
+        {
+            if (session == null || string.IsNullOrWhiteSpace(userIdString)) return;
+            ObjectId userId;
+            if (!ObjectId.TryParse(userIdString, out userId)) return;
+            try
+            {
+                var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
+                if (user != null)
+                {
+                    session["UserStatus"] = user.Status;
+                    session["VerificationStatus"] = user.VerificationStatus;
+                }
+            }
+            catch { }
+        }
+
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Login(LoginViewModel model, string returnUrl)
         {
