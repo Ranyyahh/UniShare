@@ -446,6 +446,24 @@
             .catch(function (error) { toast(error.message || 'The request could not be completed. Refresh and try again.'); });
     }
 
+    function postCondition(id, phase, formId, callback) {
+        var formEl = $(formId);
+        var files = formEl.querySelector('[name="conditionPhotos"]').files;
+        if (files.length > 5) { toast('Upload no more than five condition photos.'); return; }
+        var body = new FormData();
+        var token = root.querySelector('input[name="__RequestVerificationToken"]');
+        body.append('id', id);
+        body.append('phase', phase);
+        body.append('condition', formEl.querySelector('[name="condition"]').value);
+        body.append('notes', formEl.querySelector('[name="conditionNotes"]').value);
+        if (token) body.append('__RequestVerificationToken', token.value);
+        Array.prototype.forEach.call(files, function (file) { body.append('photos', file, file.name); });
+        fetch(root.getAttribute('data-condition-url'), { method: 'POST', credentials: 'same-origin', body: body })
+            .then(function (response) { return response.json().then(function (result) { if (!response.ok || !result.ok) throw new Error(result.message || 'Condition details could not be saved.'); return result; }); })
+            .then(callback)
+            .catch(function (error) { toast(error.message || 'Condition details could not be saved.'); });
+    }
+
     function openAsk(dialogId, formId, id, fields) {
         var it = byId(id);
         if (!it) { return; }
@@ -458,25 +476,29 @@
     function doHandover(id) {
         var it = byId(id);
         if (!it || !isAwaiting(it)) { return; }
-        postAction(root.getAttribute('data-handover-url'), { id: id, received: true }, function (result) {
-            it.borrowerHandoverConfirmed = true; it.canConfirmHandover = false;
-            it.handover = !!it.ownerHandoverConfirmed;
-            if (it.handover) {
-                it.status = 'Ongoing'; it.endsAt = Date.now() + it.hours * 3600000; it.steps.handover = today();
-            } else {
-                it.status = 'Pending'; it.endsAt = null;
-            }
-            render(); toast(result.message);
+        postCondition(id, 'HANDOVER', 'bi-confirm-form', function () {
+            postAction(root.getAttribute('data-handover-url'), { id: id, received: true }, function (result) {
+                it.borrowerHandoverConfirmed = true; it.canConfirmHandover = false;
+                it.handover = !!it.ownerHandoverConfirmed;
+                if (it.handover) {
+                    it.status = 'Ongoing'; it.endsAt = Date.now() + it.hours * 3600000; it.steps.handover = today();
+                } else {
+                    it.status = 'Pending'; it.endsAt = null;
+                }
+                render(); toast(result.message);
+            });
         });
     }
 
     function doReturn(id) {
         var it = byId(id);
         if (!it || !isInUse(it)) { return; }
-        postAction(root.getAttribute('data-return-url'), { id: id, returned: true }, function (result) {
-            it.status = 'Return Requested'; it.returnRequested = true;
-            it.returnRequestedOn = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-            render(); toast(result.message);
+        postCondition(id, 'RETURN', 'bi-return-form', function () {
+            postAction(root.getAttribute('data-return-url'), { id: id, returned: true }, function (result) {
+                it.status = 'Return Requested'; it.returnRequested = true;
+                it.returnRequestedOn = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                render(); toast(result.message);
+            });
         });
     }
 

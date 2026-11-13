@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Web;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using UniShare.Models;
@@ -13,6 +15,13 @@ namespace UniShare.Services
     {
         private static readonly string[] DisplayableStatuses = { "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED", "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" };
         private static readonly string[] AwaitingHandover = { "ACCEPTED", "APPROVED" };
+        private static readonly Lazy<bool> LifecycleIndexesReady = new Lazy<bool>(() =>
+        {
+            MongoDatabase.Handovers.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId"), new CreateIndexOptions { Unique = true, Name = "bookingId_unique" }));
+            MongoDatabase.Returns.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId"), new CreateIndexOptions { Unique = true, Name = "bookingId_unique" }));
+            MongoDatabase.ConditionRecords.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId").Ascending("phase").Ascending("createdAt")));
+            return true;
+        });
 
         public static List<BorrowedItem> GetForBorrower(ObjectId borrowerId)
         {
@@ -46,6 +55,7 @@ namespace UniShare.Services
 
         public static bool ConfirmHandover(ObjectId borrowerId, string recordId)
         {
+            EnsureLifecycleIndexes();
             BsonDocument doc; bool isBooking;
             if (!TryFind(borrowerId, recordId, out doc, out isBooking)) return false;
             var status = Status(doc);
@@ -57,12 +67,15 @@ namespace UniShare.Services
             var update = Builders<BsonDocument>.Update.Set("borrowerHandoverConfirmed", true).Set("borrowerHandoverConfirmedAt", now).Set("updatedAt", now);
             UpdateRecord(doc, isBooking, borrowerId, update);
             UpdateLinkedRental(doc, borrowerId, update);
+            SaveHandover(doc, borrowerId, "BORROWER", now);
+            AdminAccountabilityService.LogActivity(borrowerId, "HANDOVER_CONFIRMED", "BOOKING", ReadBookingId(doc), new BsonDocument { { "party", "BORROWER" } });
             ActivateIfBothConfirmed(doc.GetValue("_id", BsonNull.Value), isBooking);
             return true;
         }
 
         public static bool ConfirmHandoverByOwner(ObjectId ownerId, string recordId)
         {
+            EnsureLifecycleIndexes();
             ObjectId id;
             if (!ObjectId.TryParse(recordId, out id)) return false;
             var ownerFilter = Builders<BsonDocument>.Filter.Eq("ownerId", ownerId);
@@ -79,6 +92,8 @@ namespace UniShare.Services
             var result = collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id) & ownerFilter & allowed & ownerNotConfirmed, update);
             if (result.ModifiedCount != 1) return false;
             UpdateLinkedRental(doc, ownerId, update);
+            SaveHandover(doc, ownerId, "OWNER", now);
+            AdminAccountabilityService.LogActivity(ownerId, "HANDOVER_CONFIRMED", "BOOKING", ReadBookingId(doc), new BsonDocument { { "party", "OWNER" } });
             ActivateIfBothConfirmed(doc.GetValue("_id", BsonNull.Value), isBooking);
             return true;
         }
@@ -100,7 +115,20 @@ namespace UniShare.Services
                 .Set("handoverConfirmedAt", now).Set("handoverAt", now).Set("updatedAt", now);
             if (collection.UpdateOne(eligible, update).ModifiedCount != 1) return;
 
+            var itemValue = doc.GetValue("itemId", BsonNull.Value);
+            if (itemValue.IsObjectId)
+                MongoDatabase.Items.UpdateOne(x => x.Id == itemValue.AsObjectId,
+                    Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, "RENTED").Set(x => x.UpdatedAt, now));
+
             var bookingId = doc.GetValue("bookingId", id);
+            if (bookingId.IsObjectId)
+                MongoDatabase.Handovers.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", bookingId)
+                        .SetOnInsert("scheduledAt", doc.GetValue("handoverDate", doc.GetValue("startDate", BsonNull.Value)))
+                        .Set("status", "COMPLETED").Set("ownerConfirmed", true).Set("borrowerConfirmed", true)
+                        .Set("actualHandoverAt", now).Set("updatedAt", now).SetOnInsert("createdAt", now),
+                    new UpdateOptions { IsUpsert = true });
+
             if (bookingId.IsObjectId)
             {
                 MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
@@ -111,16 +139,26 @@ namespace UniShare.Services
 
         public static bool RequestReturn(ObjectId borrowerId, string recordId)
         {
+            EnsureLifecycleIndexes();
             BsonDocument doc; bool isBooking;
             if (!TryFind(borrowerId, recordId, out doc, out isBooking) || (Status(doc) != "ONGOING" && Status(doc) != "OVERDUE") || !doc.GetValue("handoverConfirmed", false).ToBoolean()) return false;
             var now = DateTime.UtcNow;
             UpdateRecord(doc, isBooking, borrowerId, Builders<BsonDocument>.Update.Set("status", "RETURN_REQUESTED").Set("returnRequestedAt", now).Set("updatedAt", now));
             UpdateLinkedRental(doc, borrowerId, Builders<BsonDocument>.Update.Set("status", "RETURN_REQUESTED").Set("returnRequestedAt", now).Set("updatedAt", now));
+            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+            if (bookingId.IsObjectId)
+                MongoDatabase.Returns.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", bookingId)
+                        .SetOnInsert("rentalId", doc.GetValue("_id", BsonNull.Value)).SetOnInsert("borrowerId", borrowerId)
+                        .Set("status", "RETURN_REQUESTED").Set("requestedAt", now).Set("updatedAt", now)
+                        .SetOnInsert("createdAt", now), new UpdateOptions { IsUpsert = true });
+            AdminAccountabilityService.LogActivity(borrowerId, "RETURN_REQUESTED", "BOOKING", ReadBookingId(doc), new BsonDocument());
             return true;
         }
 
         public static bool ConfirmReturnByOwner(ObjectId ownerId, string recordId)
         {
+            EnsureLifecycleIndexes();
             ObjectId id;
             if (!ObjectId.TryParse(recordId, out id)) return false;
             var doc = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.In("status", new[] { "RETURN_REQUESTED", "RETURN PENDING" })).FirstOrDefault();
@@ -133,21 +171,132 @@ namespace UniShare.Services
             var result = isBooking ? MongoDatabase.Bookings.UpdateOne(filter, update) : MongoDatabase.Rentals.UpdateOne(filter, update);
             if (result.ModifiedCount != 1) return false;
             UpdateLinkedRental(doc, ownerId, update);
+            PaymentFeeService.AssessLateFee(doc, now);
+            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+            if (bookingId.IsObjectId)
+                MongoDatabase.Returns.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", bookingId)
+                        .Set("status", "COMPLETED").Set("confirmedBy", ownerId).Set("confirmedAt", now)
+                        .Set("returnedAt", now).Set("updatedAt", now).SetOnInsert("createdAt", now), new UpdateOptions { IsUpsert = true });
+            var itemValue = doc.GetValue("itemId", BsonNull.Value);
+            if (itemValue.IsObjectId && Status(doc) != "DISPUTED")
+                MongoDatabase.Items.UpdateOne(x => x.Id == itemValue.AsObjectId && x.AvailabilityStatus == "RENTED",
+                    Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, "AVAILABLE").Set(x => x.UpdatedAt, now));
+            AdminAccountabilityService.LogActivity(ownerId, "RETURN_CONFIRMED", "BOOKING", ReadBookingId(doc), new BsonDocument());
             return true;
         }
 
-        public static bool SubmitDispute(ObjectId borrowerId, string recordId, string reason, string details)
+        public static bool RecordCondition(ObjectId actorId, string recordId, string phase, string condition, string notes, IList<string> photos)
         {
-            BsonDocument doc; bool isBooking;
-            if (!TryFind(borrowerId, recordId, out doc, out isBooking)) return false;
-            if (Status(doc) != "ONGOING" && Status(doc) != "OVERDUE" && Status(doc) != "ACCEPTED" && Status(doc) != "APPROVED") return false;
-            if (string.IsNullOrWhiteSpace(reason)) return false;
+            EnsureLifecycleIndexes();
+            ObjectId id;
+            phase = (phase ?? "").Trim().ToUpperInvariant();
+            condition = (condition ?? "").Trim().ToUpperInvariant();
+            if (!ObjectId.TryParse(recordId, out id) || (phase != "HANDOVER" && phase != "RETURN") ||
+                !new[] { "EXCELLENT", "GOOD", "FAIR", "POOR", "DAMAGED" }.Contains(condition) ||
+                (notes ?? "").Length > 1000 || photos == null || photos.Count > 5) return false;
+            var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id)).FirstOrDefault();
+            if (booking == null) return false;
+            var ownerValue = booking.GetValue("ownerId", BsonNull.Value);
+            var borrowerValue = booking.GetValue("borrowerId", BsonNull.Value);
+            var isOwner = ownerValue.IsObjectId && ownerValue.AsObjectId == actorId;
+            var isBorrower = borrowerValue.IsObjectId && borrowerValue.AsObjectId == actorId;
+            if (!isOwner && !isBorrower) return false;
+            var status = Status(booking);
+            if (phase == "HANDOVER" && status != "ACCEPTED" && status != "ONGOING" && status != "ACTIVE") return false;
+            if (phase == "RETURN" && status != "RETURN_REQUESTED" && status != "RETURN PENDING" && status != "COMPLETED" &&
+                !(isBorrower && (status == "ONGOING" || status == "OVERDUE"))) return false;
+            if (photos.Any(x => !IsSavedConditionPhoto(x))) return false;
+            var now = DateTime.UtcNow;
+            MongoDatabase.ConditionRecords.InsertOne(new BsonDocument {
+                { "_id", ObjectId.GenerateNewId() }, { "bookingId", id }, { "itemId", booking.GetValue("itemId", BsonNull.Value) },
+                { "recordedBy", actorId }, { "participantRole", isOwner ? "OWNER" : "BORROWER" }, { "phase", phase },
+                { "condition", condition }, { "photos", new BsonArray(photos.Select(x => (BsonValue)x)) },
+                { "notes", (notes ?? "").Trim() }, { "createdAt", now }
+            });
+            if (phase == "RETURN")
+            {
+                var rolePrefix = isOwner ? "owner" : "borrower";
+                MongoDatabase.Returns.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", id),
+                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", id)
+                        .SetOnInsert("borrowerId", borrowerValue).SetOnInsert("createdAt", now)
+                        .Set(rolePrefix + "ConditionAfter", condition).Set(rolePrefix + "ConditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
+                        .Set(rolePrefix + "ConditionNotes", (notes ?? "").Trim()).Set(rolePrefix + "ConditionAt", now)
+                        .Set("conditionAfter", condition).Set("conditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
+                        .Set("conditionNotes", (notes ?? "").Trim()).Set("conditionRecordedAt", now).Set("updatedAt", now), new UpdateOptions { IsUpsert = true });
+            }
+            else
+            {
+                var rolePrefix = isOwner ? "owner" : "borrower";
+                MongoDatabase.Handovers.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", id),
+                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", id)
+                        .SetOnInsert("ownerId", ownerValue).SetOnInsert("borrowerId", borrowerValue).SetOnInsert("createdAt", now)
+                        .Set(rolePrefix + "ConditionBefore", condition).Set(rolePrefix + "ConditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
+                        .Set(rolePrefix + "ConditionNotes", (notes ?? "").Trim()).Set(rolePrefix + "ConditionAt", now)
+                        .Set("conditionBefore", condition).Set("conditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
+                        .Set("conditionNotes", (notes ?? "").Trim()).Set("updatedAt", now), new UpdateOptions { IsUpsert = true });
+            }
+            return true;
+        }
+
+        private static void SaveHandover(BsonDocument booking, ObjectId actorId, string role, DateTime at)
+        {
+            var bookingId = booking.GetValue("bookingId", booking.GetValue("_id", BsonNull.Value));
+            if (!bookingId.IsObjectId) return;
+            var confirmedField = role == "OWNER" ? "ownerConfirmed" : "borrowerConfirmed";
+            MongoDatabase.Handovers.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", bookingId)
+                    .SetOnInsert("ownerId", booking.GetValue("ownerId", BsonNull.Value)).SetOnInsert("borrowerId", booking.GetValue("borrowerId", BsonNull.Value))
+                    .SetOnInsert("scheduledAt", booking.GetValue("handoverDate", booking.GetValue("startDate", BsonNull.Value)))
+                    .Set(confirmedField, true).Set(role == "OWNER" ? "ownerConfirmedAt" : "borrowerConfirmedAt", at)
+                    .Set("updatedAt", at).SetOnInsert("createdAt", at), new UpdateOptions { IsUpsert = true });
+        }
+
+        private static ObjectId? ReadBookingId(BsonDocument doc)
+        {
+            var value = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+            return value.IsObjectId ? (ObjectId?)value.AsObjectId : null;
+        }
+
+        private static void EnsureLifecycleIndexes() { var initialized = LifecycleIndexesReady.Value; }
+
+        private static bool IsSavedConditionPhoto(string photo)
+        {
+            if (String.IsNullOrWhiteSpace(photo) || photo.Length > 80 || photo.Contains("/") || photo.Contains("\\")) return false;
+            var extension = Path.GetExtension(photo).ToLowerInvariant();
+            Guid id;
+            if ((extension != ".jpg" && extension != ".jpeg" && extension != ".png") ||
+                !Guid.TryParseExact(Path.GetFileNameWithoutExtension(photo), "N", out id)) return false;
+            var context = HttpContext.Current;
+            return context != null && File.Exists(context.Server.MapPath("~/Uploads/" + photo));
+        }
+
+        public static bool SubmitDispute(ObjectId participantId, string recordId, string reason, string details)
+        {
+            ObjectId id;
+            if (!ObjectId.TryParse(recordId, out id)) return false;
+            var doc = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id)).FirstOrDefault();
+            var isBooking = doc != null;
+            if (doc == null) doc = MongoDatabase.Rentals.Find(Builders<BsonDocument>.Filter.Eq("_id", id)).FirstOrDefault();
+            if (doc == null) return false;
+            var ownerValue = doc.GetValue("ownerId", BsonNull.Value);
+            var borrowerValue = doc.GetValue("borrowerId", doc.GetValue("renterId", BsonNull.Value));
+            if (!(ownerValue.IsObjectId && ownerValue.AsObjectId == participantId) &&
+                !(borrowerValue.IsObjectId && borrowerValue.AsObjectId == participantId)) return false;
+            if (Status(doc) != "ONGOING" && Status(doc) != "OVERDUE" && Status(doc) != "ACCEPTED" && Status(doc) != "APPROVED" &&
+                Status(doc) != "RETURN_REQUESTED" && Status(doc) != "RETURN PENDING") return false;
+            if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 100 || (details ?? "").Length > 400) return false;
             var now = DateTime.UtcNow;
             var text = string.IsNullOrWhiteSpace(details) ? reason.Trim() : reason.Trim() + ": " + details.Trim();
             var update = Builders<BsonDocument>.Update.Set("status", "DISPUTED").Set("disputeReason", text)
                 .Set("disputeCategory", reason.Trim()).Set("disputeDetails", (details ?? "").Trim()).Set("disputedAt", now).Set("updatedAt", now);
-            UpdateRecord(doc, isBooking, borrowerId, update);
-            UpdateLinkedRental(doc, borrowerId, update);
+            var collection = isBooking ? MongoDatabase.Bookings : MongoDatabase.Rentals;
+            var participantFilter = Builders<BsonDocument>.Filter.Eq("ownerId", participantId) |
+                Builders<BsonDocument>.Filter.Eq("borrowerId", participantId) | Builders<BsonDocument>.Filter.Eq("renterId", participantId);
+            if (collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id) & participantFilter &
+                Builders<BsonDocument>.Filter.In("status", new[] { "ONGOING", "OVERDUE", "ACCEPTED", "APPROVED", "RETURN_REQUESTED", "RETURN PENDING" }), update).ModifiedCount != 1) return false;
+            UpdateLinkedRental(doc, participantId, update);
+            AdminAccountabilityService.RecordDispute(doc, participantId, reason.Trim(), (details ?? "").Trim());
             return true;
         }
 
@@ -182,10 +331,11 @@ namespace UniShare.Services
             var status = Status(x);
             return DisplayableStatuses.Contains(status) || status == "PENDING" || status == "REQUESTED";
         }
-        private static void RefreshOverdue(ObjectId borrowerId)
+        public static void RefreshOverdue(ObjectId userId)
         {
-            var users = Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId) | Builders<BsonDocument>.Filter.Eq("renterId", borrowerId) |
-                        Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId.ToString()) | Builders<BsonDocument>.Filter.Eq("renterId", borrowerId.ToString());
+            var users = Builders<BsonDocument>.Filter.Eq("borrowerId", userId) | Builders<BsonDocument>.Filter.Eq("renterId", userId) |
+                        Builders<BsonDocument>.Filter.Eq("ownerId", userId) | Builders<BsonDocument>.Filter.Eq("borrowerId", userId.ToString()) |
+                        Builders<BsonDocument>.Filter.Eq("renterId", userId.ToString()) | Builders<BsonDocument>.Filter.Eq("ownerId", userId.ToString());
             var active = users & Builders<BsonDocument>.Filter.In("status", new[] { "ONGOING", "ACTIVE" });
             var now = DateTime.UtcNow;
             foreach (var collection in new[] { MongoDatabase.Bookings, MongoDatabase.Rentals })
@@ -193,7 +343,9 @@ namespace UniShare.Services
                 foreach (var doc in collection.Find(active).ToList())
                 {
                     var start = ReadDate(doc, "handoverAt") ?? ReadDate(doc, "handoverConfirmedAt") ?? ReadDate(doc, "startDate") ?? ReadDate(doc, "handoverDate");
-                    if (!start.HasValue || start.Value.AddHours(ReadHours(doc)) > now) continue;
+                    var graceMinutesValue = doc.GetValue("lateGraceMinutes", 30);
+                    var graceMinutes = graceMinutesValue.IsNumeric ? Math.Max(0, Math.Min(60, graceMinutesValue.ToInt32())) : 30;
+                    if (!start.HasValue || start.Value.AddHours(ReadHours(doc)).AddMinutes(graceMinutes) > now) continue;
                     collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("status", doc.GetValue("status", "")),
                         Builders<BsonDocument>.Update.Set("status", "OVERDUE").Set("overdueAt", now).Set("updatedAt", now));
                 }

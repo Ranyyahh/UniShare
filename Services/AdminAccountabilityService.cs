@@ -69,10 +69,15 @@ namespace UniShare.Services
                 var bookingId = ReadObjectId(dispute, "bookingId");
                 if (bookingId.HasValue)
                 {
+                    var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED")).FirstOrDefault();
                     MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED"),
                         Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("completedAt", now).Set("disputeResolvedAt", now).Set("updatedAt", now));
                     MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED"),
                         Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("completedAt", now).Set("disputeResolvedAt", now).Set("updatedAt", now));
+                    var itemValue = booking == null ? BsonNull.Value : booking.GetValue("itemId", BsonNull.Value);
+                    if (itemValue.IsObjectId)
+                        MongoDatabase.Items.UpdateOne(x => x.Id == itemValue.AsObjectId && x.AvailabilityStatus == "RENTED",
+                            Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, "AVAILABLE").Set(x => x.UpdatedAt, now));
                 }
             }
             WriteAudit(adminId, "DISPUTE_" + status, "DISPUTE", disputeId, new BsonDocument { { "notes", notes ?? "" } });

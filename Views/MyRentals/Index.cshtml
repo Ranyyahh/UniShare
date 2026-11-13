@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" href="~/Content/MyRentals.css" />
 
-<div class="my-rentals-page" data-history-url="@Url.Action("HistoryData", "MyRentals")" data-handover-url="@Url.Action("ConfirmHandover", "MyRentals")" data-return-url="@Url.Action("ConfirmReturn", "MyRentals")">
+<div class="my-rentals-page" data-history-url="@Url.Action("HistoryData", "MyRentals")" data-handover-url="@Url.Action("ConfirmHandover", "MyRentals")" data-return-url="@Url.Action("ConfirmReturn", "MyRentals")" data-decide-url="@Url.Action("Decide", "RentalRequests")" data-dispute-url="@Url.Action("Dispute", "BorrowedItems")" data-condition-url="@Url.Action("RecordCondition", "BorrowedItems")">
     @Html.AntiForgeryToken()
     <!-- A. Page Header -->
     <header class="my-rentals-header">
@@ -1261,7 +1261,25 @@
                     </div>
                     <div class="rm-info-notice" role="note">
                         <svg class="rm-notice-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" /></svg>
-                        <span>The rental timer will only start after both parties confirm the physical handover in person.</span>
+                        <span id="acceptedHandoverNoticeText">The rental timer will only start after both parties confirm the physical handover in person.</span>
+                    </div>
+                </section>
+                <section class="rm-condition-panel" aria-labelledby="ownerHandoverConditionTitle">
+                    <div class="rm-condition-panel__heading">
+                        <h3 id="ownerHandoverConditionTitle">Record handover condition</h3>
+                        <p>Save the item's condition and photos before confirming the physical handover.</p>
+                    </div>
+                    <div class="rm-condition-grid">
+                        <label class="rm-condition-field" for="ownerHandoverCondition">Condition
+                            <select id="ownerHandoverCondition"><option value="GOOD">Good</option><option value="EXCELLENT">Excellent</option><option value="FAIR">Fair</option><option value="POOR">Poor</option><option value="DAMAGED">Damaged</option></select>
+                        </label>
+                        <label class="rm-condition-field" for="ownerHandoverNotes">Notes
+                            <textarea id="ownerHandoverNotes" maxlength="1000" rows="3" placeholder="Describe the item's condition or included accessories"></textarea>
+                        </label>
+                        <label class="rm-condition-field rm-condition-field--photos" for="ownerHandoverPhotos">Condition photos
+                            <input id="ownerHandoverPhotos" type="file" accept="image/jpeg,image/png" multiple />
+                            <span class="rm-condition-help">JPG or PNG, up to 5 photos (5 MB each).</span>
+                        </label>
                     </div>
                 </section>
             </div>
@@ -1483,7 +1501,7 @@
             </div>
             <footer class="my-rentals-modal__footer">
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnDisputedClose">Close</button>
-                <button type="button" class="my-rentals-btn rm-btn-accept" id="btnDisputedResolve">&#10003; Mark as Resolved</button>
+                <p class="text-muted">This dispute is awaiting administrator review.</p>
             </footer>
         </div>
     </div>

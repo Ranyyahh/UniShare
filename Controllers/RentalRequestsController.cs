@@ -24,9 +24,15 @@ namespace UniShare.Controllers
         {
             ObjectId bookingId, ownerId;
             if (!ObjectId.TryParse(id, out bookingId) || !ObjectId.TryParse(User.Identity.Name, out ownerId)) return new HttpStatusCodeResult(400);
-            if (!accept && string.IsNullOrWhiteSpace(reason)) TempData["Error"] = "A decline reason is required.";
-            else if (!BookingService.Decide(bookingId, ownerId, accept, reason, notes)) TempData["Error"] = "The request was processed, expired, or its schedule is no longer available.";
-            else TempData["Success"] = accept ? "Rental request accepted." : "Rental request declined.";
+            var message = !accept && string.IsNullOrWhiteSpace(reason) ? "A decline reason is required." : null;
+            var saved = message == null && BookingService.Decide(bookingId, ownerId, accept, reason, notes);
+            if (!saved && message == null) message = "The request was processed, expired, or its schedule is no longer available.";
+            if (Request.IsAjaxRequest())
+            {
+                Response.StatusCode = saved ? 200 : 409;
+                return Json(new { ok = saved, message = saved ? (accept ? "Rental request accepted." : "Rental request declined.") : message });
+            }
+            TempData[saved ? "Success" : "Error"] = saved ? (accept ? "Rental request accepted." : "Rental request declined.") : message;
             return RedirectToAction("Index");
         }
     }

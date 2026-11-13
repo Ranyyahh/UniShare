@@ -3211,6 +3211,87 @@
         color: #059669;
     }
 
+.rm-condition-panel {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid #dbe3f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.rm-condition-panel__heading h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.rm-condition-panel__heading p {
+    margin: 4px 0 12px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.rm-condition-grid {
+    display: grid;
+    grid-template-columns: minmax(140px, .7fr) minmax(180px, 1.3fr);
+    gap: 12px;
+}
+
+.rm-condition-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rm-condition-field select,
+.rm-condition-field textarea,
+.rm-condition-field input[type="file"] {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    font: inherit;
+    font-weight: 400;
+}
+
+.rm-condition-field select,
+.rm-condition-field textarea {
+    padding: 9px 10px;
+}
+
+.rm-condition-field textarea {
+    resize: vertical;
+}
+
+.rm-condition-field input[type="file"] {
+    padding: 7px;
+    font-size: 11px;
+}
+
+.rm-condition-field--photos {
+    grid-column: 1 / -1;
+}
+
+.rm-condition-help {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+@media (max-width: 600px) {
+    .rm-condition-grid { grid-template-columns: minmax(0, 1fr); }
+    .rm-condition-field--photos { grid-column: auto; }
+}
+
 /* --- Disputed: submitted report --- */
 .rm-dispute-card {
     padding: 12px 14px;

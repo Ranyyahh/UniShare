@@ -1067,12 +1067,12 @@
             return;
         }
 
-        var requestId = rental.RequestId;
-        rental.Status = 'Accepted';
-        updateSummaryCards();
-        endFlow(false);
-        applyAllFiltersAndPaginate();
-        focusViewButton(requestId);
+        elements.btnAcceptConfirm.disabled = true;
+        postRentalAction('data-decide-url', rental.BookingObjectId, function (result) {
+            elements.btnAcceptConfirm.disabled = false;
+            if (!result || !result.ok) { window.alert(result && result.message ? result.message : 'The request could not be accepted.'); return; }
+            window.location.reload();
+        }, { accept: 'true' });
     }
 
     // --- Decline ---
@@ -1140,16 +1140,12 @@
             return;
         }
 
-        var requestId = rental.RequestId;
-        var label = chosen.parentNode.querySelector('strong');
-        rental.DeclineReason = label ? label.textContent : chosen.value;
-        rental.DeclineNote = elements.declineExplanation.value.replace(/^\s+|\s+$/g, '');
-        rental.DeclinedAtFormatted = formatDateTime(new Date());
-        rental.Status = 'Declined';
-        updateSummaryCards();
-        endFlow(false);
-        applyAllFiltersAndPaginate();
-        focusViewButton(requestId);
+        elements.btnDeclineConfirm.disabled = true;
+        postRentalAction('data-decide-url', rental.BookingObjectId, function (result) {
+            elements.btnDeclineConfirm.disabled = false;
+            if (!result || !result.ok) { window.alert(result && result.message ? result.message : 'The request could not be declined.'); return; }
+            window.location.reload();
+        }, { accept: 'false', reason: chosen.value, notes: elements.declineExplanation.value.replace(/^\s+|\s+$/g, '') });
     }
 
     // --- Accepted: two-party handover verification ---
@@ -1195,6 +1191,17 @@
         progress.textContent = count + ' of 2 Verified';
         progress.className = 'rm-verify-progress' + (count === 1 ? ' is-partial' : '');
 
+        var notice = document.getElementById('acceptedHandoverNoticeText');
+        if (notice) {
+            notice.textContent = ownerDone && borrowerDone
+                ? 'Both parties confirmed. The rental is active and its timer has started.'
+                : ownerDone
+                    ? 'Owner confirmed. Waiting for the borrower to confirm in their Borrowed Items page.'
+                    : borrowerDone
+                        ? 'Borrower confirmed. Waiting for the owner to confirm the handover.'
+                        : 'The rental timer will only start after both parties confirm the physical handover in person.';
+        }
+
         renderVerificationParty('Owner', rental.OwnerName, ownerDone, rental.OwnerHandoverConfirmedAt, 'Your confirmation required');
         renderVerificationParty('Borrower', rental.BorrowerName, borrowerDone, rental.BorrowerHandoverConfirmedAt, 'Waiting for the borrower');
 
@@ -1213,31 +1220,56 @@
             return;
         }
         elements.btnAcceptedConfirmHandover.disabled = true;
-        postRentalAction('data-handover-url', rental.BookingObjectId, function (result) {
-            if (!result || !result.ok) {
+        postHandoverCondition(rental.BookingObjectId, function (conditionResult) {
+            if (!conditionResult || !conditionResult.ok) {
                 elements.btnAcceptedConfirmHandover.disabled = false;
-                window.alert(result && result.message ? result.message : 'Handover confirmation could not be saved.');
+                window.alert(conditionResult && conditionResult.message ? conditionResult.message : 'Handover condition could not be saved.');
                 return;
             }
-            rental.OwnerHandoverConfirmed = !!result.ownerConfirmed;
-            rental.BorrowerHandoverConfirmed = !!result.borrowerConfirmed;
-            rental.Status = result.status === 'ONGOING' ? 'Ongoing' : 'Accepted';
-            rental.HandoverDate = result.handoverAt || rental.HandoverDate;
-            rental.OwnerHandoverConfirmedAt = formatDateTime(new Date());
-            renderHandoverVerification(rental);
-            if (result.ownerConfirmed && result.borrowerConfirmed) window.location.reload();
+            postRentalAction('data-handover-url', rental.BookingObjectId, function (result) {
+                if (!result || !result.ok) {
+                    elements.btnAcceptedConfirmHandover.disabled = false;
+                    window.alert(result && result.message ? result.message : 'Handover confirmation could not be saved.');
+                    return;
+                }
+                rental.OwnerHandoverConfirmed = !!result.ownerConfirmed;
+                rental.BorrowerHandoverConfirmed = !!result.borrowerConfirmed;
+                rental.Status = result.status === 'ONGOING' ? 'Ongoing' : 'Accepted';
+                rental.HandoverDate = result.handoverAt || rental.HandoverDate;
+                rental.OwnerHandoverConfirmedAt = formatDateTime(new Date());
+                renderHandoverVerification(rental);
+                if (result.ownerConfirmed && result.borrowerConfirmed) window.location.reload();
+            });
         });
     }
 
-    function postRentalAction(urlAttribute, bookingId, callback) {
+    function postRentalAction(urlAttribute, bookingId, callback, extraFields) {
         var root = document.querySelector('.my-rentals-page');
         var token = document.querySelector('input[name="__RequestVerificationToken"]');
         var body = new URLSearchParams();
         body.append('id', bookingId || '');
+        Object.keys(extraFields || {}).forEach(function (key) { body.append(key, extraFields[key]); });
         if (token) body.append('__RequestVerificationToken', token.value);
-        fetch(root.getAttribute(urlAttribute), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
+        fetch(root.getAttribute(urlAttribute), { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest' }, body: body.toString() })
             .then(function (r) { return r.json(); }).then(callback)
             .catch(function () { callback({ ok: false, message: 'The update could not be saved. Refresh the page and try again.' }); });
+    }
+
+    function postHandoverCondition(bookingId, callback) {
+        var input = document.getElementById('ownerHandoverPhotos');
+        var files = input ? input.files : [];
+        if (files.length > 5) { callback({ ok: false, message: 'Upload no more than five condition photos.' }); return; }
+        var form = new FormData();
+        var token = document.querySelector('input[name="__RequestVerificationToken"]');
+        form.append('id', bookingId || ''); form.append('phase', 'HANDOVER');
+        form.append('condition', document.getElementById('ownerHandoverCondition').value);
+        form.append('notes', document.getElementById('ownerHandoverNotes').value);
+        if (token) form.append('__RequestVerificationToken', token.value);
+        Array.prototype.forEach.call(files, function (file) { form.append('photos', file, file.name); });
+        var root = document.querySelector('.my-rentals-page');
+        fetch(root.getAttribute('data-condition-url'), { method: 'POST', credentials: 'same-origin', body: form })
+            .then(function (r) { return r.json(); }).then(callback)
+            .catch(function () { callback({ ok: false, message: 'Handover condition could not be saved.' }); });
     }
 
     function startRental(rental) {
@@ -1671,7 +1703,7 @@
                 window.location.reload();
             });
         } else if (confirmKind === 'resolved') {
-            markCompleted(rental, true);
+            window.alert('Only an administrator can resolve a dispute. Use Dispute Management to review and close it.');
         }
     }
 
@@ -1857,8 +1889,6 @@
         elements.disputeUploadSub.textContent = full ? 'Remove an image to upload another' : count + ' of ' + MAX_DISPUTE_IMAGES + ' added';
     }
 
-    // Frontend only: validates the form, then moves the record to Disputed in the page.
-    // Nothing is saved, and nobody is actually notified.
     function submitDispute() {
         var rental = flow.rental;
         if (!rental || (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue' && rental.Status !== 'Returned')) {
@@ -1894,20 +1924,23 @@
             return;
         }
 
-        var requestId = rental.RequestId;
-        rental.DisputeCategory = chosen.value;
-        rental.DisputeDescription = description;
-        rental.DisputeEvidenceNames = disputeImages.map(function (x) { return x.file.name; });
-        // The Disputed modal keeps showing the evidence, so its image URLs are handed over to the record
-        // (not revoked) and the form's list is emptied.
-        rental.DisputeEvidenceUrls = disputeImages.map(function (x) { return x.url; });
-        disputeImages = [];
-        rental.DisputeSubmittedAtFormatted = formatDateTime(new Date());
-        rental.Status = 'Disputed';
-        updateSummaryCards();
-        endFlow(false);
-        applyAllFiltersAndPaginate();
-        focusViewButton(requestId);
+        var root = document.querySelector('.my-rentals-page');
+        var token = document.querySelector('input[name="__RequestVerificationToken"]');
+        var form = new FormData();
+        form.append('id', rental.BookingObjectId || '');
+        form.append('reason', chosen.value);
+        form.append('details', description);
+        if (token) form.append('__RequestVerificationToken', token.value);
+        disputeImages.forEach(function (entry) { form.append('evidenceFiles', entry.file, entry.file.name); });
+        elements.btnDisputeSubmit.disabled = true;
+        fetch(root.getAttribute('data-dispute-url'), { method: 'POST', credentials: 'same-origin', body: form })
+            .then(function (response) { return response.json(); })
+            .then(function (result) {
+                elements.btnDisputeSubmit.disabled = false;
+                if (!result || !result.ok) { window.alert(result && result.message ? result.message : 'The dispute could not be submitted.'); return; }
+                window.location.reload();
+            })
+            .catch(function () { elements.btnDisputeSubmit.disabled = false; window.alert('The dispute could not be saved. Refresh and try again.'); });
     }
 
     function bindFlowModalEvents() {
@@ -2027,7 +2060,7 @@
             e.preventDefault();
             endFlow(true);
         });
-        elements.btnDisputedResolve.addEventListener('click', function (e) {
+        if (elements.btnDisputedResolve) elements.btnDisputedResolve.addEventListener('click', function (e) {
             e.preventDefault();
             openStatusConfirm('resolved', elements.disputedModal, elements.btnDisputedResolve);
         });

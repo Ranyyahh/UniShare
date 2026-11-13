@@ -82,29 +82,22 @@
             </div>
         </div>
 
-        <!-- Audit Handshake Timeline: Simple vertical list with Green and Blue check icons -->
+        <!-- Payment receipt state is recorded by the owner after money changes hands. -->
         <div class="modal-section">
-            <label class="form-section-title">Audit Handshake Timeline</label>
+            <label class="form-section-title">Payment Record</label>
             <div class="audit-timeline">
                 <div class="timeline-step">
-                    <span class="timeline-icon icon-emerald"><i class="glyphicon glyphicon-ok-sign"></i></span>
+                    <span class="timeline-icon icon-blue"><i class="glyphicon glyphicon-credit-card"></i></span>
                     <div class="timeline-content">
-                        <div class="timeline-title">Payment Authorized via GCash</div>
-                        <div class="timeline-meta">Settlement hash confirmed on university ledger &bull; @details.DateLogged</div>
-                    </div>
-                </div>
-                <div class="timeline-step">
-                    <span class="timeline-icon icon-blue"><i class="glyphicon glyphicon-ok-sign"></i></span>
-                    <div class="timeline-content">
-                        <div class="timeline-title">Escrow Handshake &amp; Audit Logged</div>
-                        <div class="timeline-meta">Automated system check passed &bull; Funds escrowed</div>
+                        <div class="timeline-title">Method: @details.Method</div>
+                        <div class="timeline-meta">Record created @details.DateLogged</div>
                     </div>
                 </div>
                 <div class="timeline-step">
                     <span class="timeline-icon icon-amber"><i class="glyphicon glyphicon-time"></i></span>
                     <div class="timeline-content">
-                        <div class="timeline-title">Awaiting Owner Return Confirmation</div>
-                        <div class="timeline-meta">Pending equipment return verification by lender</div>
+                        <div class="timeline-title">Receipt status: @details.Status</div>
+                        <div class="timeline-meta">This record tracks the reported payment and owner confirmation. It does not process or hold funds.</div>
                     </div>
                 </div>
             </div>
@@ -114,16 +107,16 @@
         <div id="modalAlertBox" class="modal-alert-box" style="display:none;"></div>
     </div>
 
-    <!-- Actions: Purple button, White button, Red link -->
-    <div class="modal-actions-bar">
-        <button type="button" class="btn btn-audit-verify" id="btnMarkAudited">
-            Mark as Audited &amp; Verified
-        </button>
-        <button type="button" class="btn btn-send-reminder" id="btnSendReminder">
-            Send Owner Confirmation Reminder
-        </button>
-        <a href="javascript:void(0);" class="link-flag-dispute" id="btnFlagDispute">
-            Flag for Dispute Review
-        </a>
-    </div>
+    @if (details.RefundAvailable)
+    {
+        <div class="modal-actions-bar">
+            @using (Html.BeginForm("Refund", "Payments", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="bookingId" value="@details.BookingObjectId" />
+                <input type="text" name="reason" maxlength="500" required placeholder="Refund reason" />
+                <button type="submit" class="btn btn-send-reminder">Record Refund</button>
+            }
+        </div>
+    }
 </div>

@@ -65,6 +65,7 @@
      data-messages-url="@Url.Action("Index", "Messages")"
      data-handover-url="@Url.Action("ConfirmHandover", "BorrowedItems")"
      data-return-url="@Url.Action("ReturnItem", "BorrowedItems")"
+     data-condition-url="@Url.Action("RecordCondition", "BorrowedItems")"
      data-dispute-url="@Url.Action("Dispute", "BorrowedItems")"
      data-rate-url="@Url.Action("Rate", "BorrowedItems")">
     @Html.AntiForgeryToken()
@@ -168,6 +169,9 @@
             <div class="bi-dialog__pad">
                 <p>Confirm that you received <strong id="bi-confirm-item"></strong> from <strong id="bi-confirm-lender"></strong>. The rental timer starts after confirmation.</p>
                 <label class="bi-check"><input type="checkbox" name="received" value="true" required /> I received the item and it matches the listing.</label>
+                <label class="bi-field">Handover condition<select name="condition" required><option value="">Select condition</option><option>EXCELLENT</option><option>GOOD</option><option>FAIR</option><option>POOR</option><option>DAMAGED</option></select></label>
+                <label class="bi-field">Notes<textarea name="conditionNotes" rows="2" maxlength="1000"></textarea></label>
+                <label class="bi-field">Condition photos<input type="file" name="conditionPhotos" accept="image/jpeg,image/png" multiple /></label>
                 <div class="bi-modal-actions">
                     <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
                     <button type="submit" class="us-btn us-btn--primary">Confirm Handover</button>
@@ -186,6 +190,9 @@
             <div class="bi-dialog__pad">
                 <p>Confirm that you gave <strong id="bi-return-item"></strong> back to <strong id="bi-return-lender"></strong>. This sends a return request to the lender. The rental is completed after the lender confirms receipt.</p>
                 <label class="bi-check"><input type="checkbox" name="returned" value="true" required /> I returned the item in the agreed condition.</label>
+                <label class="bi-field">Return condition<select name="condition" required><option value="">Select condition</option><option>EXCELLENT</option><option>GOOD</option><option>FAIR</option><option>POOR</option><option>DAMAGED</option></select></label>
+                <label class="bi-field">Notes<textarea name="conditionNotes" rows="2" maxlength="1000"></textarea></label>
+                <label class="bi-field">Condition photos<input type="file" name="conditionPhotos" accept="image/jpeg,image/png" multiple /></label>
                 <div class="bi-modal-actions">
                     <button type="button" class="us-btn us-btn--ghost" data-close>Cancel</button>
                     <button type="submit" class="us-btn us-btn--primary">Return Item</button>

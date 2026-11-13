@@ -1,9 +1,5 @@
 use UniShare
 
-db.test.insertOne({ created: true })
-
-show dbs
-
 const ownerId = ObjectId();
 const borrowerId = ObjectId();
 const adminId = ObjectId();
@@ -13,7 +9,7 @@ db.users.insertMany([
     {
         _id: ownerId,
         schoolEmail: "owner@qcu.edu.ph",
-        passwordHash: "owner123",
+        passwordHash: "120000.AAECAwQFBgcICQoLDA0ODw==.3ClTNb48LIQYWKoN+RDyFhpKsvg7ScKQ31PwdEnChOA=",
 
         firstName: "Juan",
         middleName: "Santos",
@@ -33,7 +29,7 @@ db.users.insertMany([
     {
         _id: borrowerId,
         schoolEmail: "borrower@qcu.edu.ph",
-        passwordHash: "borrower123",
+        passwordHash: "120000.EBESExQVFhcYGRobHB0eHw==.6fMlKgvcOVrqtQFApp/emJi/AEUm0ihYFYQmacW/rNE=",
 
         firstName: "Maria",
         middleName: "Reyes",
@@ -53,7 +49,7 @@ db.users.insertMany([
     {
         _id: studentId,
         schoolEmail: "student@qcu.edu.ph",
-        passwordHash: "student123",
+        passwordHash: "120000.ICEiIyQlJicoKSorLC0uLw==.h31mKH76zINc22tzUpQX/DvczGdfKrEdNG7fsa4x3ro=",
 
         firstName: "Pedro",
         middleName: "Garcia",
@@ -73,7 +69,7 @@ db.users.insertMany([
     {
         _id: adminId,
         schoolEmail: "admin@qcu.edu.ph",
-        passwordHash: "admin123",
+        passwordHash: "120000.MDEyMzQ1Njc4OTo7PD0+Pw==.hf0qBgXhGOtpL3+ZHi6mkJaDxKIjlEY132ZKSLsBZfo=",
 
         firstName: "UniShare",
         middleName: "",
@@ -129,6 +125,12 @@ db.verificationApplications.insertOne({
 const laptopItemId = ObjectId();
 const cameraItemId = ObjectId();
 const projectorItemId = ObjectId();
+const noShowBookingId = ObjectId();
+const disputeBookingId = ObjectId();
+const completedBookingId = ObjectId();
+const handoverStart = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+handoverStart.setHours(9, 0, 0, 0);
+const expectedReturn = new Date(handoverStart.getTime() + 2 * 60 * 60 * 1000);
 
 db.items.insertMany([
     {
@@ -197,7 +199,7 @@ db.items.insertMany([
             room: "Room 203"
         },
 
-        availabilityStatus: "AVAILABLE",
+        availabilityStatus: "RENTED",
 
         approvalStatus: "APPROVED",
 
@@ -252,22 +254,33 @@ const bookingId = ObjectId();
 db.bookings.insertOne({
     _id: bookingId,
 
+    requestId: "REQ-SEED-BOOKING-001",
+
     itemId: laptopItemId,
+    itemName: "Laptop",
 
     ownerId: ownerId,
     borrowerId: borrowerId,
 
-    startDate: new Date("2026-11-15"),
-    endDate: new Date("2026-11-17"),
+    startDate: handoverStart,
+    endDate: expectedReturn,
+    handoverDate: handoverStart,
+    handoverTime: "09:00 AM",
+    durationHours: 2,
+    duration: "2 hours",
+    lateGraceMinutes: 30,
 
     quantity: 1,
 
     pricePerDay: 500,
-    totalAmount: 1000,
+    totalAmount: 100,
+    estimatedFee: 100,
 
     status: "PENDING",
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
 
     purpose: "School project",
+    notes: "School project",
 
     pickupLocation: {
         campus: "QCU",
@@ -277,6 +290,84 @@ db.bookings.insertOne({
 
     createdAt: new Date(),
     updatedAt: new Date()
+});
+
+const noShowTime = new Date(Date.now() - 3 * 60 * 60 * 1000);
+db.bookings.insertOne({
+    _id: noShowBookingId,
+    requestId: "REQ-SEED-NOSHOW-001",
+    itemId: laptopItemId,
+    itemName: "Laptop",
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+    startDate: noShowTime,
+    endDate: new Date(noShowTime.getTime() + 2 * 60 * 60 * 1000),
+    handoverDate: noShowTime,
+    handoverTime: "09:00 AM",
+    durationHours: 2,
+    duration: "2 hours",
+    estimatedFee: 100,
+    status: "ACCEPTED",
+    acceptedAt: noShowTime,
+    handoverConfirmed: false,
+    lateGraceMinutes: 30,
+    createdAt: new Date(noShowTime.getTime() - 24 * 60 * 60 * 1000),
+    updatedAt: noShowTime
+});
+
+const disputeStart = new Date(Date.now() - 4 * 60 * 60 * 1000);
+db.bookings.insertOne({
+    _id: disputeBookingId,
+    requestId: "REQ-SEED-DISPUTE-001",
+    itemId: cameraItemId,
+    itemName: "Digital Camera",
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+    startDate: disputeStart,
+    endDate: new Date(disputeStart.getTime() + 2 * 60 * 60 * 1000),
+    handoverDate: disputeStart,
+    handoverTime: "09:00 AM",
+    durationHours: 2,
+    duration: "2 hours",
+    estimatedFee: 70,
+    status: "DISPUTED",
+    handoverConfirmed: true,
+    ownerHandoverConfirmed: true,
+    borrowerHandoverConfirmed: true,
+    handoverAt: disputeStart,
+    disputeCategory: "Item condition",
+    disputeDetails: "Demo dispute record for admin review.",
+    disputedAt: new Date(),
+    lateGraceMinutes: 30,
+    createdAt: disputeStart,
+    updatedAt: new Date()
+});
+
+const completedStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+db.bookings.insertOne({
+    _id: completedBookingId,
+    requestId: "REQ-SEED-COMPLETED-001",
+    itemId: projectorItemId,
+    itemName: "Projector",
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+    startDate: completedStart,
+    endDate: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000),
+    handoverDate: completedStart,
+    handoverTime: "09:00 AM",
+    durationHours: 2,
+    duration: "2 hours",
+    estimatedFee: 90,
+    status: "COMPLETED",
+    handoverConfirmed: true,
+    ownerHandoverConfirmed: true,
+    borrowerHandoverConfirmed: true,
+    handoverAt: completedStart,
+    returnedAt: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000),
+    completedAt: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000),
+    lateGraceMinutes: 30,
+    createdAt: completedStart,
+    updatedAt: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000)
 });
 
 
@@ -293,15 +384,14 @@ db.payments.insertOne({
 
     payerId: borrowerId,
 
-    amount: 1000,
+    amount: 100,
 
     paymentMethod: "GCASH",
 
-    paymentProvider: "PAYMONGO",
+    ownerId: ownerId,
+    transactionReference: "GCASH-SEED-001",
 
-    transactionReference: "PMNG-TEST-001",
-
-    status: "PENDING",
+    status: "UNPAID",
 
     paidAt: null,
 
@@ -332,7 +422,7 @@ db.handovers.insertOne({
         room: "Room 401"
     },
 
-    scheduledAt: new Date("2026-11-15T09:00:00"),
+    scheduledAt: handoverStart,
 
     status: "PENDING",
 
@@ -361,15 +451,29 @@ db.rentals.insertOne({
     ownerId: ownerId,
     borrowerId: borrowerId,
 
-    startDate: new Date("2026-11-15"),
-    expectedReturnDate: new Date("2026-11-17"),
+    startDate: handoverStart,
+    expectedReturnDate: expectedReturn,
 
     actualReturnDate: null,
 
-    status: "ACTIVE",
+    status: "PENDING",
 
     createdAt: new Date(),
     updatedAt: new Date()
+});
+
+db.rentals.insertOne({
+    _id: ObjectId(),
+    bookingId: completedBookingId,
+    itemId: projectorItemId,
+    ownerId: ownerId,
+    borrowerId: borrowerId,
+    startDate: completedStart,
+    expectedReturnDate: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000),
+    actualReturnDate: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000),
+    status: "COMPLETED",
+    createdAt: completedStart,
+    updatedAt: new Date(completedStart.getTime() + 2 * 60 * 60 * 1000)
 });
 
 
@@ -381,7 +485,8 @@ db.returns.insertOne({
     _id: ObjectId(),
 
     rentalId: rentalId,
-    bookingId: bookingId,
+    bookingId: disputeBookingId,
+    requestId: "REQ-SEED-DISPUTE-001",
 
     returnedBy: borrowerId,
 
@@ -410,26 +515,18 @@ db.returns.insertOne({
 db.disputes.insertOne({
     _id: ObjectId(),
 
-    bookingId: bookingId,
-
-    reportedBy: borrowerId,
-
-    againstUserId: ownerId,
-
-    reason: "ITEM_NOT_AS_DESCRIBED",
-
-    description: "The item condition did not match the listing.",
-
-    evidence: [
-        "evidence1.jpg"
-    ],
-
+    bookingId: disputeBookingId,
+    requestId: "REQ-SEED-DISPUTE-001",
+    itemName: "Digital Camera",
+    reporterId: borrowerId,
+    respondentId: ownerId,
+    category: "Item condition",
+    details: "Demo dispute record for the admin review page.",
+    incidentStatement: "Item condition: Demo dispute record for the admin review page.",
+    priority: "MEDIUM",
     status: "OPEN",
-
-    resolvedBy: null,
-    resolution: null,
-    resolvedAt: null,
-
+    evidenceUrls: [],
+    events: [],
     createdAt: new Date(),
     updatedAt: new Date()
 });
@@ -442,16 +539,17 @@ db.disputes.insertOne({
 db.noShowIncidents.insertOne({
     _id: ObjectId(),
 
-    bookingId: bookingId,
-
+    bookingId: noShowBookingId,
+    requestId: "REQ-SEED-NOSHOW-001",
+    itemName: "Laptop",
     reportedBy: ownerId,
-
-    reportedUserId: borrowerId,
-
+    reporterRole: "OWNER",
+    subjectUserId: borrowerId,
     reason: "Borrower did not arrive for pickup.",
 
     status: "PENDING",
-
+    reportedAt: new Date(),
+    evidenceUrls: [],
     reviewedBy: null,
     reviewedAt: null,
 
@@ -466,14 +564,18 @@ db.noShowIncidents.insertOne({
 db.ratings.insertOne({
     _id: ObjectId(),
 
-    bookingId: bookingId,
+    bookingId: completedBookingId,
 
     reviewerId: borrowerId,
     reviewedUserId: ownerId,
 
     rating: 5,
+    itemRating: 5,
+    ownerRating: 5,
 
-    comment: "Smooth transaction and good item condition.",
+    review: "Smooth transaction and good item condition.",
+    isReported: false,
+    isHidden: false,
 
     createdAt: new Date()
 });
@@ -488,7 +590,7 @@ db.accountRestrictions.insertOne({
 
     userId: borrowerId,
 
-    restrictionType: "WARNING",
+    type: "WARNING",
 
     reason: "Test warning",
 
@@ -527,6 +629,12 @@ db.auditLogs.insertOne({
 
     createdAt: new Date()
 });
+
+// Collections used by the marketplace and rental workflow that start empty.
+db.createCollection("lateFees");
+db.createCollection("conditionRecords");
+db.createCollection("bookingLocks");
+db.createCollection("notificationReads");
 
 
 // ======================================================
@@ -608,9 +716,10 @@ db.bookings.createIndex({
 
 
 // PAYMENTS
-db.payments.createIndex({
-    bookingId: 1
-});
+db.payments.createIndex(
+    { bookingId: 1 },
+    { unique: true, name: "bookingId_unique" }
+);
 
 db.payments.createIndex({
     payerId: 1
@@ -622,9 +731,10 @@ db.payments.createIndex({
 
 
 // HANDOVERS
-db.handovers.createIndex({
-    bookingId: 1
-});
+db.handovers.createIndex(
+    { bookingId: 1 },
+    { unique: true, name: "bookingId_unique" }
+);
 
 
 // RENTALS
@@ -645,6 +755,20 @@ db.rentals.createIndex({
 db.returns.createIndex({
     rentalId: 1
 });
+
+db.returns.createIndex(
+    { bookingId: 1 },
+    { unique: true, name: "bookingId_unique" }
+);
+
+db.lateFees.createIndex(
+    { bookingId: 1 },
+    { unique: true, name: "bookingId_unique" }
+);
+
+db.conditionRecords.createIndex({ bookingId: 1, phase: 1, createdAt: -1 });
+db.bookingLocks.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+db.notificationReads.createIndex({ userId: 1 });
 
 
 // DISPUTES

@@ -1,6 +1,9 @@
 @model UniShare.Controllers.RentalRecordDto
 @{ ViewBag.Title = "Rental Details"; }
-<main class="container py-4"><h1>Rental Details</h1><dl class="row">
+<main class="container py-4"><h1>Rental Details</h1>
+@if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-warning">@TempData["Error"]</div> }
+<dl class="row">
     <dt class="col-sm-3">Request</dt><dd class="col-sm-9">@Model.RequestId</dd>
     <dt class="col-sm-3">Item</dt><dd class="col-sm-9">@Model.ItemName</dd>
     <dt class="col-sm-3">Renter</dt><dd class="col-sm-9">@Model.BorrowerName (@Model.BorrowerProgram)</dd>
@@ -13,4 +16,50 @@
     @if (!string.IsNullOrWhiteSpace(Model.DeclineNote)) { <dt class="col-sm-3">Owner notes</dt><dd class="col-sm-9">@Model.DeclineNote</dd> }
     @if (!string.IsNullOrWhiteSpace(Model.DeclinedAtFormatted)) { <dt class="col-sm-3">Declined</dt><dd class="col-sm-9">@Model.DeclinedAtFormatted</dd> }
     @if (!string.IsNullOrWhiteSpace(Model.RequestNote)) { <dt class="col-sm-3">Renter notes</dt><dd class="col-sm-9">@Model.RequestNote</dd> }
-</dl><a href="@Url.Action("Index")">Back to rentals</a></main>
+</dl>
+<section class="panel panel-default" style="max-width:720px;margin:24px 0;padding:20px">
+    <h2 style="margin-top:0">Payment</h2>
+    <p>Rental fee: <strong>₱@Model.PaymentAmount.ToString("N2")</strong></p>
+    <p>Status: <strong>@Model.PaymentStatus</strong></p>
+    @if (!string.IsNullOrWhiteSpace(Model.PaymentMethod)) { <p>Method: @Model.PaymentMethod</p> }
+    @if (!string.IsNullOrWhiteSpace(Model.PaymentReference)) { <p>GCash reference: @Model.PaymentReference</p> }
+    @if (Model.CanChoosePayment)
+    {
+        using (Html.BeginForm("ChoosePayment", "MyRentals", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="bookingId" value="@Model.BookingObjectId" />
+            <div class="form-group"><label for="paymentMethod">Payment method</label><select class="form-control" id="paymentMethod" name="method" required><option value="">Choose method</option><option value="CASH">Cash</option><option value="GCASH">GCash</option></select></div>
+            <div class="form-group"><label for="transactionReference">GCash reference (optional)</label><input class="form-control" id="transactionReference" name="transactionReference" maxlength="120" /></div>
+            <button class="btn btn-primary" type="submit">Save payment method</button>
+        }
+    }
+    @if (Model.CanConfirmPayment)
+    {
+        using (Html.BeginForm("ConfirmPayment", "MyRentals", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="bookingId" value="@Model.BookingObjectId" />
+            <button class="btn btn-success" type="submit">Confirm payment received</button>
+        }
+    }
+    @if (Model.LateFeeStatus == "ESTIMATED" || Model.LateFeeStatus == "FINALIZED")
+    {
+        <hr />
+        <p>Late fee estimate: <strong>₱@Model.EstimatedLateFee.ToString("N2")</strong></p>
+        if (Model.FinalLateFee.HasValue) { <p>Final late fee: <strong>₱@Model.FinalLateFee.Value.ToString("N2")</strong></p> }
+        <p>Late fee status: @Model.LateFeeStatus</p>
+    }
+    @if (Model.CanFinalizeLateFee)
+    {
+        using (Html.BeginForm("FinalizeLateFee", "MyRentals", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="bookingId" value="@Model.BookingObjectId" />
+            <div class="form-group"><label for="finalLateFee">Final late fee amount (₱)</label><input class="form-control" id="finalLateFee" name="finalAmount" type="number" min="0" max="100000" step="0.01" value="@Model.EstimatedLateFee" required /></div>
+            <div class="form-group"><label for="lateFeeNotes">Notes</label><input class="form-control" id="lateFeeNotes" name="notes" maxlength="1000" /></div>
+            <button class="btn btn-primary" type="submit">Finalize late fee</button>
+        }
+    }
+</section>
+<a href="@Url.Action("Index")">Back to rentals</a></main>

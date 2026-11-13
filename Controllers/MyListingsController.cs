@@ -57,6 +57,7 @@ namespace UniShare.Controllers
         [HttpGet]
         public ActionResult Ongoing()
         {
+            BorrowedItemsService.RefreshOverdue(CurrentOwnerId);
             var rentals = BookingService.ForOwner(CurrentOwnerId)
                 .Where(x => new[] { "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "DISPUTED" }
                     .Contains(x.GetValue("status", "").ToString().Trim().ToUpperInvariant()))
@@ -104,9 +105,9 @@ namespace UniShare.Controllers
             var item = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
             if (item != null)
             {
-                if (string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase) || HasBlockingBooking(item.Id))
                 {
-                    TempData["Error"] = "Cannot delete a listing with an active rental.";
+                    TempData["Error"] = "Cannot delete a listing with an active rental or reservation.";
                     return RedirectToAction("ItemListings");
                 }
                 var deleted = MongoDatabase.Items.DeleteOne(x => x.Id == item.Id && x.OwnerId == CurrentOwnerId && x.AvailabilityStatus != "RENTED");
@@ -308,9 +309,9 @@ namespace UniShare.Controllers
 
             var existing = MarketplaceService.GetOwnerItem(CurrentOwnerId, id);
             if (existing == null) return HttpNotFound();
-            if (string.Equals(existing.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(existing.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase) || HasBlockingBooking(existing.Id))
             {
-                TempData["Error"] = "A listing cannot be changed during an active rental.";
+                TempData["Error"] = "A listing cannot be changed during an active rental or reservation.";
                 return RedirectToAction("ItemListings");
             }
 
@@ -406,6 +407,14 @@ namespace UniShare.Controllers
                 !string.Equals(location.Building, model.Building.Trim(), StringComparison.Ordinal) ||
                 !string.Equals(location.Room, string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(), StringComparison.Ordinal) ||
                 !string.Equals(location.HandoverLocation, model.HandoverLocation.Trim(), StringComparison.Ordinal);
+        }
+
+        private static bool HasBlockingBooking(ObjectId itemId)
+        {
+            BookingService.ExpirePending();
+            var activeStatuses = new[] { "PENDING", "REQUESTED", "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "DISPUTED" };
+            return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId) &
+                Builders<BsonDocument>.Filter.In("status", activeStatuses)).Limit(1).Any();
         }
 
         private static string FormatTimeForDisplay(string value)

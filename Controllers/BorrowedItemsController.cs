@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web.Mvc;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using UniShare.Models;
 using UniShare.Services;
 
@@ -79,13 +82,109 @@ namespace UniShare.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Dispute(string id, string reason, string details)
+        public ActionResult Dispute(string id, string reason, string details, System.Web.HttpPostedFileBase[] evidenceFiles)
         {
-            ObjectId borrowerId;
-            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
+            ObjectId participantId;
+            if (!ObjectId.TryParse(User.Identity.Name, out participantId)) return Json(new { ok = false, message = "Please sign in again." });
             if (string.IsNullOrWhiteSpace(reason) || reason.Length > 100 || (details ?? "").Length > 400)
                 return Json(new { ok = false, message = "Select a reason and check the details." });
-            return Run(() => BorrowedItemsService.SubmitDispute(borrowerId, id, reason, details), "Dispute sent for review.", "A dispute cannot be submitted for this rental.");
+            var evidence = new List<string>();
+            try
+            {
+                evidence = SaveEvidencePhotos(evidenceFiles);
+                var saved = BorrowedItemsService.SubmitDispute(participantId, id, reason, details);
+                ObjectId bookingId;
+                if (saved && evidence.Count > 0 && ObjectId.TryParse(id, out bookingId))
+                    MongoDatabase.Disputes.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                        Builders<BsonDocument>.Update.PushEach("evidenceUrls", evidence.Select(x => "~/Uploads/" + x)));
+                if (!saved) DeleteConditionPhotos(evidence);
+                return Json(new { ok = saved, message = saved ? "Dispute sent for review." : "A dispute cannot be submitted for this rental." });
+            }
+            catch (InvalidDataException ex)
+            {
+                DeleteConditionPhotos(evidence);
+                return Json(new { ok = false, message = ex.Message });
+            }
+            catch (MongoException)
+            {
+                DeleteConditionPhotos(evidence);
+                Response.StatusCode = 503;
+                return Json(new { ok = false, message = "The dispute could not be saved." });
+            }
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult RecordCondition(string id, string phase, string condition, string notes, System.Web.HttpPostedFileBase[] photos)
+        {
+            ObjectId actorId;
+            if (!ObjectId.TryParse(User.Identity.Name, out actorId)) return Json(new { ok = false, message = "Please sign in again." });
+            if ((notes ?? "").Length > 1000 || (photos ?? new System.Web.HttpPostedFileBase[0]).Length > 5)
+                return Json(new { ok = false, message = "Check the notes and photo count." });
+            var savedPhotos = new List<string>();
+            try
+            {
+                savedPhotos = SaveEvidencePhotos(photos);
+                var saved = BorrowedItemsService.RecordCondition(actorId, id, phase, condition, notes, savedPhotos);
+                if (!saved) DeleteConditionPhotos(savedPhotos);
+                return Json(new { ok = saved, message = saved ? "Condition record saved." : "Condition records can only be added by a booking participant during handover or return." });
+            }
+            catch (InvalidDataException ex)
+            {
+                DeleteConditionPhotos(savedPhotos);
+                return Json(new { ok = false, message = ex.Message });
+            }
+            catch (IOException)
+            {
+                DeleteConditionPhotos(savedPhotos);
+                Response.StatusCode = 500;
+                return Json(new { ok = false, message = "The condition photos could not be saved." });
+            }
+            catch (MongoException)
+            {
+                DeleteConditionPhotos(savedPhotos);
+                Response.StatusCode = 503;
+                return Json(new { ok = false, message = "The condition record could not be saved." });
+            }
+        }
+
+        private void DeleteConditionPhotos(IEnumerable<string> photos)
+        {
+            var folder = Server.MapPath("~/Uploads");
+            foreach (var photo in photos)
+            {
+                try { System.IO.File.Delete(Path.Combine(folder, Path.GetFileName(photo))); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
+
+        private List<string> SaveEvidencePhotos(System.Web.HttpPostedFileBase[] files)
+        {
+            if ((files ?? new System.Web.HttpPostedFileBase[0]).Length > 5) throw new InvalidDataException("Upload up to five photos.");
+            var saved = new List<string>();
+            try
+            {
+                foreach (var file in files ?? new System.Web.HttpPostedFileBase[0])
+                {
+                    if (file == null || file.ContentLength == 0) continue;
+                    var ext = Path.GetExtension(Path.GetFileName(file.FileName)).ToLowerInvariant();
+                    if (file.ContentLength > 5 * 1024 * 1024 || (ext != ".jpg" && ext != ".jpeg" && ext != ".png"))
+                        throw new InvalidDataException("Use JPG or PNG photos up to 5 MB each.");
+                    var header = new byte[8];
+                    var read = file.InputStream.Read(header, 0, header.Length);
+                    file.InputStream.Position = 0;
+                    var isJpeg = read >= 3 && header[0] == 0xff && header[1] == 0xd8 && header[2] == 0xff;
+                    var isPng = read == 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4e && header[3] == 0x47 && header[4] == 0x0d && header[5] == 0x0a && header[6] == 0x1a && header[7] == 0x0a;
+                    if (!isJpeg && !isPng) throw new InvalidDataException("The uploaded file is not a valid JPG or PNG image.");
+                    var fileName = Guid.NewGuid().ToString("N") + ext;
+                    var folder = Server.MapPath("~/Uploads");
+                    Directory.CreateDirectory(folder);
+                    file.SaveAs(Path.Combine(folder, fileName));
+                    saved.Add(fileName);
+                }
+                return saved;
+            }
+            catch { DeleteConditionPhotos(saved); throw; }
         }
 
         private JsonResult Run(Func<bool> action, string success, string failure)

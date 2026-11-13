@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using UniShare.Models;
@@ -31,6 +32,8 @@ namespace UniShare.Services
             if (item == null || item.OwnerId == renterId || !string.Equals(item.ApprovalStatus, "APPROVED", StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(item.AvailabilityStatus, "AVAILABLE", StringComparison.OrdinalIgnoreCase))
                 throw new BookingException("This item is not available for rental.");
+            if (!IsWithinListingSchedule(item, start))
+                throw new BookingException("Choose a day and handover time within the owner's availability schedule.");
             var end = start.AddHours(durationHours);
             var rate = item.RentalDetails == null ? 0 : item.RentalDetails.HourlyRate;
             if (rate <= 0 && item.RentalDetails != null && item.RentalDetails.PricingUnitHours > 0)
@@ -47,10 +50,17 @@ namespace UniShare.Services
                 { "_id", ObjectId.GenerateNewId() }, { "requestId", "REQ-" + now.ToString("yyyyMMdd") + "-" + ObjectId.GenerateNewId().ToString().Substring(18).ToUpperInvariant() },
                 { "itemId", item.Id }, { "borrowerId", renterId }, { "ownerId", item.OwnerId }, { "startDate", start }, { "endDate", end },
                 { "handoverDate", start }, { "handoverTime", handoverTime }, { "durationHours", durationHours }, { "duration", durationHours + " hours" },
-                { "estimatedFee", Math.Round(rate * durationHours, 2, MidpointRounding.AwayFromZero) }, { "status", "PENDING" },
+                { "estimatedFee", Math.Round(rate * durationHours, 2, MidpointRounding.AwayFromZero) }, { "status", "PENDING" }, { "lateGraceMinutes", 30 },
                 { "createdAt", now }, { "expiresAt", now.AddHours(24) }, { "notes", (notes ?? "").Trim() }, { "itemName", item.Name }
             };
             MongoDatabase.Bookings.InsertOne(doc);
+            // Create the unpaid ledger entry with the request so payment history and
+            // booking state stay linked from the start of the transaction.
+            MongoDatabase.Payments.InsertOne(new BsonDocument {
+                { "_id", ObjectId.GenerateNewId() }, { "bookingId", doc["_id"] }, { "payerId", renterId },
+                { "ownerId", item.OwnerId }, { "amount", doc["estimatedFee"] }, { "paymentMethod", "" },
+                { "transactionReference", "" }, { "status", "UNPAID" }, { "createdAt", now }, { "updatedAt", now }
+            });
             return doc;
             }
             finally { MongoDatabase.BookingLocks.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", item.Id) & Builders<BsonDocument>.Filter.Eq("token", lockToken)); }
@@ -59,10 +69,14 @@ namespace UniShare.Services
         public static void ExpirePending()
         {
             var now = DateTime.UtcNow;
-            MongoDatabase.Bookings.UpdateMany(
-                Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" }) &
-                (Builders<BsonDocument>.Filter.Lte("expiresAt", now) | Builders<BsonDocument>.Filter.Lte("createdAt", now.AddHours(-24))),
-                Builders<BsonDocument>.Update.Set("status", "EXPIRED").Set("expiredAt", now));
+            var expiredFilter = Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" }) &
+                (Builders<BsonDocument>.Filter.Lte("expiresAt", now) | Builders<BsonDocument>.Filter.Lte("createdAt", now.AddHours(-24)));
+            var expiredIds = MongoDatabase.Bookings.Find(expiredFilter).Project(x => x["_id"]).ToList();
+            if (expiredIds.Count == 0) return;
+            MongoDatabase.Bookings.UpdateMany(expiredFilter,
+                Builders<BsonDocument>.Update.Set("status", "EXPIRED").Set("expiredAt", now).Set("updatedAt", now));
+            MongoDatabase.Payments.UpdateMany(Builders<BsonDocument>.Filter.In("bookingId", expiredIds) & Builders<BsonDocument>.Filter.In("status", new[] { "UNPAID", "PENDING" }),
+                Builders<BsonDocument>.Update.Set("voidedAt", now).Set("voidReason", "BOOKING_EXPIRED").Set("updatedAt", now));
         }
 
         public static List<string> GetUnavailableHandoverSlots(ObjectId itemId, DateTime date, int durationHours)
@@ -70,6 +84,7 @@ namespace UniShare.Services
             if (!new[] { 1, 2, 3, 4, 6, 8, 12, 24 }.Contains(durationHours)) throw new BookingException("Choose one of the available rental durations.");
             ExpirePending();
             var bookings = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId)).ToList();
+            var item = MongoDatabase.Items.Find(x => x.Id == itemId).FirstOrDefault();
             var unavailable = new List<string>();
             foreach (var slot in HandoverSlots)
             {
@@ -78,7 +93,8 @@ namespace UniShare.Services
                     System.Globalization.DateTimeStyles.None, out time)) continue;
                 var start = date.Date.Add(time.TimeOfDay);
                 var end = start.AddHours(durationHours);
-                if (start <= DateTime.Now || bookings.Any(x => BlocksAvailability(x, DateTime.UtcNow) && Overlaps(x, start, end))) unavailable.Add(slot);
+                if (start <= DateTime.Now || item == null || !IsWithinListingSchedule(item, start) ||
+                    bookings.Any(x => BlocksAvailability(x, DateTime.UtcNow) && Overlaps(x, start, end))) unavailable.Add(slot);
             }
             return unavailable;
         }
@@ -125,7 +141,14 @@ namespace UniShare.Services
                 var update = accept
                     ? Builders<BsonDocument>.Update.Set("status", "ACCEPTED").Set("acceptedAt", DateTime.UtcNow)
                     : Builders<BsonDocument>.Update.Set("status", "DECLINED").Set("declinedAt", DateTime.UtcNow).Set("declineReason", (reason ?? "").Trim()).Set("declineNotes", (notes ?? "").Trim());
-                return MongoDatabase.Bookings.UpdateOne(ownerFilter, update).ModifiedCount == 1;
+                var changed = MongoDatabase.Bookings.UpdateOne(ownerFilter, update).ModifiedCount == 1;
+                if (changed && !accept)
+                    MongoDatabase.Payments.UpdateMany(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) & Builders<BsonDocument>.Filter.In("status", new[] { "UNPAID", "PENDING" }),
+                        Builders<BsonDocument>.Update.Set("voidedAt", now).Set("voidReason", "BOOKING_DECLINED").Set("updatedAt", now));
+                if (changed)
+                    AdminAccountabilityService.LogActivity(ownerId, accept ? "BOOKING_ACCEPTED" : "BOOKING_DECLINED", "BOOKING", bookingId,
+                        new BsonDocument { { "reason", (reason ?? "").Trim() }, { "notes", (notes ?? "").Trim() } });
+                return changed;
             }
             finally { MongoDatabase.BookingLocks.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", itemId) & Builders<BsonDocument>.Filter.Eq("token", lockId)); }
         }
@@ -134,7 +157,15 @@ namespace UniShare.Services
         {
             var filter = Builders<BsonDocument>.Filter.Eq("_id", bookingId) & Builders<BsonDocument>.Filter.Eq("borrowerId", renterId) &
                 Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" });
-            return MongoDatabase.Bookings.UpdateOne(filter, Builders<BsonDocument>.Update.Set("status", "CANCELLED").Set("cancelledAt", DateTime.UtcNow)).ModifiedCount == 1;
+            var now = DateTime.UtcNow;
+            var cancelled = MongoDatabase.Bookings.UpdateOne(filter, Builders<BsonDocument>.Update.Set("status", "CANCELLED").Set("cancelledAt", now).Set("updatedAt", now)).ModifiedCount == 1;
+            if (cancelled)
+            {
+                MongoDatabase.Payments.UpdateMany(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) & Builders<BsonDocument>.Filter.In("status", new[] { "UNPAID", "PENDING" }),
+                    Builders<BsonDocument>.Update.Set("voidedAt", now).Set("voidReason", "BOOKING_CANCELLED").Set("updatedAt", now));
+                AdminAccountabilityService.LogActivity(renterId, "BOOKING_CANCELLED", "BOOKING", bookingId, new BsonDocument());
+            }
+            return cancelled;
         }
 
         private static bool HasAcceptedConflict(ObjectId itemId, DateTime start, DateTime end, ObjectId? except = null)
@@ -158,6 +189,19 @@ namespace UniShare.Services
             var localStart = start.Kind == DateTimeKind.Utc ? start.ToLocalTime() : start;
             var localEnd = end.Kind == DateTimeKind.Utc ? end.ToLocalTime() : end;
             return otherStart < localEnd && otherEnd > localStart;
+        }
+        private static bool IsWithinListingSchedule(ItemDocument item, DateTime start)
+        {
+            var availableDays = item.AvailableDays ?? new List<string>();
+            if (availableDays.Count > 0 && !availableDays.Any(x => String.Equals(x, start.ToString("dddd", CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))) return false;
+            DateTime earliest, latest;
+            if (!String.IsNullOrWhiteSpace(item.EarliestHandoverTime) &&
+                DateTime.TryParseExact(item.EarliestHandoverTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out earliest) &&
+                start.TimeOfDay < earliest.TimeOfDay) return false;
+            if (!String.IsNullOrWhiteSpace(item.LatestReturnTime) &&
+                DateTime.TryParseExact(item.LatestReturnTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out latest) &&
+                start.TimeOfDay > latest.TimeOfDay) return false;
+            return true;
         }
         private static bool IsExpired(BsonDocument d, DateTime now) { return Date(d, "expiresAt", Date(d, "createdAt", now).AddHours(24)) <= now; }
         private static DateTime Date(BsonDocument d, string key, DateTime fallback) { var v = d.GetValue(key, BsonNull.Value); return v.IsValidDateTime ? v.ToUniversalTime() : fallback; }

@@ -6,6 +6,8 @@ namespace UniShare.Models
     {
         public string TransactionId { get; set; }
         public string BookingId { get; set; }
+        public string BookingObjectId { get; set; }
+        public bool RefundAvailable { get; set; }
         public string DateLogged { get; set; }
         public string DateRange { get; set; }
         public string ItemName { get; set; }

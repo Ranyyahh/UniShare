@@ -20,6 +20,7 @@ namespace UniShare.Controllers
             ViewBag.Title = "Rentals";
             ObjectId userId;
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpStatusCodeResult(401);
+            BorrowedItemsService.RefreshOverdue(userId);
             var model = new MyRentalsViewModel
             {
                 Rentals = BookingService.ForRenter(userId).Select(x => MapBooking(x, userId))
@@ -60,11 +61,57 @@ namespace UniShare.Controllers
             var model = MapBooking(booking);
             var ownerValue = booking.GetValue("ownerId", BsonNull.Value);
             var isOwner = ownerValue.IsObjectId && ownerValue.AsObjectId == userId;
+            var payment = PaymentFeeService.GetPayment(id, userId);
+            ObjectId bookingObjectId;
+            var lateFee = ObjectId.TryParse(id, out bookingObjectId)
+                ? MongoDatabase.LateFees.Find(Builders<BsonDocument>.Filter.Eq("bookingId", bookingObjectId)).FirstOrDefault() : null;
+            model.PaymentMethod = payment == null ? "" : payment.GetValue("paymentMethod", "").ToString();
+            model.PaymentStatus = payment == null ? "UNPAID" : payment.GetValue("status", "UNPAID").ToString();
+            model.PaymentReference = payment == null ? "" : payment.GetValue("transactionReference", "").ToString();
+            var amountValue = payment == null ? BsonNull.Value : payment.GetValue("amount", BsonNull.Value);
+            model.PaymentAmount = amountValue.IsNumeric ? amountValue.ToDecimal() : model.RentalFee;
+            model.EstimatedLateFee = lateFee != null && lateFee.GetValue("amount", BsonNull.Value).IsNumeric ? lateFee["amount"].ToDecimal() : 0m;
+            model.FinalLateFee = lateFee != null && lateFee.GetValue("finalAmount", BsonNull.Value).IsNumeric ? (decimal?)lateFee["finalAmount"].ToDecimal() : null;
+            model.LateFeeStatus = lateFee == null ? "" : lateFee.GetValue("status", "").ToString();
+            model.CanFinalizeLateFee = isOwner && model.LateFeeStatus == "ESTIMATED";
+            model.CanChoosePayment = !isOwner && (model.PaymentStatus == "UNPAID" || model.PaymentStatus == "PENDING") &&
+                !new[] { "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" }.Contains(booking.GetValue("status", "").ToString().ToUpperInvariant());
+            model.CanConfirmPayment = isOwner && (model.PaymentStatus == "UNPAID" || model.PaymentStatus == "PENDING") && !String.IsNullOrWhiteSpace(model.PaymentMethod);
             var status = booking.GetValue("status", "").ToString().Trim().ToUpperInvariant();
             var isPast = new[] { "COMPLETED", "COMPLETE", "RETURNED", "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" }.Contains(status);
             model.BackAction = isOwner ? (isPast ? "PastTransactions" : "Ongoing") : "Index";
             model.BackController = isOwner ? "MyListings" : "MyRentals";
             return View(model);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
+        public ActionResult ChoosePayment(string bookingId, string method, string transactionReference)
+        {
+            ObjectId borrowerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return new HttpStatusCodeResult(401);
+            var saved = PaymentFeeService.SelectMethod(bookingId, borrowerId, method, transactionReference);
+            TempData[saved ? "Success" : "Error"] = saved ? "Payment method saved. Ask the owner to confirm receipt after payment." : "Payment method could not be saved.";
+            return RedirectToAction("Details", new { id = bookingId });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken, VerifiedStudent]
+        public ActionResult ConfirmPayment(string bookingId)
+        {
+            ObjectId ownerId;
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return new HttpStatusCodeResult(401);
+            var saved = PaymentFeeService.ConfirmReceipt(bookingId, ownerId);
+            TempData[saved ? "Success" : "Error"] = saved ? "Payment receipt confirmed." : "No unpaid payment awaits confirmation.";
+            return RedirectToAction("Details", new { id = bookingId });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult FinalizeLateFee(string bookingId, decimal finalAmount, string notes)
+        {
+            ObjectId actorId;
+            if (!ObjectId.TryParse(User.Identity.Name, out actorId)) return new HttpStatusCodeResult(401);
+            var saved = PaymentFeeService.FinalizeLateFee(bookingId, actorId, User.IsInRole("ADMIN"), finalAmount, notes);
+            TempData[saved ? "Success" : "Error"] = saved ? "Final late fee saved." : "The late fee could not be finalized.";
+            return RedirectToAction("Details", new { id = bookingId });
         }
 
         [HttpGet]
@@ -152,6 +199,7 @@ namespace UniShare.Controllers
                 HandoverTimeFormatted = start.ToString("hh:mm tt"),
                 HandoverScheduleFormatted = requestedStart.ToString("MMM d, yyyy") + " · " + booking.GetValue("handoverTime", requestedStart.ToString("hh:mm tt")),
                 Duration = hours + " hour" + (hours == 1 ? "" : "s"), DurationHours = hours,
+                GracePeriodMinutes = booking.GetValue("lateGraceMinutes", 30).IsNumeric ? booking.GetValue("lateGraceMinutes", 30).ToInt32() : 30,
                 RentalFee = fee, RentalFeeFormatted = "₱" + fee.ToString("N2"), Status = ToDisplayStatus(status),
                 OwnerName = item == null ? "" : (MongoDatabase.Users.Find(x => x.Id == item.OwnerId).FirstOrDefault() is UserDocument owner ? (owner.FirstName + " " + owner.LastName).Trim() : ""),
                 RequestNote = booking.GetValue("notes", "").ToString(), Category = item == null ? "" : item.Category,

@@ -21,7 +21,7 @@
                     <span class="stat-title">Total</span>
                     <span class="stat-icon stat-icon-indigo"><i class="glyphicon glyphicon-list-alt"></i></span>
                 </div>
-                <div class="stat-value">@(ViewBag.TotalTransactions ?? 128)</div>
+                <div class="stat-value">@(ViewBag.TotalTransactions ?? 0)</div>
             </div>
         </div>
         <div class="col-xs-6 col-sm-3 col-md-3">
@@ -30,7 +30,7 @@
                     <span class="stat-title">Confirmed</span>
                     <span class="stat-icon stat-icon-emerald"><i class="glyphicon glyphicon-ok-sign"></i></span>
                 </div>
-                <div class="stat-value">@(ViewBag.ConfirmedPayments ?? 104)</div>
+                <div class="stat-value">@(ViewBag.ConfirmedPayments ?? 0)</div>
             </div>
         </div>
         <div class="col-xs-6 col-sm-3 col-md-3">
@@ -39,7 +39,7 @@
                     <span class="stat-title">Pending</span>
                     <span class="stat-icon stat-icon-rose"><i class="glyphicon glyphicon-time"></i></span>
                 </div>
-                <div class="stat-value">@(ViewBag.PendingConfirmation ?? 24)</div>
+                <div class="stat-value">@(ViewBag.PendingConfirmation ?? 0)</div>
             </div>
         </div>
         <div class="col-xs-6 col-sm-3 col-md-3">
@@ -48,7 +48,7 @@
                     <span class="stat-title">Total Fees</span>
                     <span class="stat-icon stat-icon-purple"><i class="glyphicon glyphicon-credit-card"></i></span>
                 </div>
-                <div class="stat-value">@(ViewBag.TotalRecordedFees ?? "PHP 38,450.00")</div>
+                <div class="stat-value">@(ViewBag.TotalRecordedFees ?? "PHP 0.00")</div>
             </div>
         </div>
     </div>
@@ -62,12 +62,15 @@
         <select id="txnMethodSelect" class="filter-input filter-select">
             <option value="">All Methods</option>
             <option value="GCash">GCash</option>
-            <option value="Maya">Maya</option>
+            <option value="Cash">Cash</option>
         </select>
         <select id="txnStatusSelect" class="filter-input filter-select">
             <option value="">All Statuses</option>
             <option value="Confirmed">Confirmed</option>
             <option value="Awaiting Owner Confirmation">Awaiting Owner Confirmation</option>
+            <option value="Disputed">Disputed</option>
+            <option value="Refunded">Refunded</option>
+            <option value="Cancelled">Cancelled</option>
         </select>
         <select id="txnDateRangeSelect" class="filter-input filter-select">
             <option value="Last 7 Days">Last 7 Days</option>
