@@ -42,6 +42,7 @@
             window.setTimeout(function () { target.classList.remove('is-visible'); }, 3000);
         }
         function showEmpty(title, detail) {
+            if (!history) return;
             history.innerHTML = '';
             var empty = make('div', 'cr-no-results');
             empty.appendChild(make('b', '', title));
@@ -49,9 +50,11 @@
             history.appendChild(empty);
             selectedThread = null;
             lastMessageId = '';
-            send.disabled = true;
-            input.disabled = true;
-            input.placeholder = 'Select a conversation first...';
+            if (send) send.disabled = true;
+            if (input) {
+                input.disabled = true;
+                input.placeholder = 'Select a conversation first...';
+            }
         }
         function setItem(thread) {
             var itemName = text(prop(thread, 'ItemName', 'itemName')) || 'Rental item';
@@ -59,20 +62,27 @@
             var price = text(prop(thread, 'ItemPrice', 'itemPrice'));
             var imageBox = document.getElementById('cr-photo');
             var itemLink = document.getElementById('cr-item-link');
-            document.getElementById('cr-detail-item').textContent = itemName;
-            document.getElementById('cr-detail-price').textContent = price;
-            document.getElementById('cr-detail-price').parentElement.style.display = price ? '' : 'none';
-            imageBox.innerHTML = '';
-            if (image) {
+            var itemHeading = document.getElementById('cr-detail-item');
+            var priceLabel = document.getElementById('cr-detail-price');
+            var status = document.getElementById('cr-status');
+            if (itemHeading) itemHeading.textContent = itemName;
+            if (priceLabel) {
+                priceLabel.textContent = price;
+                if (priceLabel.parentElement) priceLabel.parentElement.style.display = price ? '' : 'none';
+            }
+            if (imageBox) imageBox.innerHTML = '';
+            if (image && imageBox) {
                 var img = make('img', 'cr-item-image');
                 img.src = image;
                 img.alt = itemName;
                 imageBox.appendChild(img);
-            } else imageBox.appendChild(make('span', '', 'Item photo'));
+            } else if (imageBox) imageBox.appendChild(make('span', '', 'Item photo'));
             var itemUrl = text(prop(thread, 'ItemUrl', 'itemUrl'));
-            itemLink.href = itemUrl || '#';
-            itemLink.hidden = !itemUrl;
-            document.getElementById('cr-status').textContent = 'About: ' + itemName;
+            if (itemLink) {
+                itemLink.href = itemUrl || '#';
+                itemLink.hidden = !itemUrl;
+            }
+            if (status) status.textContent = 'About: ' + itemName;
         }
         function renderMessages(thread, forceScroll) {
             var messages = prop(thread, 'Messages', 'messages') || [];
@@ -113,14 +123,19 @@
             return api(url).then(function (data) {
                 if (selectedId !== id) return;
                 var thread = data.thread;
+                if (!thread) throw new Error('This conversation could not be loaded. Please select it again.');
                 selectedThread = thread;
-                document.getElementById('cr-person').textContent = text(prop(thread, 'With', 'with'));
-                document.getElementById('cr-person-avatar').textContent = text(prop(thread, 'Initials', 'initials'));
+                var person = document.getElementById('cr-person');
+                var avatar = document.getElementById('cr-person-avatar');
+                if (person) person.textContent = text(prop(thread, 'With', 'with')) || 'Student';
+                if (avatar) avatar.textContent = text(prop(thread, 'Initials', 'initials')) || 'ST';
                 setItem(thread);
                 renderMessages(thread, forceScroll);
-                send.disabled = false;
-                input.disabled = false;
-                input.placeholder = 'Type a message...';
+                if (send) send.disabled = false;
+                if (input) {
+                    input.disabled = false;
+                    input.placeholder = 'Type a message...';
+                }
             });
         }
         function renderConversations(conversations) {
@@ -146,13 +161,14 @@
             document.getElementById('cr-count').textContent = conversations.length;
             var title = document.getElementById('cr-empty-title');
             var copy = document.getElementById('cr-empty-copy');
+            var emptyPanel = document.getElementById('cr-no-results');
             if (!conversations.length) {
-                title.textContent = 'No conversations yet';
-                copy.textContent = 'Open an item and choose Message Lender to start a conversation.';
-                document.getElementById('cr-no-results').hidden = false;
+                if (title) title.textContent = 'No conversations yet';
+                if (copy) copy.textContent = 'Open an item and choose Message Lender to start a conversation.';
+                if (emptyPanel) emptyPanel.hidden = false;
                 showEmpty('No conversation selected', 'Choose an item and contact its owner to start chatting.');
             } else {
-                document.getElementById('cr-no-results').hidden = true;
+                if (emptyPanel) emptyPanel.hidden = true;
                 if (!conversations.some(function (c) { return text(prop(c, 'Id', 'id')) === selectedId; })) selectedId = text(prop(conversations[0], 'Id', 'id'));
                 Array.prototype.forEach.call(list.children, function (button) {
                     button.classList.toggle('selected', button.getAttribute('data-id') === selectedId);
@@ -189,7 +205,8 @@
                 if (matches) visible++;
             });
             document.getElementById('cr-count').textContent = visible;
-            document.getElementById('cr-no-results').hidden = visible !== 0;
+            var emptyPanel = document.getElementById('cr-no-results');
+            if (emptyPanel) emptyPanel.hidden = visible !== 0;
             if (visible === 0 && list.children.length) {
                 document.getElementById('cr-empty-title').textContent = 'No conversations found';
                 document.getElementById('cr-empty-copy').textContent = 'Try searching another name or item.';
@@ -237,7 +254,7 @@
             if (inbox) inbox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
 
-        var notice = '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(Convert.ToString(ViewBag.ChatNotice)))';
+        var notice = page.getAttribute('data-chat-notice') || '';
         if (notice) toast(notice, true);
         loadConversations();
         window.setInterval(function () {
