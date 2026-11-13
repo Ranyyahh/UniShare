@@ -35,5 +35,5 @@
         <a class="primary-button status-link" href="@Url.Action("Apply")">Submit student documents</a>
     }
     @if (Model != null && Model.SubmittedAt != DateTime.MinValue) { <p class="status-date" style="margin-top: 16px;">Submitted on @Model.SubmittedAt.ToLocalTime().ToString("MMMM d, yyyy")</p> }
-    <div class="form-footer" style="margin-top: 20px;"><a class="text-link" href="@Url.Action("Index", "Home")">&larr; Return to UniShare</a></div>
+    <div class="form-footer" style="margin-top: 20px;"><a class="text-link" href="@Url.Action("Index", "Dashboard")">&larr; Return to UniShare</a></div>
 </main>
