@@ -27,6 +27,7 @@ namespace UniShare.Models
         public List<string> ConditionTags { get; set; }
         public List<GalleryImageViewModel> Gallery { get; set; }
         public LenderViewModel Lender { get; set; }
+        public List<DateTime> BookedDates { get; set; }
         public decimal ReplacementValue { get; set; }
         public string Accessories { get; set; }
         public string OwnerId { get; set; }
@@ -81,5 +82,17 @@ namespace UniShare.Models
         public int ReviewCount { get; set; }
         public int CompletedRentals { get; set; }
         public List<ListingItemViewModel> Listings { get; set; } = new List<ListingItemViewModel>();
+        public List<PublicReviewViewModel> Reviews { get; set; } = new List<PublicReviewViewModel>();
+    }
+
+    public class PublicReviewViewModel
+    {
+        public string Id { get; set; }
+        public string ReviewerId { get; set; }
+        public string ReviewerName { get; set; }
+        public int? ItemRating { get; set; }
+        public int? OwnerRating { get; set; }
+        public string Review { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

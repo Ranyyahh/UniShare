@@ -14,8 +14,7 @@
 }
 
 .admin-sidebar__brand { padding: 2px 10px 24px; border-bottom: 1px solid #34465a; }
-.admin-sidebar__brand-link { display: flex; align-items: center; gap: 14px; color: #fff; text-decoration: none; }
-.admin-sidebar__brand-link:hover, .admin-sidebar__brand-link:focus { color: #fff; text-decoration: none; }
+.admin-sidebar__brand-link { display: flex; align-items: center; gap: 14px; color: #fff; text-decoration: none; cursor: default; user-select: none; }
 .admin-sidebar__brand .brand__mark { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; border-radius: 12px; color: #fff; background: #7c3aed; box-shadow: 0 4px 12px rgba(124,58,237,.25); }
 .admin-sidebar__brand .brand__mark svg { width: 23px; height: 23px; }
 .admin-sidebar__brand .brand__copy { gap: 3px; }
@@ -41,6 +40,8 @@
 .admin-sidebar__account-menu .account-dropdown { width: 292px; position: fixed; z-index: 250; top: auto; right: auto; bottom: 100px; left: 16px; padding: 6px; border: 1px solid #dbe3ef; border-radius: 11px; background: #fff; box-shadow: 0 14px 35px rgba(15,23,42,.25); }
 .admin-sidebar__account-menu .account-dropdown__item { min-height: 42px; color: #334155; }
 .admin-sidebar__account-menu .account-dropdown__item:hover, .admin-sidebar__account-menu .account-dropdown__item:focus { color: #4338ca; background: #eef2ff; }
+.admin-sidebar__account-menu .account-dropdown__item--danger { color: #b91c1c; }
+.admin-sidebar__account-menu .account-dropdown__item--danger:hover, .admin-sidebar__account-menu .account-dropdown__item--danger:focus { color: #991b1b; background: #fef2f2; }
 .admin-sidebar__account-menu .account-dropdown__item svg { width: 17px; height: 17px; }
 .admin-sidebar__logout-form { margin: 7px 0 0; }
 .admin-sidebar__logout { width: 100%; min-height: 43px; padding: 8px 13px; display: flex; align-items: center; gap: 12px; border: 0; border-radius: 8px; color: #fb7185; background: transparent; font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }

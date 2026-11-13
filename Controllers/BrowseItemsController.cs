@@ -19,7 +19,7 @@ namespace UniShare.Controllers
                 ? new System.Collections.Generic.List<UserDocument>()
                 : MongoDatabase.Users.Find(Builders<UserDocument>.Filter.In(x => x.Id, ownerIds)).ToList();
             var ownerMap = owners.ToDictionary(x => x.Id);
-            var ratingDocs = MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+            var ratingDocs = MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Ne("isHidden", true)).ToList();
             var ratingMap = ratingDocs.Where(x => x.GetValue("reviewedUserId", BsonNull.Value).IsObjectId && x.GetValue("rating", BsonNull.Value).IsNumeric)
                 .GroupBy(x => x["reviewedUserId"].AsObjectId).ToDictionary(g => g.Key, g => new { Average = g.Average(x => x["rating"].ToDouble()), Count = g.Count() });
             var bookingDocs = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Empty).ToList();
@@ -95,6 +95,12 @@ namespace UniShare.Controllers
             var fullName = (owner.FirstName + " " + owner.LastName).Trim();
             var ownerItems = MongoDatabase.Items.Find(x => x.OwnerId == ownerId && x.ApprovalStatus == "APPROVED" && x.AvailabilityStatus == "AVAILABLE")
                 .SortByDescending(x => x.CreatedAt).ToList().Select(MarketplaceService.ToListing).ToList();
+            var reviewFilter = (Builders<BsonDocument>.Filter.Eq("reviewedUserId", ownerId) | Builders<BsonDocument>.Filter.Eq("reviewedUserId", ownerId.ToString())) &
+                Builders<BsonDocument>.Filter.Ne("isHidden", true);
+            var reviewDocs = MongoDatabase.Ratings.Find(reviewFilter).SortByDescending(x => x["createdAt"]).Limit(50).ToList();
+            var reviewers = reviewDocs.Select(x => x.GetValue("reviewerId", BsonNull.Value)).Where(x => x.IsObjectId).Select(x => x.AsObjectId).Distinct().ToList();
+            var reviewerMap = reviewers.Count == 0 ? new System.Collections.Generic.List<UserDocument>() : MongoDatabase.Users.Find(Builders<UserDocument>.Filter.In(x => x.Id, reviewers)).ToList();
+            var reviewerNames = reviewerMap.ToDictionary(x => x.Id, x => ((x.FirstName ?? "") + " " + (x.LastName ?? "")).Trim());
             return View("~/Views/BrowseItems/OwnerProfile.cshtml", new OwnerProfileViewModel
             {
                 OwnerId = ownerId.ToString(),
@@ -109,7 +115,22 @@ namespace UniShare.Controllers
                 Rating = MarketplaceService.GetOwnerRatingSummary(ownerId).Item1,
                 ReviewCount = MarketplaceService.GetOwnerRatingSummary(ownerId).Item2,
                 CompletedRentals = MarketplaceService.GetCompletedRentalCount(ownerId),
-                Listings = ownerItems
+                Listings = ownerItems,
+                Reviews = reviewDocs.Select(x =>
+                {
+                    var reviewerIdValue = x.GetValue("reviewerId", BsonNull.Value);
+                    var reviewerId = reviewerIdValue.IsObjectId ? (ObjectId?)reviewerIdValue.AsObjectId : null;
+                    var itemValue = x.GetValue("itemRating", BsonNull.Value);
+                    var ownerValue = x.GetValue("ownerRating", x.GetValue("rating", BsonNull.Value));
+                    var createdValue = x.GetValue("createdAt", BsonDateTime.Create(DateTime.UtcNow));
+                    return new PublicReviewViewModel
+                    {
+                        Id = x.GetValue("_id", ObjectId.Empty).ToString(), ReviewerId = reviewerId.HasValue ? reviewerId.Value.ToString() : "",
+                        ReviewerName = reviewerId.HasValue && reviewerNames.ContainsKey(reviewerId.Value) ? reviewerNames[reviewerId.Value] : "Student",
+                        ItemRating = itemValue.IsNumeric ? (int?)itemValue.ToInt32() : null, OwnerRating = ownerValue.IsNumeric ? (int?)ownerValue.ToInt32() : null,
+                        Review = x.GetValue("review", "").ToString(), CreatedAt = createdValue.IsValidDateTime ? createdValue.ToUniversalTime().ToLocalTime() : DateTime.MinValue
+                    };
+                }).ToList()
             });
         }
 

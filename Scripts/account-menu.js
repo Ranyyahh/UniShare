@@ -54,15 +54,27 @@
 
         var grid = document.createElement('dl');
         grid.className = 'account-profile-grid';
-        grid.appendChild(field('Student ID', data ? data.studentId : null));
-        grid.appendChild(field('Email address', data ? data.email : null));
-        grid.appendChild(field('Course / program', data ? data.program : null));
-        grid.appendChild(field('Year level', data ? data.yearLevel : null));
-        grid.appendChild(field('Section', data ? data.section : null));
-        grid.appendChild(field('Contact', data ? data.phone : null));
-        grid.appendChild(field('Verification status', data ? data.verificationStatus : null));
-        grid.appendChild(field('Role', data ? data.role : null));
-        grid.appendChild(field('Member since', data ? data.registered : null));
+
+        if (data && data.isAdmin) {
+            // Admin-specific fields
+            grid.appendChild(field('Username',       data.username));
+            grid.appendChild(field('Email address',  data.email));
+            grid.appendChild(field('Contact number', data.contactNumber));
+            grid.appendChild(field('Role',           data.role));
+            grid.appendChild(field('Admin since',    data.registered));
+        } else {
+            // Student fields
+            grid.appendChild(field('Student ID',          data ? data.studentId : null));
+            grid.appendChild(field('Email address',       data ? data.email : null));
+            grid.appendChild(field('Course / program',    data ? data.program : null));
+            grid.appendChild(field('Year level',          data ? data.yearLevel : null));
+            grid.appendChild(field('Section',             data ? data.section : null));
+            grid.appendChild(field('Contact',             data ? data.phone : null));
+            grid.appendChild(field('Verification status', data ? data.verificationStatus : null));
+            grid.appendChild(field('Role',                data ? data.role : null));
+            grid.appendChild(field('Member since',        data ? data.registered : null));
+        }
+
         profile.appendChild(grid);
     }
 

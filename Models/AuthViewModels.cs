@@ -12,6 +12,28 @@ namespace UniShare.Models
         [StringLength(500)] public string Bio { get; set; }
     }
 
+    public class AdminSettingsViewModel
+    {
+        // Read-only display fields
+        public string SchoolEmail { get; set; }
+        public string Username { get; set; }
+
+        // Password change (all optional — only applied if NewPassword is filled)
+        [DataType(DataType.Password)]
+        [Display(Name = "Current Password")]
+        public string CurrentPassword { get; set; }
+
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Min 8 characters")]
+        [DataType(DataType.Password)]
+        [Display(Name = "New Password")]
+        public string NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm New Password")]
+        [Compare("NewPassword", ErrorMessage = "Passwords don't match")]
+        public string ConfirmNewPassword { get; set; }
+    }
+
     public class RegisterViewModel
     {
         [Required(ErrorMessage = "Required"), StringLength(60)] public string FirstName { get; set; }

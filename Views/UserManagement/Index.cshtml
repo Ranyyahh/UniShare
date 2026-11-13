@@ -1,0 +1,17 @@
+@model UniShare.Models.UserManagementViewModel
+@{ ViewBag.Title = "User Management"; ViewBag.ShowAdminSidebar = true; }
+@section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
+<main class="aa-page">
+    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN MANAGEMENT</p><h1>User directory</h1><p>Review member status and open account actions for a student.</p></div><a class="aa-button" href="@Url.Action("Index", "AccountRestriction")">Manage restrictions</a></header>
+    @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">User records are unavailable. Check the database connection.</div> }
+    <section class="aa-panel">
+        <div class="aa-toolbar"><form method="get" action="@Url.Action("Index", "UserManagement")"><input class="aa-input" type="search" name="search" value="@Model.Search" placeholder="Name, school email, or student number" /><button class="aa-button" type="submit">Search</button><a class="aa-button aa-button--quiet" href="@Url.Action("Index", "UserManagement")">Reset</a></form></div>
+        <div class="aa-table-wrap"><table class="aa-table"><thead><tr><th>Student</th><th>Student number</th><th>Account</th><th>Verification</th><th>Restriction</th><th>Joined</th><th></th></tr></thead><tbody>
+        @if (Model.Users.Count == 0) { <tr><td colspan="7" class="aa-empty">No matching accounts found.</td></tr> }
+        @foreach (var user in Model.Users)
+        {
+            <tr><td><span class="aa-cell-title">@user.Name</span><span class="aa-cell-sub">@user.Email</span></td><td>@user.StudentNumber</td><td><span class="aa-status aa-status--@user.Status.ToLowerInvariant()">@user.Status</span></td><td>@user.VerificationStatus</td><td>@user.RestrictionSummary</td><td>@user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</td><td><a class="aa-button aa-button--quiet" href="@Url.Action("Index", "AccountRestriction")#restriction-form">Account action</a></td></tr>
+        }
+        </tbody></table></div>
+    </section>
+</main>

@@ -60,6 +60,7 @@ namespace UniShare.Models
         public bool BorrowerHandoverConfirmed { get; set; }
         public bool OwnerHandoverConfirmed { get; set; }
         public bool CanConfirmHandover { get; set; }
+        public bool CanReportNoShow { get; set; }
         public int? Rating { get; set; }
         public string Review { get; set; }
         public string DisputeReason { get; set; }

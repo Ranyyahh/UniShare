@@ -235,8 +235,13 @@
     <Compile Include="Services\BorrowedItemsService.cs" />
     <Compile Include="Services\PasswordHasher.cs" />
     <Compile Include="Services\VerifiedStudentAttribute.cs" />
+    <Compile Include="Controllers\AdminAccountabilityController.cs" />
+    <Compile Include="Models\AdminAccountabilityViewModels.cs" />
+    <Compile Include="Services\AdminAccountabilityService.cs" />
+    <Compile Include="Services\AccountRestrictionFilter.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\admin-accountability.css" />
     <Content Include="Content\admin-dashboard.css" />
     <Content Include="Content\admin-item-booking.css" />
     <Content Include="Content\admin-student-verification.css" />
@@ -294,7 +299,9 @@
     <Content Include="Scripts\unishare-popups.js" />
     <Content Include="Web.config" />
     <Content Include="Views\Account\Login.cshtml" />
+    <Content Include="Views\Account\AdminSettings.cshtml" />
     <Content Include="Views\Account\Register.cshtml" />
+    <Content Include="Views\Account\Restricted.cshtml" />
     <Content Include="Views\Account\Settings.cshtml" />
     <Content Include="Views\Verification\Status.cshtml" />
     <Content Include="Views\Verification\Apply.cshtml" />
@@ -344,6 +351,13 @@
     <Content Include="Views\AdminItemBooking\Index.cshtml" />
     <Content Include="Views\AdminStudentVerification\Index.cshtml" />
     <Content Include="Views\BorrowedItems\Index.cshtml" />
+    <Content Include="Views\AccountRestriction\Index.cshtml" />
+    <Content Include="Views\AuditLogs\Index.cshtml" />
+    <Content Include="Views\NoShowReports\Index.cshtml" />
+    <Content Include="Views\RatingsReviews\Index.cshtml" />
+    <Content Include="Views\UserManagement\Index.cshtml" />
+    <Content Include="Views\MyRentals\Details.cshtml" />
+    <Content Include="Views\MyRentals\History.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

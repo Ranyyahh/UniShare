@@ -16,6 +16,9 @@ namespace UniShare.Controllers
     {
         [HttpGet] public ActionResult Login(string returnUrl) { ViewBag.ReturnUrl = returnUrl; return View(); }
 
+        [AllowAnonymous, HttpGet]
+        public ActionResult Restricted() { return View(); }
+
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Login(LoginViewModel model, string returnUrl)
         {
@@ -24,6 +27,11 @@ namespace UniShare.Controllers
             {
                 var email = model.SchoolEmail.Trim().ToLowerInvariant();
                 var user = MongoDatabase.Users.Find(x => x.SchoolEmail == email).FirstOrDefault();
+                if (user != null)
+                {
+                    AdminAccountabilityService.IsUserRestricted(user.Id);
+                    user = MongoDatabase.Users.Find(x => x.Id == user.Id).FirstOrDefault();
+                }
                 if (user == null || (user.Status != "ACTIVE" && user.Status != "PENDING") || String.IsNullOrEmpty(user.PasswordHash) || !PasswordHasher.Verify(model.Password, user.PasswordHash))
                 {
                     ModelState.AddModelError("", "The email or password is incorrect.");
@@ -116,19 +124,39 @@ namespace UniShare.Controllers
             {
                 var user = MongoDatabase.Users.Find(x => x.Id == ObjectId.Parse(User.Identity.Name)).FirstOrDefault();
                 if (user == null) return new HttpUnauthorizedResult();
+
+                if (user.Role == "ADMIN")
+                {
+                    return Json(new
+                    {
+                        displayName       = user.FirstName + " " + user.LastName,
+                        email             = user.SchoolEmail,
+                        role              = user.Role,
+                        isAdmin           = true,
+                        username          = user.Username ?? "",
+                        contactNumber     = user.ContactNumber ?? user.Phone ?? "",
+                        registered        = user.CreatedAt != default(DateTime)
+                                              ? user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")
+                                              : "Active"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
                 var verif = MongoDatabase.Verifications.Find(x => x.UserId == user.Id).SortByDescending(x => x.SubmittedAt).FirstOrDefault();
                 return Json(new
                 {
-                    displayName = user.FirstName + " " + user.LastName,
-                    email = user.SchoolEmail,
-                    role = user.Role,
+                    displayName        = user.FirstName + " " + user.LastName,
+                    email              = user.SchoolEmail,
+                    role               = user.Role,
+                    isAdmin            = false,
                     verificationStatus = user.VerificationStatus ?? "PENDING",
-                    studentId = user.StudentIdNumber ?? (verif != null ? verif.StudentIdNumber : ""),
-                    program = verif != null ? verif.Program : "",
-                    yearLevel = verif != null ? verif.YearLevel : "",
-                    section = user.Section ?? "",
-                    phone = user.Phone ?? user.ContactNumber ?? "",
-                    registered = user.CreatedAt != default(DateTime) ? user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy") : "Active"
+                    studentId          = user.StudentIdNumber ?? (verif != null ? verif.StudentIdNumber : ""),
+                    program            = verif != null ? verif.Program : "",
+                    yearLevel          = verif != null ? verif.YearLevel : "",
+                    section            = user.Section ?? "",
+                    phone              = user.Phone ?? user.ContactNumber ?? "",
+                    registered         = user.CreatedAt != default(DateTime)
+                                           ? user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")
+                                           : "Active"
                 }, JsonRequestBehavior.AllowGet);
             }
             catch { return new HttpUnauthorizedResult(); }
@@ -141,13 +169,59 @@ namespace UniShare.Controllers
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
             var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
             if (user == null) return new HttpUnauthorizedResult();
+
+            if (User.IsInRole("ADMIN"))
+            {
+                ViewBag.ShowAdminSidebar = true;
+                return View("AdminSettings", new AdminSettingsViewModel
+                {
+                    SchoolEmail  = user.SchoolEmail,
+                    Username     = user.Username
+                });
+            }
+
             return View(new OwnerProfileEditViewModel
             {
-                Program = user.Program,
+                Program   = user.Program,
                 YearLevel = user.YearLevel,
-                Campus = user.Campus,
-                Bio = user.Bio
+                Campus    = user.Campus,
+                Bio       = user.Bio
             });
+        }
+
+        [HttpPost, Authorize, ValidateAntiForgeryToken]
+        public ActionResult AdminSettings(AdminSettingsViewModel model)
+        {
+            ViewBag.ShowAdminSidebar = true;
+            ObjectId userId;
+            if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
+            var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
+            if (user == null) return new HttpUnauthorizedResult();
+
+            if (string.IsNullOrWhiteSpace(model.NewPassword))
+            {
+                ModelState.AddModelError("NewPassword", "Please provide a new password to update.");
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(model.CurrentPassword) || !PasswordHasher.Verify(model.CurrentPassword, user.PasswordHash))
+                    ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.SchoolEmail = user.SchoolEmail;
+                model.Username    = user.Username;
+                return View(model);
+            }
+
+            var update = Builders<UserDocument>.Update
+                .Set(x => x.PasswordHash, PasswordHasher.Hash(model.NewPassword))
+                .Set(x => x.UpdatedAt, DateTime.UtcNow);
+
+            MongoDatabase.Users.UpdateOne(x => x.Id == userId, update);
+            TempData["ProfileSaved"] = "Password updated successfully.";
+            return RedirectToAction("Settings");
         }
 
         [HttpPost, Authorize, ValidateAntiForgeryToken]
@@ -157,10 +231,10 @@ namespace UniShare.Controllers
             ObjectId userId;
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
             var update = Builders<UserDocument>.Update
-                .Set(x => x.Program, (model.Program ?? "").Trim())
+                .Set(x => x.Program,   (model.Program   ?? "").Trim())
                 .Set(x => x.YearLevel, (model.YearLevel ?? "").Trim())
-                .Set(x => x.Campus, (model.Campus ?? "").Trim())
-                .Set(x => x.Bio, (model.Bio ?? "").Trim())
+                .Set(x => x.Campus,    (model.Campus    ?? "").Trim())
+                .Set(x => x.Bio,       (model.Bio       ?? "").Trim())
                 .Set(x => x.UpdatedAt, DateTime.UtcNow);
             var result = MongoDatabase.Users.UpdateOne(x => x.Id == userId, update);
             if (result.MatchedCount == 0) return new HttpUnauthorizedResult();

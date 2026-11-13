@@ -1,18 +1,36 @@
 @model UniShare.Models.OwnerProfileEditViewModel
 @{
     ViewBag.Title = "Account Settings";
+    var isAdmin = ViewBag.ShowAdminSidebar != null && (bool)ViewBag.ShowAdminSidebar;
+}
+@if (isAdmin)
+{
+    @section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
 }
 
-<main class="container py-5" style="max-width: 760px">
-    <h1 class="h2">Account Settings</h1>
-    <p class="text-secondary">Manage the public details borrowers see on your owner profile.</p>
+<main class="@(isAdmin ? "aa-page" : "container py-5")" style="@(isAdmin ? "" : "max-width: 760px")">
+    @if (isAdmin)
+    {
+        <header class="aa-page-head">
+            <div>
+                <p class="aa-eyebrow">ADMIN WORKSPACE</p>
+                <h1>Account Settings</h1>
+                <p>Update your administrator profile details.</p>
+            </div>
+        </header>
+    }
+    else
+    {
+        <h1 class="h2">Account Settings</h1>
+        <p class="text-secondary">Manage the public details borrowers see on your owner profile.</p>
+    }
 
     @if (TempData["ProfileSaved"] != null)
     {
-        <div class="alert alert-success" role="status">@TempData["ProfileSaved"]</div>
+        <div class="@(isAdmin ? "aa-alert aa-alert--ok" : "alert alert-success")" role="status">@TempData["ProfileSaved"]</div>
     }
 
-    <section class="card border-0 shadow-sm p-4 mt-4">
+    <section class="@(isAdmin ? "aa-card" : "card border-0 shadow-sm p-4 mt-4")">
         @using (Html.BeginForm("Settings", "Account", FormMethod.Post))
         {
             @Html.AntiForgeryToken()
@@ -36,7 +54,7 @@
                 @Html.TextAreaFor(x => x.Bio, 4, 1, new { @class = "form-control", maxlength = "500", placeholder = "A short introduction for other students." })
                 @Html.ValidationMessageFor(x => x.Bio, "", new { @class = "text-danger small" })
             </div>
-            <button type="submit" class="btn btn-primary">Save profile</button>
+            <button type="submit" class="@(isAdmin ? "aa-btn aa-btn--primary" : "btn btn-primary")">Save profile</button>
         }
     </section>
 </main>

@@ -1,0 +1,87 @@
+@model UniShare.Models.AdminSettingsViewModel
+@{
+    ViewBag.Title = "Account Settings";
+    ViewBag.ShowAdminSidebar = true;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" />
+}
+
+<main class="aa-page">
+    <header class="aa-page-head" style="margin-bottom: 2rem;">
+        <div>
+            <p class="aa-eyebrow" style="font-size: 0.95rem; letter-spacing: 0.08em; font-weight: 700;">ADMIN WORKSPACE</p>
+            <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.5rem; line-height: 1.2;">Account Settings</h1>
+            <p style="font-size: 1.15rem; color: var(--aa-text-muted, #4b5563); line-height: 1.5; margin-top: 0.25rem;">Manage your administrator account information and password.</p>
+        </div>
+    </header>
+
+    @if (TempData["ProfileSaved"] != null)
+    {
+        <div class="aa-alert aa-alert--ok" role="status" style="font-size: 1.05rem; padding: 1rem 1.25rem; margin-bottom: 2rem;">@TempData["ProfileSaved"]</div>
+    }
+
+    @using (Html.BeginForm("AdminSettings", "Account", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <div style="display:grid; gap:2rem; max-width:850px;">
+
+            @* Read-only identity *@
+            <section class="aa-card" style="padding: 1.75rem 2rem;">
+                <h2 class="aa-card__title">Account Identity</h2>
+                <p class="aa-card__desc">These fields are set at account creation and cannot be changed here.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1.5rem;">
+                    <div>
+                        <label class="aa-label">Email Address</label>
+                        <div class="aa-readonly">@Model.SchoolEmail</div>
+                    </div>
+                    <div>
+                        <label class="aa-label">Username</label>
+                        <div class="aa-readonly">@Model.Username</div>
+                    </div>
+                </div>
+            </section>
+
+            @* Password change *@
+            <section class="aa-card" style="padding: 1.75rem 2rem;">
+                <h2 class="aa-card__title">Change Password</h2>
+                <p class="aa-card__desc">Enter your current password and your desired new password.</p>
+                <div style="display:grid; gap:1.25rem; max-width:520px; margin-top:1.5rem;">
+                    <div>
+                        @Html.LabelFor(x => x.CurrentPassword, new { @class = "aa-label" })
+                        @Html.PasswordFor(x => x.CurrentPassword, new { @class = "aa-input", autocomplete = "current-password", placeholder = "Enter current password" })
+                        @Html.ValidationMessageFor(x => x.CurrentPassword, "", new { @class = "aa-field-error" })
+                    </div>
+                    <div>
+                        @Html.LabelFor(x => x.NewPassword, new { @class = "aa-label" })
+                        @Html.PasswordFor(x => x.NewPassword, new { @class = "aa-input", autocomplete = "new-password", placeholder = "Min. 8 characters" })
+                        @Html.ValidationMessageFor(x => x.NewPassword, "", new { @class = "aa-field-error" })
+                    </div>
+                    <div>
+                        @Html.LabelFor(x => x.ConfirmNewPassword, new { @class = "aa-label" })
+                        @Html.PasswordFor(x => x.ConfirmNewPassword, new { @class = "aa-input", autocomplete = "new-password", placeholder = "Re-enter new password" })
+                        @Html.ValidationMessageFor(x => x.ConfirmNewPassword, "", new { @class = "aa-field-error" })
+                    </div>
+                </div>
+            </section>
+
+            <div style="margin-top: 0.5rem;">
+                <button type="submit" class="aa-btn aa-btn--primary" style="font-size: 1.05rem; padding: 0.75rem 1.75rem; border-radius: 8px;">Save changes</button>
+            </div>
+        </div>
+    }
+</main>
+
+@section scripts {
+<style>
+    .aa-label        { display:block; font-size:.925rem; font-weight:700; color:var(--aa-text-muted,#4b5563); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem; }
+    .aa-input        { width:100%; padding:.75rem 1rem; border:1.5px solid var(--aa-border,#cbd5e1); border-radius:10px; font-size:1.05rem; background:#fff; color:inherit; transition:border-color .15s, box-shadow .15s; box-sizing:border-box; }
+    .aa-input:focus  { outline:none; border-color:var(--aa-accent,#6366f1); box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+    .aa-readonly     { padding:.75rem 1rem; background:var(--aa-surface-alt,#f8fafc); border:1.5px solid var(--aa-border,#cbd5e1); border-radius:10px; font-size:1.05rem; color:#334155; font-weight:500; }
+    .aa-card__title  { font-size:1.25rem; font-weight:700; margin:0 0 .4rem; color:#1e293b; }
+    .aa-card__desc   { font-size:1rem; color:var(--aa-text-muted,#64748b); margin:0; line-height: 1.5; }
+    .aa-field-error  { display:block; font-size:.9rem; color:#ef4444; margin-top:.4rem; font-weight: 500; }
+</style>
+}
