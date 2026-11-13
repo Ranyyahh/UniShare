@@ -254,3 +254,15 @@
 @media (prefers-reduced-motion: reduce) {
     .bi-card, .bi-tab, .bi-select__chev, .bi-page .us-btn { transition: none; }
 }
+
+/* Keep the borrower tabs and search controls visually centered as one toolbar. */
+.bi-toolbar { align-items: center; }
+.bi-tabs { align-self: center; }
+.bi-filters { width: min(100%, 820px); justify-content: center; }
+.bi-search { flex: 0 1 560px; }
+@media (max-width: 640px) {
+    .bi-tabs { width: min(100%, 560px); }
+    .bi-filters { width: min(100%, 560px); align-items: center; }
+    .bi-search { flex: 1 1 100%; width: 100%; }
+    .bi-select { width: 100%; }
+}

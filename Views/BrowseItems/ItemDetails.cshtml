@@ -26,7 +26,7 @@
         <!-- LEFT: gallery and owner profile -->
         <div class="col-lg-6">
             <div class="d-card">
-                <div class="gal-main">
+                <div class="gal-main" id="galleryMain" role="button" tabindex="0" aria-label="Open full size item photo">
                     @if (first != null) { <img id="g-main" src="@first.ImageUrl" alt="@Model.Name" style="transform:@first.Transform;transform-origin:@first.TransformOrigin"> }
                     else { <div class="item-photo-empty" role="img" aria-label="No photo uploaded"><i class="bi bi-camera"></i><span>No photo uploaded</span></div> }
                     <span class="gal-badge tl"><i class="bi bi-patch-check me-1"></i>Actual Item Condition</span>
@@ -145,11 +145,50 @@
             </div>
         </div>
     </div>
+    <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Full size item photo" hidden>
+        <div class="photo-viewer__dialog">
+            <button type="button" class="photo-viewer__close" id="photoViewerClose" aria-label="Close photo viewer">&times;</button>
+            <img class="photo-viewer__image" id="photoViewerImage" alt="Full size @Model.Name photo" />
+        </div>
+    </div>
 </main>
 
 @section Scripts {
     <script>
         // Gallery thumbnails
+        var galleryMain = document.getElementById("galleryMain");
+        var photoViewer = document.getElementById("photoViewer");
+        var photoViewerImage = document.getElementById("photoViewerImage");
+        var photoViewerClose = document.getElementById("photoViewerClose");
+        var photoViewerReturnFocus = null;
+        function openPhotoViewer() {
+            var image = document.getElementById("g-main");
+            if (!image || !photoViewer) return;
+            photoViewerImage.src = image.src;
+            photoViewerImage.alt = image.alt;
+            photoViewerImage.style.transform = image.style.transform;
+            photoViewerImage.style.transformOrigin = image.style.transformOrigin;
+            photoViewerReturnFocus = document.activeElement;
+            photoViewer.hidden = false;
+            document.body.classList.add("photo-viewer-open");
+            photoViewerClose.focus();
+        }
+        function closePhotoViewer() {
+            if (!photoViewer || photoViewer.hidden) return;
+            photoViewer.hidden = true;
+            document.body.classList.remove("photo-viewer-open");
+            if (photoViewerReturnFocus && photoViewerReturnFocus.focus) photoViewerReturnFocus.focus();
+        }
+        if (galleryMain) {
+            galleryMain.addEventListener("click", openPhotoViewer);
+            galleryMain.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openPhotoViewer(); }
+            });
+        }
+        if (photoViewerClose) photoViewerClose.addEventListener("click", closePhotoViewer);
+        if (photoViewer) photoViewer.addEventListener("click", function (event) { if (event.target === photoViewer) closePhotoViewer(); });
+        document.addEventListener("keydown", function (event) { if (event.key === "Escape") closePhotoViewer(); });
+
         document.querySelectorAll(".gal-thumb").forEach(function (btn) {
             btn.addEventListener("click", function () {
                 var img = document.getElementById("g-main");

@@ -24,7 +24,17 @@
     var categoryOrder = data.categories || [];
     var now = Date.now();
 
+    var categoryAliases = {
+        'Electronics': 'Electronics & Gadgets',
+        'Books & References': 'Books & Learning Materials',
+        'Sports Equipment': 'Sports & Recreation',
+        'Other': 'Others',
+        'Other Items': 'Others',
+        'Accessories': 'Others'
+    };
+
     items.forEach(function (it) {
+        it.category = categoryAliases[it.category] || it.category;
         it.endsAt = (it.remaining !== null && it.remaining !== undefined) ? now + it.remaining * 1000 : null;
         it.pausedMs = (it.pausedMs !== null && it.pausedMs !== undefined) ? Number(it.pausedMs) : null;
         it.lateMs = (it.lateMs !== null && it.lateMs !== undefined) ? Number(it.lateMs) : null;
@@ -60,6 +70,7 @@
     function isInUse(it) { return (it.status === 'Ongoing' || it.status === 'Return Requested') && it.handover; }
     function lower(s) { return String(s).toLowerCase(); }
     function money(n) { return PESO + n.toFixed(2); }
+    function priceText(n) { var value = Number(n); return (isFinite(value) ? value : 0).toFixed(2); }
     function human(ms) {
         var total = Math.floor(ms / 60000);
         if (total < 1) { return 'under 1 min'; }
@@ -169,7 +180,7 @@
         return '<dl class="bi-facts">' +
             row('Rental Period', esc(it.period)) + row('Pick-up Point', esc(it.pickup)) +
             row('Payment Method', esc(it.payment)) + row('Transaction ID', esc(it.txn)) +
-            row('Rental Fee <small>(' + PESO + it.price + '/hr x ' + it.hours + ' hrs)</small>', PESO + fee.toFixed(2)) +
+            row('Rental Fee <small>(' + PESO + priceText(it.price) + '/hr x ' + it.hours + ' hrs)</small>', PESO + fee.toFixed(2)) +
             row('Overdue', overdue, overCls) +
             row('Late Fee' + calc, money(late.fee), late.over ? 'bi-facts__late' : '', late.over && late.live ? ' data-lfee="' + id + '"' : '') +
             row('Total Amount', money(fee + late.fee), 'bi-facts__total', ' data-ltotal="' + id + '"') +
@@ -212,7 +223,7 @@
             '<span>' + esc(it.name) + '</span>' +
             '<span class="card-rating">' + (it.itemRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.itemRating) : '') + '</span>' +
             '</h3>' +
-            '<div class="bi-meta" style="margin-bottom: 4px;"><span class="bi-price">' + PESO + it.price + '<small>/hr</small></span>' +
+            '<div class="bi-meta" style="margin-bottom: 4px;"><span class="bi-price">' + PESO + priceText(it.price) + '<small>/hr</small></span>' +
             '<span class="bi-lender" style="display:flex; align-items:center; gap:4px;">Lender: <strong>' + esc(it.lender) + '</strong> <span class="owner-rating">' + (it.ownerRating ? '<span class="star-icon">&#9733;</span> ' + ratingText(it.ownerRating) : '') + '</span></span></div>' +
             '<div class="bi-foot">' + foot + '</div></div></article>';
     }
@@ -300,7 +311,7 @@
             '<span>' + esc(it.name) + '</span>' +
             '<span style="font-size:16px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;">' + (it.itemRating ? '<span style="color:#f59e0b;">&#9733;</span> ' + ratingText(it.itemRating) : '') + '</span>' +
             '</h3>' +
-            '<div class="bi-dialog__price">' + PESO + it.price + '<small>/hr</small></div>' +
+            '<div class="bi-dialog__price">' + PESO + priceText(it.price) + '<small>/hr</small></div>' +
             '<div class="bi-factbox">' + factsFull(it) + '</div>' + timerPanel(it) +
             '<h4 class="bi-h4">Rental Progress</h4>' + stepsHTML(it) + actions + '</section></div>';
     }
@@ -357,7 +368,7 @@
         var html = '<li><button type="button" role="option" class="is-selected" data-value="">All Categories <span>' + items.length + '</span></button></li>';
         names.forEach(function (n) {
             var c = items.filter(function (i) { return i.category === n; }).length;
-            if (c) { html += '<li><button type="button" role="option" data-value="' + esc(n) + '">' + esc(n) + ' <span>' + c + '</span></button></li>'; }
+            html += '<li><button type="button" role="option" data-value="' + esc(n) + '">' + esc(n) + ' <span>' + c + '</span></button></li>';
         });
         catMenu.innerHTML = html;
     }

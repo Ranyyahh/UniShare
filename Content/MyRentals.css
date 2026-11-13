@@ -25,11 +25,11 @@
 .my-rentals-btn-history { height: 40px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 150ms ease, border-color 150ms ease, color 150ms ease; }
 .my-rentals-btn-history:hover, .my-rentals-btn-history:focus-visible { color: #4338ca; background: #f8fafc; border-color: #a5b4fc; outline: none; }
 .my-rentals-btn-history svg { flex: 0 0 16px; }
-.my-rentals-modal--history { width: min(920px, calc(100vw - 32px)); max-height: min(82vh, 760px); }
+.my-rentals-page .my-rentals-modal--history { width: min(1440px, calc(100vw - 48px)); max-width: 1440px; max-height: min(86vh, 900px); }
 .my-rentals-history-content { min-height: 120px; }
 .my-rentals-history-empty { padding: 32px 16px; color: #64748b; text-align: center; }
 .my-rentals-history-table-wrap { overflow: auto; max-height: 55vh; border: 1px solid #e2e8f0; border-radius: 10px; }
-.my-rentals-history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.my-rentals-history-table { width: 100%; min-width: 1040px; border-collapse: collapse; font-size: 14px; }
 .my-rentals-history-table th { position: sticky; top: 0; background: #f8fafc; color: #475569; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
 .my-rentals-history-table th, .my-rentals-history-table td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
 .my-rentals-history-table td:nth-child(2), .my-rentals-history-table td:nth-child(3) { white-space: normal; }

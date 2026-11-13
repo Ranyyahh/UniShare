@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 @{
     var showAdminSidebar = ViewBag.ShowAdminSidebar != null && (bool)ViewBag.ShowAdminSidebar;
+    var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? "";
     var popupNotifications = new System.Collections.Generic.List<UniShare.Models.NotificationItem>();
     MongoDB.Bson.ObjectId popupUserId;
     if (User != null && User.Identity != null && User.Identity.IsAuthenticated && MongoDB.Bson.ObjectId.TryParse(User.Identity.Name, out popupUserId))
@@ -40,6 +41,7 @@
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
     @RenderSection("Styles", required: false)
+    <link rel="stylesheet" href="@Url.Content("~/Content/ResponsiveScale.css")" />
 </head>
 <body class="@(showAdminSidebar ? "admin-layout" : "")">
     @if (!showAdminSidebar)
@@ -55,18 +57,18 @@
                 <div class="site-navigation__links">
                     @if (Request.IsAuthenticated)
                     {
-                    @Html.ActionLink("Dashboard", "Index", "Dashboard", null, new { @class = "site-navigation__link" })
+                    @Html.ActionLink("Dashboard", "Index", "Dashboard", null, new { @class = "site-navigation__link" + (currentController == "Dashboard" ? " is-active" : ""), aria_current = currentController == "Dashboard" ? "page" : null })
                     }
-                    @Html.ActionLink("Browse Items", "Index", "BrowseItems", null, new { @class = "site-navigation__link" })
+                    @Html.ActionLink("Browse Items", "Index", "BrowseItems", null, new { @class = "site-navigation__link" + (currentController == "BrowseItems" ? " is-active" : ""), aria_current = currentController == "BrowseItems" ? "page" : null })
                     @if (Request.IsAuthenticated)
                     {
-                    @Html.ActionLink("My Listings", "Index", "MyListings", null, new { @class = "site-navigation__link" })
+                    @Html.ActionLink("My Listings", "Index", "MyListings", null, new { @class = "site-navigation__link" + (currentController == "MyListings" ? " is-active" : ""), aria_current = currentController == "MyListings" ? "page" : null })
 
-                    @Html.ActionLink("My Rentals", "Index", "MyRentals", null, new { @class = "site-navigation__link" })
+                    @Html.ActionLink("My Rentals", "Index", "MyRentals", null, new { @class = "site-navigation__link" + (currentController == "MyRentals" ? " is-active" : ""), aria_current = currentController == "MyRentals" ? "page" : null })
 
-                    @Html.ActionLink("Borrowed Items", "Index", "BorrowedItems", null, new { @class = "site-navigation__link" })
+                    @Html.ActionLink("Borrowed Items", "Index", "BorrowedItems", null, new { @class = "site-navigation__link" + (currentController == "BorrowedItems" ? " is-active" : ""), aria_current = currentController == "BorrowedItems" ? "page" : null })
 
-                    @Html.ActionLink("Reports & Analytics", "Index", "ReportsAnalytics", null, new { @class = "site-navigation__link" })
+                    @Html.ActionLink("Reports & Analytics", "Index", "ReportsAnalytics", null, new { @class = "site-navigation__link" + (currentController == "ReportsAnalytics" ? " is-active" : ""), aria_current = currentController == "ReportsAnalytics" ? "page" : null })
                     }
 
 @if (User != null && User.IsInRole("ADMIN"))

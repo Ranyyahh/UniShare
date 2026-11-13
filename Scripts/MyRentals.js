@@ -33,7 +33,7 @@
     var DEFAULT_STATUSES = ALL_STATUSES.slice();
     var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var PAGE_SIZE = 6;
-    var REFERENCE_TODAY = new Date(2026, 10, 9); // Nov 09, 2026 (local project reference time)
+    var REFERENCE_TODAY = new Date();
     var MAX_DISPUTE_IMAGES = 2;
     var MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB per image
 
@@ -335,9 +335,9 @@
             return true;
         }
 
-        var itemDate = parseItemDate(item.HandoverDate);
+        var itemDate = parseItemDate(item.RequestDate);
         if (!itemDate) {
-            return true;
+            return false;
         }
 
         // Compare calendar days (not timestamps) so a record dated later today still counts as "0 days ago"
@@ -349,11 +349,11 @@
         }
 
         if (state.appliedDate === 'Last 7 Days') {
-            return diffDays >= 0 && diffDays <= 7;
+            return diffDays >= 0 && diffDays < 7;
         }
 
         if (state.appliedDate === 'Last 30 Days') {
-            return diffDays >= 0 && diffDays <= 30;
+            return diffDays >= 0 && diffDays < 30;
         }
 
         if (state.appliedDate === 'This Month') {

@@ -8,7 +8,7 @@
 
     var payload = new
     {
-        categories = Model.Select(b => b.Category).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c).ToList(),
+        categories = new[] { "Electronics & Gadgets", "Books & Learning Materials", "School Supplies", "Clothing & Uniforms", "Sports & Recreation", "Others" },
         lateRate = 1,
         graceMinutes = 30,
         items = Model.Select(b => new

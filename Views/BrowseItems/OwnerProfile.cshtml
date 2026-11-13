@@ -7,62 +7,73 @@
 
 @section Styles {
     <link href="@Url.Content("~/Content/items.css")" rel="stylesheet" />
+    <link href="@Url.Content("~/Content/OwnerProfile.css")" rel="stylesheet" />
 }
 
 <main class="owner-profile-page">
-    <a class="text-decoration-none" href="@Url.Action("Index", "BrowseItems")">&larr; Browse items</a>
-    <section class="owner-profile-hero mt-3">
-        <div class="d-flex align-items-center gap-4 flex-wrap">
+    <a class="op-back" href="@Url.Action("Index", "BrowseItems")"><span aria-hidden="true">←</span> Browse items</a>
+    <section class="op-hero mt-3">
+        <div class="op-identity">
             @if (!string.IsNullOrWhiteSpace(Model.ProfilePhoto))
             {
-                <img src="@Url.Content(Model.ProfilePhoto)" alt="@Model.Name" class="rounded-circle" style="width:104px;height:104px;object-fit:cover" />
+                <img src="@Url.Content(Model.ProfilePhoto)" alt="@Model.Name" class="op-avatar" />
             }
             else
             {
-                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width:104px;height:104px;font-size:1.8rem">@Model.Initials</div>
+                <div class="op-avatar op-avatar--initials" aria-hidden="true">@Model.Initials</div>
             }
-            <div class="flex-grow-1">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <h1 class="h2 mb-0">@Model.Name</h1>
-                    @if (Model.IsVerified) { <span class="badge bg-success">Verified student</span> }
+            <div class="op-owner-copy">
+                <div class="op-name-line">
+                    <h1>@Model.Name</h1>
+                    @if (Model.Rating.HasValue)
+                    {
+                        <span class="op-owner-rating" aria-label="Owner rating @Model.Rating.Value.ToString("0.0") out of 5">
+                            <span aria-hidden="true">★</span> @Model.Rating.Value.ToString("0.0") <small>(@Model.ReviewCount)</small>
+                        </span>
+                    }
+                    @if (Model.IsVerified) { <span class="op-verified"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verified student</span> }
                 </div>
-                <div class="text-secondary mt-2">
-                    @Model.Campus
-                    @if (!string.IsNullOrWhiteSpace(Model.Program)) { <span> · @Model.Program</span> }
-                    @if (!string.IsNullOrWhiteSpace(Model.YearLevel)) { <span> · @Model.YearLevel</span> }
+                <div class="op-meta">
+                    @if (!string.IsNullOrWhiteSpace(Model.Campus)) { <span><i class="bi bi-geo-alt" aria-hidden="true"></i>@Model.Campus</span> }
+                    @if (!string.IsNullOrWhiteSpace(Model.Program)) { <span>@Model.Program</span> }
+                    @if (!string.IsNullOrWhiteSpace(Model.YearLevel)) { <span>@Model.YearLevel</span> }
                 </div>
-                <div class="small mt-2">
-                    @if (Model.Rating.HasValue) { <span class="fw-semibold">★ @Model.Rating.Value.ToString("0.0")</span><span class="text-secondary"> (@Model.ReviewCount reviews) · </span> }
-                    <span class="text-secondary">@Model.CompletedRentals completed rentals</span>
+                <div class="op-stats">
+                    <span><strong>@Model.CompletedRentals</strong> completed rentals</span>
+                    <span><strong>@Model.Listings.Count</strong> available listings</span>
                 </div>
             </div>
         </div>
-        @if (!string.IsNullOrWhiteSpace(Model.Bio)) { <p class="mt-4 mb-0" style="overflow-wrap:anywhere;line-height:1.7">@Model.Bio</p> }
+        @if (!string.IsNullOrWhiteSpace(Model.Bio)) { <p class="op-bio">@Model.Bio</p> }
     </section>
 
-    <section class="mt-5" aria-labelledby="ownerListingsTitle">
-        <div class="d-flex align-items-end justify-content-between gap-3 flex-wrap">
+    <section class="op-section" aria-labelledby="ownerListingsTitle">
+        <div class="op-section-heading">
             <div>
-                <h2 class="h3 mb-1" id="ownerListingsTitle">Available listings</h2>
-                <p class="text-secondary mb-0"><span id="owner-visible-count">@Model.Listings.Count</span> of @Model.Listings.Count items</p>
+                <span class="op-eyebrow">Marketplace</span>
+                <h2 id="ownerListingsTitle">Available listings</h2>
+                <p><span id="owner-visible-count">@Model.Listings.Count</span> of @Model.Listings.Count items</p>
             </div>
         </div>
 
         <div class="owner-profile-tools">
-            <input id="owner-item-search" type="search" class="form-control" placeholder="Search this owner's items" aria-label="Search this owner's items" />
-            <select id="owner-category-filter" class="form-select" aria-label="Filter by category">
+            <label class="op-search"><span class="visually-hidden">Search this owner's items</span><i class="bi bi-search" aria-hidden="true"></i>
+                <input id="owner-item-search" type="search" placeholder="Search items, categories, or condition" aria-label="Search this owner's items" />
+            </label>
+            <select id="owner-category-filter" aria-label="Filter by category">
                 <option value="">All categories</option>
                 @foreach (var category in categories) { <option value="@category">@category</option> }
             </select>
-            <select id="owner-condition-filter" class="form-select" aria-label="Filter by condition">
+            <select id="owner-condition-filter" aria-label="Filter by condition">
                 <option value="">All conditions</option>
                 @foreach (var condition in new[] { "Like New", "Good", "Fair", "Heavy Use" }) { <option value="@condition">@condition</option> }
             </select>
+            <button type="button" class="owner-profile-reset" id="owner-filter-reset">Clear filters</button>
         </div>
 
         @if (Model.Listings.Count == 0)
         {
-            <div class="owner-profile-hero text-secondary">This owner has no available listings right now.</div>
+            <div class="op-empty op-empty--listings">This owner has no available listings right now.</div>
         }
         else
         {
@@ -70,49 +81,46 @@
                 @foreach (var item in Model.Listings)
                 {
                     <div class="col-sm-6 col-xl-4 owner-listing-result" data-title="@item.Title" data-category="@item.CategoryLabel" data-condition="@item.Condition">
-                        <a class="owner-listing-card d-block text-decoration-none text-reset" href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })">
+                        <a class="owner-listing-card" href="@Url.Action("ItemDetails", "BrowseItems", new { id = item.Id })">
                             @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@Url.Content(item.ImageUrl)" alt="@item.Title" loading="lazy" /> }
                             else { <div class="owner-listing-placeholder">No photo uploaded</div> }
-                            <div class="p-4">
-                                <div class="small text-secondary">@item.CategoryLabel · @item.Condition</div>
-                                <h3 class="h5 mt-2 mb-3">@item.Title</h3>
-                                <div class="fw-bold text-primary">₱@((item.Price / Math.Max(1, item.PerHours)).ToString("0")) / hr</div>
+                            <div class="op-listing-copy">
+                                <div class="op-listing-meta"><span>@item.CategoryLabel</span><span>@item.Condition</span></div>
+                                <h3>@item.Title</h3>
+                                <div class="op-listing-price">₱@((item.Price / Math.Max(1, item.PerHours)).ToString("0.00")) <small>/ hr</small></div>
                             </div>
                         </a>
                     </div>
                 }
             </div>
-            <div class="owner-profile-hero mt-3 text-secondary" id="owner-listings-empty" hidden>No listings match your search and filters.</div>
+            <div class="op-empty op-empty--listings" id="owner-listings-empty" hidden>No listings match your search and filters.</div>
         }
     </section>
 
-    <section class="mt-5" aria-labelledby="ownerReviewsTitle">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h4 mb-0" id="ownerReviewsTitle">Student Reviews <span class="text-secondary">(@Model.Reviews.Count)</span></h2>
+    <section class="op-section op-reviews-section" aria-labelledby="ownerReviewsTitle">
+        <div class="op-section-heading">
+            <div><span class="op-eyebrow">Community feedback</span><h2 id="ownerReviewsTitle">Student Reviews</h2><p>@Model.Reviews.Count review@(Model.Reviews.Count == 1 ? "" : "s")</p></div>
         </div>
         @if (Model.Reviews.Count == 0)
         {
-            <div class="card border-0 shadow-sm p-4 text-secondary">No reviews have been submitted for this owner yet.</div>
+            <div class="op-empty">No reviews have been submitted for this owner yet.</div>
         }
         else
         {
-            <div class="d-flex flex-column gap-3">
+            <div class="op-review-list">
                 @foreach (var review in Model.Reviews)
                 {
-                    <article class="card border-0 shadow-sm p-4">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div>
-                                <strong class="d-block">@review.ReviewerName</strong>
-                                <small class="text-secondary">@review.CreatedAt.ToString("MMM d, yyyy")</small>
-                            </div>
-                            <div class="text-warning fw-bold">
-                                @if (review.ItemRating.HasValue) { <span>Item: ★ @review.ItemRating.Value</span> }
-                                @if (review.OwnerRating.HasValue) { <span class="ms-2">Owner: ★ @review.OwnerRating.Value</span> }
+                    <article class="op-review-card">
+                        <div class="op-review-head">
+                            <div class="op-review-author"><strong>@review.ReviewerName</strong><time datetime="@review.CreatedAt.ToString("yyyy-MM-dd")">@review.CreatedAt.ToString("MMM d, yyyy")</time></div>
+                            <div class="op-review-ratings">
+                                @if (review.OwnerRating.HasValue) { <span><small>Owner</small> ★ @review.OwnerRating.Value.ToString("0.0")</span> }
+                                @if (review.ItemRating.HasValue) { <span><small>Item</small> ★ @review.ItemRating.Value.ToString("0.0")</span> }
                             </div>
                         </div>
                         @if (!string.IsNullOrWhiteSpace(review.Review))
                         {
-                            <p class="mt-3 mb-0 text-secondary" style="line-height:1.6">@review.Review</p>
+                            <p class="op-review-text">@review.Review</p>
                         }
                         @if (Request.IsAuthenticated)
                         {
@@ -138,13 +146,15 @@
             var search = document.getElementById('owner-item-search');
             var category = document.getElementById('owner-category-filter');
             var condition = document.getElementById('owner-condition-filter');
+            var reset = document.getElementById('owner-filter-reset');
             var cards = Array.prototype.slice.call(document.querySelectorAll('.owner-listing-result'));
             if (!search || !category || !condition) return;
             function apply() {
                 var term = search.value.trim().toLowerCase();
                 var visible = 0;
                 cards.forEach(function (card) {
-                    var matches = (card.dataset.title || '').toLowerCase().indexOf(term) !== -1 &&
+                    var searchable = [card.dataset.title, card.dataset.category, card.dataset.condition].join(' ').toLowerCase();
+                    var matches = searchable.indexOf(term) !== -1 &&
                         (!category.value || card.dataset.category === category.value) &&
                         (!condition.value || card.dataset.condition === condition.value);
                     card.classList.toggle('owner-profile-hidden', !matches);
@@ -157,6 +167,7 @@
             search.addEventListener('input', apply);
             category.addEventListener('change', apply);
             condition.addEventListener('change', apply);
+            if (reset) reset.addEventListener('click', function () { search.value = ''; category.value = ''; condition.value = ''; apply(); search.focus(); });
         })();
     </script>
 }
