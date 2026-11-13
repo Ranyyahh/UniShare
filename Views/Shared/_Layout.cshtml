@@ -253,22 +253,5 @@
             <button onclick="document.getElementById('pendingModal').style.display='none'" class="btn btn-primary">Understood</button>
         </div>
     </div>
-
-    <script>
-        const isPending = document.body.dataset.userStatus === 'PENDING' || document.body.dataset.verificationStatus === 'PENDING';
-
-        function showPendingModal(e) {
-            if (isPending) {
-                if (e) {
-                    e.preventDefault();
-                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                    if (e.stopPropagation) e.stopPropagation();
-                }
-                document.getElementById('pendingModal').style.display = 'flex';
-                return false;
-            }
-            return true;
-        }
-    </script>
 </body>
 </html>
