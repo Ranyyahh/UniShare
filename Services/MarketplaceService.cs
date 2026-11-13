@@ -26,15 +26,66 @@ namespace UniShare.Services
 
         public static List<ListingItemViewModel> GetOwnerListings(ObjectId ownerId)
         {
-            return MongoDatabase.Items.Find(x => x.OwnerId == ownerId)
-                .SortByDescending(x => x.CreatedAt).ToList().Select(ToListing).ToList();
+            var rawItems = MongoDatabase.Items.Database.GetCollection<BsonDocument>("items");
+            var ownerString = ownerId.ToString();
+            var ownerFilter = Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) |
+                              Builders<BsonDocument>.Filter.Eq("ownerId", ownerString);
+            var documents = rawItems.Find(ownerFilter).ToList();
+            var ids = new List<ObjectId>();
+            foreach (var document in documents)
+            {
+                var idValue = document.GetValue("_id", BsonNull.Value);
+                if (!idValue.IsObjectId) continue;
+                var storedOwner = document.GetValue("ownerId", BsonNull.Value);
+                if (storedOwner.IsString && string.Equals(storedOwner.AsString, ownerString, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Normalize direct Mongo inserts that stored ObjectId as text so the
+                    // rest of the typed item operations (edit/delete/booking) can match it.
+                    rawItems.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", idValue) & Builders<BsonDocument>.Filter.Eq("ownerId", storedOwner),
+                        Builders<BsonDocument>.Update.Set("ownerId", ownerId));
+                }
+                ids.Add(idValue.AsObjectId);
+            }
+            if (ids.Count == 0) return new List<ListingItemViewModel>();
+            var items = MongoDatabase.Items.Find(x => ids.Contains(x.Id)).SortByDescending(x => x.CreatedAt).ToList();
+            foreach (var item in items) RepairStaleRentedStatus(item);
+            return items.Select(ToListing).ToList();
         }
 
         public static ItemDocument GetOwnerItem(ObjectId ownerId, string id)
         {
             ObjectId objectId;
             if (!ObjectId.TryParse(id, out objectId)) return null;
-            return MongoDatabase.Items.Find(x => x.Id == objectId && x.OwnerId == ownerId).FirstOrDefault();
+            var rawItems = MongoDatabase.Items.Database.GetCollection<BsonDocument>("items");
+            var raw = rawItems.Find(Builders<BsonDocument>.Filter.Eq("_id", objectId)).FirstOrDefault();
+            if (raw == null) return null;
+            var storedOwner = raw.GetValue("ownerId", BsonNull.Value);
+            if (storedOwner.IsString)
+            {
+                ObjectId parsedOwnerId;
+                if (!ObjectId.TryParse(storedOwner.AsString, out parsedOwnerId) || parsedOwnerId != ownerId) return null;
+                rawItems.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", objectId) & Builders<BsonDocument>.Filter.Eq("ownerId", storedOwner),
+                    Builders<BsonDocument>.Update.Set("ownerId", ownerId));
+            }
+            else if (!storedOwner.IsObjectId || storedOwner.AsObjectId != ownerId) return null;
+            var item = MongoDatabase.Items.Find(x => x.Id == objectId && x.OwnerId == ownerId).FirstOrDefault();
+            if (item != null) RepairStaleRentedStatus(item);
+            return item;
+        }
+
+        private static void RepairStaleRentedStatus(ItemDocument item)
+        {
+            if (item == null || !string.Equals(item.AvailabilityStatus, "RENTED", StringComparison.OrdinalIgnoreCase)) return;
+            var activeStatuses = new[] { "PENDING", "REQUESTED", "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "DISPUTED" };
+            var activeFilter = Builders<BsonDocument>.Filter.Eq("itemId", item.Id) &
+                               Builders<BsonDocument>.Filter.In("status", activeStatuses);
+            var hasBlockingBooking = MongoDatabase.Bookings.Find(activeFilter).Limit(1).Any() ||
+                                     MongoDatabase.Rentals.Find(activeFilter).Limit(1).Any();
+            if (hasBlockingBooking) return;
+            var previousStatus = item.AvailabilityStatus;
+            MongoDatabase.Items.UpdateOne(x => x.Id == item.Id && x.OwnerId == item.OwnerId && x.AvailabilityStatus == previousStatus,
+                Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, "AVAILABLE").Set(x => x.UpdatedAt, DateTime.UtcNow));
+            item.AvailabilityStatus = "AVAILABLE";
         }
 
         public static Tuple<double?, int> GetOwnerRatingSummary(ObjectId ownerId)
@@ -157,8 +208,8 @@ namespace UniShare.Services
             if (photo.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return photo;
             if (photo.StartsWith("~/", StringComparison.Ordinal)) photo = photo.Substring(2);
             var fileName = System.IO.Path.GetFileName(photo);
-            Guid uploadId;
-            if (!Guid.TryParseExact(System.IO.Path.GetFileNameWithoutExtension(fileName), "N", out uploadId)) return null;
+            var extension = System.IO.Path.GetExtension(fileName);
+            if (String.IsNullOrWhiteSpace(fileName) || !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension, StringComparer.OrdinalIgnoreCase)) return null;
             var physical = HttpContext.Current == null ? null : HttpContext.Current.Server.MapPath("~/Uploads/" + fileName);
             if (physical != null && !System.IO.File.Exists(physical)) return null;
             return VirtualPathUtility.ToAbsolute("~/Uploads/" + fileName);

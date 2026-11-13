@@ -207,7 +207,7 @@ namespace UniShare.Controllers
                     Campus = model.Campus.Trim(),
                     Building = "",
                     Room = null,
-                    HandoverLocation = model.Campus.Trim()
+                    HandoverLocation = SafeTrim(model.HandoverLocation).Length > 0 ? SafeTrim(model.HandoverLocation) : SafeTrim(model.Campus)
                 },
                 CreatedAt = now,
                 UpdatedAt = now
@@ -292,7 +292,7 @@ namespace UniShare.Controllers
             var validPhotoIds = new HashSet<int>(original.ExistingPhotos.Select(p => p.Id));
             var kept = (model.KeptPhotoIds ?? new List<int>()).Where(validPhotoIds.Contains).Distinct().ToList();
 
-            ValidatePhotos(GetUploadedFiles(model), kept.Count, 10);
+            ValidatePhotos(GetUploadedFiles(model), kept.Count, 10, false);
             ValidateSchedule(model);
             var validCategory = model.CategoryId.HasValue && GetCategoryOptions().Any(c => c.Id == model.CategoryId.Value);
             if (!validCategory) ModelState.AddModelError("CategoryId", "Choose a valid category.");
@@ -316,7 +316,7 @@ namespace UniShare.Controllers
             }
 
             var category = GetCategoryOptions().FirstOrDefault(c => c.Id == model.CategoryId);
-            var retainedPhotos = existing.Photos.Where((photo, index) => kept.Contains(index + 1)).ToList();
+            var retainedPhotos = (existing.Photos ?? new List<string>()).Where((photo, index) => kept.Contains(index + 1)).ToList();
             List<string> addedPhotos;
             try { addedPhotos = SavePhotos(GetUploadedFiles(model)); }
             catch (IOException)
@@ -354,10 +354,10 @@ namespace UniShare.Controllers
                 })
                 .Set(x => x.Location, new ItemLocationDocument
                 {
-                    Campus = model.Campus.Trim(),
-                    Building = "",
-                    Room = null,
-                    HandoverLocation = model.Campus.Trim()
+                    Campus = SafeTrim(model.Campus),
+                    Building = SafeTrim(model.Building),
+                    Room = string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(),
+                    HandoverLocation = SafeTrim(model.HandoverLocation).Length > 0 ? SafeTrim(model.HandoverLocation) : SafeTrim(model.Campus)
                 })
                 .Set(x => x.UpdatedAt, DateTime.UtcNow);
             if (requiresReview)
@@ -374,7 +374,7 @@ namespace UniShare.Controllers
                 TempData["Error"] = "The listing was not updated. It may have changed or be rented.";
                 return RedirectToAction("ItemListings");
             }
-            DeletePhotos(existing.Photos.Except(newPhotos));
+            DeletePhotos((existing.Photos ?? new List<string>()).Except(newPhotos));
 
             TempData["Message"] = requiresReview
                 ? "Listing changes submitted for admin review. The listing will remain hidden until approved."
@@ -403,18 +403,39 @@ namespace UniShare.Controllers
                 !string.Equals(existing.EarliestHandoverTime, model.EarliestHandoverTime, StringComparison.Ordinal) ||
                 !string.Equals(existing.LatestReturnTime, model.LatestReturnTime, StringComparison.Ordinal) ||
                 !string.Equals(existing.Accessories, model.Accessories, StringComparison.Ordinal) ||
-                !string.Equals(location.Campus, model.Campus.Trim(), StringComparison.Ordinal) ||
-                !string.Equals(location.Building, model.Building.Trim(), StringComparison.Ordinal) ||
+                !string.Equals(location.Campus, SafeTrim(model.Campus), StringComparison.Ordinal) ||
+                !string.Equals(location.Building, SafeTrim(model.Building), StringComparison.Ordinal) ||
                 !string.Equals(location.Room, string.IsNullOrWhiteSpace(model.Room) ? null : model.Room.Trim(), StringComparison.Ordinal) ||
-                !string.Equals(location.HandoverLocation, model.HandoverLocation.Trim(), StringComparison.Ordinal);
+                !string.Equals(location.HandoverLocation, SafeTrim(model.HandoverLocation), StringComparison.Ordinal);
+        }
+
+        private static string SafeTrim(string value) { return (value ?? "").Trim(); }
+
+        private static string NormalizeCampus(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "San Bartolome";
+            var campus = value.Trim();
+            if (campus.IndexOf("San Francisco", StringComparison.OrdinalIgnoreCase) >= 0) return "San Francisco";
+            if (campus.IndexOf("Batasan", StringComparison.OrdinalIgnoreCase) >= 0) return "Batasan";
+            return "San Bartolome";
+        }
+
+        private static List<string> NormalizeAvailableDays(IEnumerable<string> values)
+        {
+            var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+            var normalized = (values ?? Enumerable.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(value => days.FirstOrDefault(day => day.StartsWith(value.Trim().Substring(0, Math.Min(3, value.Trim().Length)), StringComparison.OrdinalIgnoreCase)))
+                .Where(day => day != null).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            return normalized.Count > 0 ? normalized : new List<string> { "Mon", "Tue", "Wed", "Thu", "Fri" };
         }
 
         private static bool HasBlockingBooking(ObjectId itemId)
         {
             BookingService.ExpirePending();
             var activeStatuses = new[] { "PENDING", "REQUESTED", "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "DISPUTED" };
-            return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId) &
-                Builders<BsonDocument>.Filter.In("status", activeStatuses)).Limit(1).Any();
+            var filter = Builders<BsonDocument>.Filter.Eq("itemId", itemId) &
+                         Builders<BsonDocument>.Filter.In("status", activeStatuses);
+            return MongoDatabase.Bookings.Find(filter).Limit(1).Any() || MongoDatabase.Rentals.Find(filter).Limit(1).Any();
         }
 
         private static string FormatTimeForDisplay(string value)
@@ -433,10 +454,10 @@ namespace UniShare.Controllers
                 .Where(f => f != null && f.ContentLength > 0).ToList();
         }
 
-        private void ValidatePhotos(List<HttpPostedFileBase> newFiles, int keptCount, int maxMb)
+        private void ValidatePhotos(List<HttpPostedFileBase> newFiles, int keptCount, int maxMb, bool requireAtLeastOne = true)
         {
             int total = keptCount + newFiles.Count;
-            if (total == 0)
+            if (requireAtLeastOne && total == 0)
                 ModelState.AddModelError("Photos", "Keep or upload at least one photo.");
             else if (total > 4)
                 ModelState.AddModelError("Photos", "A listing can have up to 4 photos.");
@@ -474,7 +495,9 @@ namespace UniShare.Controllers
             ConditionGrade cond = ConditionGrade.Good;
             if (item.Condition != null)
             {
-                if (item.Condition.IndexOf("Like New", StringComparison.OrdinalIgnoreCase) >= 0) cond = ConditionGrade.LikeNew;
+                if (item.Condition.IndexOf("Like New", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    item.Condition.IndexOf("Excellent", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    item.Condition.IndexOf("New", StringComparison.OrdinalIgnoreCase) >= 0) cond = ConditionGrade.LikeNew;
                 else if (item.Condition.IndexOf("Fair", StringComparison.OrdinalIgnoreCase) >= 0) cond = ConditionGrade.Fair;
                 else if (item.Condition.IndexOf("Heavy", StringComparison.OrdinalIgnoreCase) >= 0) cond = ConditionGrade.HeavyUse;
             }
@@ -494,13 +517,14 @@ namespace UniShare.Controllers
                 SecurityDeposit = item.SecurityDeposit,
                 Accessories = item.Accessories,
                 EnableFullDayBundle = item.EnableFullDayBundle || fullDay,
-                AvailableDays = item.AvailableDays != null ? new List<string>(item.AvailableDays) : new List<string>(),
-                EarliestHandoverTime = item.EarliestHandoverTime,
-                LatestReturnTime = item.LatestReturnTime,
-                Campus = document.Location != null ? document.Location.Campus : null,
+                AvailableDays = NormalizeAvailableDays(item.AvailableDays),
+                EarliestHandoverTime = string.IsNullOrWhiteSpace(item.EarliestHandoverTime) ? "08:00" : item.EarliestHandoverTime,
+                LatestReturnTime = string.IsNullOrWhiteSpace(item.LatestReturnTime) ? "17:30" : item.LatestReturnTime,
+                Campus = NormalizeCampus(document.Location != null ? document.Location.Campus : null),
                 Building = document.Location != null ? document.Location.Building : null,
                 Room = document.Location != null ? document.Location.Room : null,
-                HandoverLocation = document.Location != null ? document.Location.HandoverLocation : null,
+                HandoverLocation = document.Location != null && !string.IsNullOrWhiteSpace(document.Location.HandoverLocation)
+                    ? document.Location.HandoverLocation : NormalizeCampus(document.Location != null ? document.Location.Campus : null),
                 Status = item.Status,
                 CoverImageUrl = item.ImageUrl,
                 PriceSummary = $"\u20B1{item.Price:0.##} / {item.PerHours} hrs ({(fullDay ? "\u20B1" + (item.Price * 2).ToString("0.##") + " whole day" : item.PriceNote)})",

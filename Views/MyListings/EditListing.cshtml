@@ -7,7 +7,7 @@
     var inputCls = "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:ring-brand transition";
     var errCls = "mt-1 block text-xs text-red-600 font-medium";
     var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-    var units = new[] { new { V = 1, T = "per hour" }, new { V = 2, T = "per 2 hours" }, new { V = 4, T = "per 4 hours" }, new { V = 8, T = "per 8 hours" } };
+    var units = new[] { new { V = 1, T = "per hour" }, new { V = 2, T = "per 2 hours" }, new { V = 4, T = "per 4 hours" }, new { V = 8, T = "per 8 hours" }, new { V = 24, T = "per day (24 hours)" } };
     var conditions = new[]
     {
         new { V = ConditionGrade.LikeNew,  Title = "Like New",  Desc = "No visible wear; works as expected." },
@@ -17,7 +17,7 @@
     };
 
     var categoryName = Model.Categories.Where(c => c.Id == Model.CategoryId).Select(c => c.Name).FirstOrDefault() ?? "";
-    var photosJson = Json.Encode(Model.ExistingPhotos.Select(p => new { id = p.Id, url = Url.Content(p.Url), label = p.Label, caption = p.Caption }));
+    var photosJson = Json.Encode(Model.ExistingPhotos.Select(p => new { id = p.Id, url = string.IsNullOrWhiteSpace(p.Url) ? "" : Url.Content(p.Url), label = p.Label, caption = p.Caption }));
 }
 
 @* ===== Page-scoped assets (loaded only on this page) ===== *@
@@ -178,8 +178,8 @@
             <div class="mt-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold text-slate-900">Item Photographs (<span id="photo-count">0</span> uploaded / 4 maximum) <span class="text-red-500">*</span></p>
-                        <p class="text-xs text-slate-600 mt-0.5">Clear, well-lit photos taken inside QCU facilities help rent faster.</p>
+                        <p class="text-sm font-semibold text-slate-900">Item Photographs (<span id="photo-count">0</span> / 4 maximum)</p>
+                        <p class="text-xs text-slate-600 mt-0.5">Keep existing photos, remove them, or add clear photos to improve the listing.</p>
                     </div>
                     <span class="hidden sm:inline-block shrink-0 bg-indigo-50 text-brand text-[11px] font-semibold px-2.5 py-1 rounded">High resolution photos build peer trust</span>
                 </div>
@@ -303,7 +303,7 @@
                         data-category="@categoryName"
                         data-status="@Model.Status"
                         data-price="@Model.PriceSummary"
-                        data-image="@Url.Content(Model.CoverImageUrl)"
+                        data-image="@(string.IsNullOrWhiteSpace(Model.CoverImageUrl) ? "" : Url.Content(Model.CoverImageUrl))"
                         data-active-rental="@(Model.HasActiveRental ? "true" : "false")"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 bg-white text-sm font-semibold text-red-600 hover:bg-red-50 transition">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>Delete Listing
@@ -561,20 +561,10 @@
         // 4. Description
         flag(descEl, !descEl.value.trim(), descErr);
 
-        // 5. Photos (at least 1 photo)
+        // 5. Photos are optional when editing database-seeded listings.
         var addBtn = document.getElementById('photo-add-btn');
-        if (items.length === 0) {
-            if (addBtn) addBtn.classList.add('broken-red-border');
-            if (photoErr) {
-                photoErr.querySelector('span').textContent = 'Keep or upload at least one photo.';
-                photoErr.classList.remove('hidden');
-            }
-            isValid = false;
-            if (!firstInvalid) firstInvalid = addBtn || grid;
-        } else {
-            if (addBtn) addBtn.classList.remove('broken-red-border');
-            if (photoErr) photoErr.classList.add('hidden');
-        }
+        if (addBtn) addBtn.classList.remove('broken-red-border');
+        if (photoErr) photoErr.classList.add('hidden');
 
         // 6. Rental Rate (Price)
         var priceVal = parseFloat(priceEl.value);
