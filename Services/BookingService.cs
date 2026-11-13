@@ -13,7 +13,6 @@ namespace UniShare.Services
     {
         private static readonly string[] NonBlockingStatuses = { "CANCELLED", "CANCELED", "DECLINED", "EXPIRED", "REJECTED" };
         private static readonly string[] AcceptedStatuses = { "ACCEPTED", "ACTIVE", "ONGOING", "OVERDUE" };
-        private static readonly string[] HandoverSlots = { "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM" };
 
         public static BsonDocument Submit(ObjectId renterId, string itemId, DateTime handoverDate, string handoverTime, int durationHours, string notes)
         {
@@ -88,7 +87,8 @@ namespace UniShare.Services
             var bookings = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("itemId", itemId)).ToList();
             var item = MongoDatabase.Items.Find(x => x.Id == itemId).FirstOrDefault();
             var unavailable = new List<string>();
-            foreach (var slot in HandoverSlots)
+            if (item == null) return unavailable;
+            foreach (var slot in GetHandoverSlots(item))
             {
                 DateTime time;
                 if (!DateTime.TryParseExact(slot, new[] { "hh:mm tt", "h:mm tt" }, System.Globalization.CultureInfo.InvariantCulture,
@@ -99,6 +99,22 @@ namespace UniShare.Services
                     bookings.Any(x => BlocksAvailability(x, DateTime.UtcNow) && Overlaps(x, start, end))) unavailable.Add(slot);
             }
             return unavailable;
+        }
+
+        public static List<string> GetHandoverSlots(ItemDocument item)
+        {
+            var slots = new List<string>();
+            if (item == null) return slots;
+            TimeSpan earliest, latest;
+            if (!TimeSpan.TryParse(item.EarliestHandoverTime, CultureInfo.InvariantCulture, out earliest)) earliest = new TimeSpan(9, 0, 0);
+            if (!TimeSpan.TryParse(item.LatestReturnTime, CultureInfo.InvariantCulture, out latest)) latest = new TimeSpan(16, 0, 0);
+            if (latest < earliest) return slots;
+
+            // Offer handover times on the half-hour so owner schedules such as 8:30 AM
+            // are usable instead of being forced into a hardcoded 9 AM–4 PM window.
+            for (var time = earliest; time <= latest; time = time.Add(TimeSpan.FromMinutes(30)))
+                slots.Add(DateTime.Today.Add(time).ToString("hh:mm tt", CultureInfo.InvariantCulture));
+            return slots;
         }
 
         public static List<BsonDocument> ForRenter(ObjectId id) { ExpirePending(); return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("borrowerId", id)).SortByDescending(x => x["createdAt"]).ToList(); }

@@ -4,7 +4,23 @@
     var form = document.getElementById('rental-form');
     if (!form) return;
 
-    var slots = ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
+    function makeSlots() {
+        function parseTime(value, fallback) {
+            var match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+            return match ? Number(match[1]) * 60 + Number(match[2]) : fallback;
+        }
+        var start = parseTime(form.dataset.earliestTime, 9 * 60);
+        var end = parseTime(form.dataset.latestTime, 16 * 60);
+        var result = [];
+        for (var minute = start; minute <= end; minute += 30) {
+            var hour24 = Math.floor(minute / 60), mins = minute % 60;
+            var suffix = hour24 >= 12 ? 'PM' : 'AM';
+            var hour12 = hour24 % 12 || 12;
+            result.push((hour12 < 10 ? '0' : '') + hour12 + ':' + (mins < 10 ? '0' : '') + mins + ' ' + suffix);
+        }
+        return result;
+    }
+    var slots = makeSlots();
     var dayNumbers = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
     var configuredDays = (form.dataset.availableDays || '').split(',').map(function (day) { return dayNumbers[day]; }).filter(function (day) { return day !== undefined; });
     var ownerDays = configuredDays.length ? configuredDays : [0, 1, 2, 3, 4, 5, 6];
@@ -119,6 +135,7 @@
             .then(function (response) { if (!response.ok) throw new Error('Availability could not be loaded.'); return response.json(); })
             .then(function (data) {
                 if (callId !== requestNumber) return;
+                if (Array.isArray(data.slots) && data.slots.length) slots = data.slots;
                 unavailable = data.unavailableSlots || [];
                 isLoading = false;
                 if (!selectedTime || unavailable.indexOf(selectedTime) >= 0) selectedTime = slots.find(function (slot) { return unavailable.indexOf(slot) < 0; }) || '';
