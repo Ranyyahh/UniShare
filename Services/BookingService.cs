@@ -195,13 +195,17 @@ namespace UniShare.Services
         private static bool IsWithinListingSchedule(ItemDocument item, DateTime start)
         {
             var availableDays = item.AvailableDays ?? new List<string>();
-            if (availableDays.Count > 0 && !availableDays.Any(x => String.Equals(x, start.ToString("dddd", CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))) return false;
+            var dayAbbreviation = start.ToString("ddd", CultureInfo.InvariantCulture);
+            var dayName = start.ToString("dddd", CultureInfo.InvariantCulture);
+            if (availableDays.Count > 0 && !availableDays.Any(x =>
+                String.Equals(x, dayAbbreviation, StringComparison.OrdinalIgnoreCase) ||
+                String.Equals(x, dayName, StringComparison.OrdinalIgnoreCase))) return false;
             DateTime earliest, latest;
             if (!String.IsNullOrWhiteSpace(item.EarliestHandoverTime) &&
-                DateTime.TryParseExact(item.EarliestHandoverTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out earliest) &&
+                DateTime.TryParseExact(item.EarliestHandoverTime, new[] { "HH:mm", "H:mm", "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out earliest) &&
                 start.TimeOfDay < earliest.TimeOfDay) return false;
             if (!String.IsNullOrWhiteSpace(item.LatestReturnTime) &&
-                DateTime.TryParseExact(item.LatestReturnTime, new[] { "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out latest) &&
+                DateTime.TryParseExact(item.LatestReturnTime, new[] { "HH:mm", "H:mm", "hh:mm tt", "h:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out latest) &&
                 start.TimeOfDay > latest.TimeOfDay) return false;
             return true;
         }
