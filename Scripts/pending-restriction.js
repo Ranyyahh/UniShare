@@ -15,6 +15,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Intercept Clicks (Event Delegation)
     document.body.addEventListener('click', function(e) {
+        // Patch: Block "Message Owner" in Item Details
+        var clickedBtn = e.target.closest('button, a');
+        if (clickedBtn) {
+            var btnText = (clickedBtn.innerText || "").toLowerCase();
+            var btnId = (clickedBtn.id || "").toLowerCase();
+            var btnClass = (clickedBtn.className || "").toLowerCase();
+
+            // Check if it's the Message Owner button
+            if (btnText.includes('message owner') || 
+                btnText.includes('contact owner') ||
+                btnId.includes('messageowner') || 
+                btnId === 'd-msg' ||
+                clickedBtn.hasAttribute('data-msg-lender') ||
+                btnClass.includes('message-owner') || 
+                btnClass.includes('contact-owner')) {
+                
+                showPendingModal(e);
+                return;
+            }
+        }
+
         const target = e.target.closest('a, button');
         if (!target) return;
 
