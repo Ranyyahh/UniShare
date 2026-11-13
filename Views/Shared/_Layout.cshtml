@@ -43,7 +43,7 @@
     @RenderSection("Styles", required: false)
     <link rel="stylesheet" href="@Url.Content("~/Content/ResponsiveScale.css")" />
 </head>
-<body class="@(showAdminSidebar ? "admin-layout" : "")">
+<body class="@(showAdminSidebar ? "admin-layout" : "")" data-user-status="@Session["UserStatus"]" data-verification-status="@Session["VerificationStatus"]">
     @if (!showAdminSidebar)
     {
     <header class="site-header">
@@ -222,6 +222,53 @@
     @Scripts.Render("~/bundles/jquery")
     <script src="@Url.Content("~/Scripts/account-menu.js")"></script>
     <script src="@Url.Content("~/Scripts/unishare-popups.js")"></script>
+    <script src="@Url.Content("~/Scripts/pending-restriction.js")"></script>
     @RenderSection("scripts", required: false)
+
+    <style>
+        #pendingModal.modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+        }
+        #pendingModal .modal-content-container {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 92vw;
+            width: 480px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+    <div id="pendingModal" class="modal-overlay" style="display:none; z-index: 9999;">
+        <div class="modal-content-container" style="text-align: center; padding: 30px;">
+            <h3>Account Pending</h3>
+            <p>Your account is still under review by the administrator. You cannot perform this action until your account is approved.</p>
+            <button onclick="document.getElementById('pendingModal').style.display='none'" class="btn btn-primary">Understood</button>
+        </div>
+    </div>
+
+    <script>
+        const isPending = document.body.dataset.userStatus === 'PENDING' || document.body.dataset.verificationStatus === 'PENDING';
+
+        function showPendingModal(e) {
+            if (isPending) {
+                if (e) {
+                    e.preventDefault();
+                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                    if (e.stopPropagation) e.stopPropagation();
+                }
+                document.getElementById('pendingModal').style.display = 'flex';
+                return false;
+            }
+            return true;
+        }
+    </script>
 </body>
 </html>

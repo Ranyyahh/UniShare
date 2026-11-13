@@ -50,6 +50,8 @@ namespace UniShare.Controllers
                     ModelState.AddModelError("", "The email/username or password is incorrect.");
                     return View(model);
                 }
+                Session["UserStatus"] = user.Status;
+                Session["VerificationStatus"] = user.VerificationStatus;
                 var ticket = new FormsAuthenticationTicket(1, user.Id.ToString(), DateTime.Now,
                     DateTime.Now.Add(model.RememberMe ? TimeSpan.FromDays(14) : TimeSpan.FromHours(8)), model.RememberMe, user.Role);
                 Response.Cookies.Add(new HttpCookie(FormsAuthentication.FormsCookieName, FormsAuthentication.Encrypt(ticket))
