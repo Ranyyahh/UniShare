@@ -1,0 +1,151 @@
+/* Shared visual system for borrower and owner marketplace pages. */
+:root {
+    --marketplace-ink: #172033;
+    --marketplace-muted: #64748b;
+    --marketplace-border: #e2e8f0;
+    --marketplace-surface: #fff;
+    --marketplace-canvas: #f8fafc;
+    --marketplace-accent: #4f46e5;
+    --marketplace-radius: 14px;
+    --marketplace-shadow: 0 4px 16px rgba(15, 23, 42, .055);
+    --marketplace-page-width: 1680px;
+}
+
+/* Keep navigation weight stable whether a link is active, hovered, or idle. */
+.site-navigation__link,
+.site-navigation__link.is-active { font-weight: 400; }
+
+/* Shared page width and gutters across borrower and owner views. */
+body .site-main :is(.browse-container, .owner-profile-page, .my-listings-page, .my-rentals-page, .bi-page, .rental-page) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--marketplace-page-width);
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: clamp(18px, 2.5vw, 40px);
+    padding-left: clamp(18px, 2.5vw, 40px);
+}
+
+body .site-main .rental-records { box-sizing: border-box; width: 100%; }
+body .site-main .rental-records__inner { width: 100%; max-width: var(--marketplace-page-width); }
+
+/* Shared surface treatment. Accent colors and status states remain page specific. */
+:is(
+    .item-card,
+    .filters-card,
+    .d-card,
+    .owner-listing-card,
+    .op-review-card,
+    .my-listings-summary-card,
+    .my-listings-table-panel,
+    .my-rentals-card,
+    .my-rentals-table-section,
+    .rental-card,
+    .rental-records__panel,
+    .rental-records__empty,
+    .bi-tile,
+    .us-card
+) {
+    border-color: var(--marketplace-border);
+    border-radius: var(--marketplace-radius);
+    background-color: var(--marketplace-surface);
+    box-shadow: var(--marketplace-shadow);
+}
+.my-rentals-card { border-top-color: var(--card-accent, #cbd5e1); }
+.marketplace-card { overflow: hidden; border-color: var(--marketplace-border); border-radius: var(--marketplace-radius); background-color: var(--marketplace-surface); box-shadow: var(--marketplace-shadow); }
+.marketplace-dashboard-canvas { background: var(--marketplace-canvas) !important; }
+.dashboard-page { width: 100%; max-width: var(--marketplace-page-width); color: var(--marketplace-ink); font-family: var(--font-body) !important; }
+.dashboard-page :is(h1, h2, h3) { font-family: var(--font-heading) !important; }
+
+/* The Browse Items body and its headings now use the same base language as the app. */
+body { background: var(--marketplace-canvas); color: var(--marketplace-ink); }
+.browse-container { color: var(--marketplace-ink); }
+.browse-container h1,
+.browse-container h2,
+.browse-container h3 { font-family: var(--font-heading); }
+.browse-container .page-title { font-weight: 750; }
+.browse-emphasis { color: var(--marketplace-ink); font-weight: 600; }
+
+/* Keep top-level page title weight consistent across app pages. */
+body:not(.admin-layout) .site-main h1 { font-weight: 700 !important; }
+
+body .site-main .rental-page { width: 100% !important; max-width: none !important; padding: 0 !important; }
+
+/* Align page roots to the same content grid as Reports & Analytics. */
+body:not(.admin-layout) .site-main > main:not(.cr-page) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0 !important;
+}
+
+/* Share the display face while keeping each page's established title scale. */
+body:not(.admin-layout) .site-main > main:not(.cr-page) :is(h1, h2, h3) {
+    font-family: var(--font-heading);
+}
+
+body:not(.admin-layout) .site-main > main:not(.cr-page):not(.browse-container):not(.my-listings-page) h1 {
+    margin-top: 0;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.2;
+}
+
+/* Match the Reports & Analytics outer content frame on the requested student pages. */
+body:not(.admin-layout) .site-main :is(.dashboard-page, .browse-container, .my-listings-page, .my-rentals-page, .bi-page) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Dashboard's canvas fills the site's content frame; the site-main supplies the shared gutters. */
+body:not(.admin-layout) .site-main > .marketplace-dashboard-canvas {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 0 !important;
+}
+
+/* Admin pages follow the User Management directory's content frame. */
+body.admin-layout .site-main--admin > :not(.cr-page) {
+    box-sizing: border-box;
+    width: min(100%, 1400px);
+    max-width: 1400px;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 4px 0 32px;
+    font-family: var(--font-body);
+}
+
+body.admin-layout .site-main--admin h1 {
+    margin: 0 0 7px;
+    font-family: var(--font-heading);
+    font-size: clamp(32px, 2.6vw, 38px);
+    font-weight: 800;
+    letter-spacing: -.04em;
+    line-height: 1.15;
+}
+
+body.admin-layout .site-main--admin :is(h2, h3, h4, h5, h6) {
+    font-family: var(--font-heading);
+}
+
+body.admin-layout .site-main--admin > :is(.aa-page, .admin-reports, .aib-page, .asv-page, .verification-admin) > header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 0 0 22px;
+}
+
+@media (max-width: 700px) {
+    body .site-main :is(.owner-profile-page, .rental-page) {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+    body .site-main .rental-page { width: 100% !important; max-width: none !important; padding: 0 !important; }
+}

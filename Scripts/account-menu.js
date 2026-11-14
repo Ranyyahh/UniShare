@@ -10,6 +10,8 @@
     var openModalButton = menu.querySelector('[data-account-open]');
     var dialog = modal.querySelector('[data-account-dialog]');
     var profile = modal.querySelector('[data-account-profile]');
+    var passwordForm = modal.querySelector('[data-password-form]');
+    var passwordFeedback = modal.querySelector('[data-password-feedback]');
     var previousFocus = null;
     var requestId = 0;
 
@@ -116,6 +118,51 @@
             message.setAttribute('role', 'status');
             message.textContent = error.message;
             profile.appendChild(message);
+        });
+    }
+
+    if (passwordForm && passwordFeedback) {
+        passwordForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var newPassword = passwordForm.elements.NewPassword;
+            var confirmation = passwordForm.elements.ConfirmNewPassword;
+            if (newPassword.value !== confirmation.value) {
+                confirmation.setCustomValidity('Passwords do not match.');
+                confirmation.reportValidity();
+                return;
+            }
+            confirmation.setCustomValidity('');
+            var submit = passwordForm.querySelector('[type="submit"]');
+            submit.disabled = true;
+            submit.textContent = 'Updating…';
+            passwordFeedback.hidden = false;
+            passwordFeedback.className = 'account-password-feedback';
+            passwordFeedback.textContent = 'Updating your password…';
+
+            fetch(passwordForm.action, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: new FormData(passwordForm),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function (response) {
+                var path = new URL(response.url, window.location.href).pathname.toLowerCase().replace(/\/$/, '');
+                if (response.ok && /\/account\/settings$/.test(path)) {
+                    passwordForm.reset();
+                    passwordFeedback.className = 'account-password-feedback is-success';
+                    passwordFeedback.textContent = 'Your password has been updated.';
+                    return;
+                }
+                throw new Error('We could not update your password. Check your current password and try again.');
+            }).catch(function (error) {
+                passwordFeedback.className = 'account-password-feedback is-error';
+                passwordFeedback.textContent = error.message || 'We could not update your password. Please try again.';
+            }).finally(function () {
+                submit.disabled = false;
+                submit.textContent = 'Update password';
+            });
+        });
+        passwordForm.elements.ConfirmNewPassword.addEventListener('input', function () {
+            this.setCustomValidity('');
         });
     }
 

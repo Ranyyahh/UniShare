@@ -2,7 +2,7 @@
 @{ ViewBag.Title = "No-Show Reports"; ViewBag.ShowAdminSidebar = true; }
 @section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
 <main class="aa-page">
-    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN MANAGEMENT</p><h1>No-show reports</h1><p>Review reports from the owner or borrower. Confirmed incidents cancel the booking; the first confirmed incident creates a warning for the reported student.</p></div></header>
+    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN WORKSPACE</p><h1>No-show reports</h1><p>Review reports from the owner or borrower. Confirmed incidents cancel the booking; the first confirmed incident creates a warning for the reported student.</p></div></header>
     @if (TempData["Success"] != null) { <div class="aa-alert">@TempData["Success"]</div> }
     @if (TempData["Error"] != null) { <div class="aa-alert aa-alert--error">@TempData["Error"]</div> }
     @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">No-show reports are unavailable. Check the database connection.</div> }

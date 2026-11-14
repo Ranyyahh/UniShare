@@ -2,7 +2,7 @@
 @{ ViewBag.Title = "User Management"; ViewBag.ShowAdminSidebar = true; }
 @section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
 <main class="aa-page">
-    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN MANAGEMENT</p><h1>User directory</h1><p>Review member status and open account actions for a student.</p></div><a class="aa-button" href="@Url.Action("Index", "AccountRestriction")">Manage restrictions</a></header>
+    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN WORKSPACE</p><h1>User directory</h1><p>Review member status and open account actions for a student.</p></div><a class="aa-button" href="@Url.Action("Index", "AccountRestriction")">Manage restrictions</a></header>
     @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">User records are unavailable. Check the database connection.</div> }
     <section class="aa-panel">
         <div class="aa-toolbar"><form method="get" action="@Url.Action("Index", "UserManagement")"><input class="aa-input" type="search" name="search" value="@Model.Search" placeholder="Name, school email, or student number" /><button class="aa-button" type="submit">Search</button><a class="aa-button aa-button--quiet" href="@Url.Action("Index", "UserManagement")">Reset</a></form></div>

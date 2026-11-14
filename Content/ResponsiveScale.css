@@ -197,3 +197,24 @@
     .fee-total strong { font-size: 24px !important; }
     .rental-actions button, .rental-actions a, .back-btn { min-height: 44px !important; font-size: 13px !important; }
 }
+
+/* Full HD sizing for pages without a dedicated large-screen scale rule. */
+@media (min-width: 1600px) {
+    body { font-size: 17px; }
+    .site-main { width: 100%; max-width: 1840px; padding: 42px 48px; }
+    .site-main h1 { line-height: 1.2; }
+    .site-main :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { min-height: 48px; font-size: 16px; }
+    .site-main :is(button, .btn, [role="button"]) { min-height: 44px; font-size: 15px; }
+    .owner-profile-page { max-width: 1840px; padding: 28px 40px 80px; }
+    .owner-profile-tools { gap: 16px; padding: 20px; }
+    .owner-listing-card > img, .owner-listing-placeholder { height: 280px; flex-basis: 280px; }
+    .op-review-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .op-review-card { padding: 26px 28px; }
+    .op-review-author strong { font-size: 18px; }
+    .op-review-text { font-size: 16px; }
+}
+
+@media (max-width: 767px) {
+    .site-main { width: 100%; padding: 18px 14px; }
+    .owner-profile-page { padding: 12px 14px 48px; }
+}

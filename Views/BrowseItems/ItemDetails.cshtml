@@ -7,9 +7,6 @@
 
 @section Styles {
     <!-- If your _Layout already loads Bootstrap 5 + Bootstrap Icons, remove those two links. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="@Url.Content("~/Content/items.css")" rel="stylesheet">
@@ -146,9 +143,12 @@
         </div>
     </div>
     <div class="photo-viewer" id="photoViewer" role="dialog" aria-modal="true" aria-label="Full size item photo" hidden>
-        <div class="photo-viewer__dialog">
+        <div class="photo-viewer__dialog" id="photoViewerDialog">
             <button type="button" class="photo-viewer__close" id="photoViewerClose" aria-label="Close photo viewer">&times;</button>
+            <button type="button" class="photo-viewer__nav photo-viewer__nav--previous" id="photoViewerPrevious" aria-label="View previous photo"><span aria-hidden="true">&#8249;</span></button>
             <img class="photo-viewer__image" id="photoViewerImage" alt="Full size @Model.Name photo" />
+            <button type="button" class="photo-viewer__nav photo-viewer__nav--next" id="photoViewerNext" aria-label="View next photo"><span aria-hidden="true">&#8250;</span></button>
+            <div class="photo-viewer__counter" id="photoViewerCounter" aria-live="polite"></div>
         </div>
     </div>
 </main>
@@ -160,19 +160,61 @@
         var photoViewer = document.getElementById("photoViewer");
         var photoViewerImage = document.getElementById("photoViewerImage");
         var photoViewerClose = document.getElementById("photoViewerClose");
+        var photoViewerPrevious = document.getElementById("photoViewerPrevious");
+        var photoViewerNext = document.getElementById("photoViewerNext");
+        var photoViewerCounter = document.getElementById("photoViewerCounter");
         var photoViewerReturnFocus = null;
+        var galleryButtons = Array.prototype.slice.call(document.querySelectorAll(".gal-thumb"));
+        var activeGalleryIndex = 0;
+        var photoChangeTimer = null;
+
+        function selectGalleryImage(index, direction) {
+            var mainImage = document.getElementById("g-main");
+            if (!galleryButtons.length || !mainImage) return;
+            activeGalleryIndex = (index + galleryButtons.length) % galleryButtons.length;
+            var button = galleryButtons[activeGalleryIndex];
+            var thumbnail = button.querySelector("img");
+            if (!thumbnail) return;
+            mainImage.src = thumbnail.src;
+            mainImage.alt = thumbnail.alt;
+            mainImage.style.transform = button.dataset.transform || "";
+            mainImage.style.transformOrigin = button.dataset.origin || "";
+            galleryButtons.forEach(function (item, itemIndex) { item.classList.toggle("active", itemIndex === activeGalleryIndex); });
+            if (photoViewer && !photoViewer.hidden) {
+                photoViewerImage.src = mainImage.src;
+                photoViewerImage.alt = "Full size " + mainImage.alt;
+                photoViewerImage.style.transform = "none";
+                photoViewerImage.style.transformOrigin = "center center";
+                photoViewerCounter.textContent = (activeGalleryIndex + 1) + " / " + galleryButtons.length;
+                photoViewerImage.classList.remove("is-changing-next", "is-changing-previous");
+                void photoViewerImage.offsetWidth;
+                photoViewerImage.classList.add(direction === "previous" ? "is-changing-previous" : "is-changing-next");
+                window.clearTimeout(photoChangeTimer);
+                photoChangeTimer = window.setTimeout(function () { photoViewerImage.classList.remove("is-changing-next", "is-changing-previous"); }, 220);
+            }
+        }
+
         function openPhotoViewer() {
             var image = document.getElementById("g-main");
             if (!image || !photoViewer) return;
+            var activeButtonIndex = galleryButtons.findIndex(function (button) { return button.classList.contains("active"); });
+            if (activeButtonIndex >= 0) activeGalleryIndex = activeButtonIndex;
             photoViewerImage.src = image.src;
             photoViewerImage.alt = image.alt;
-            photoViewerImage.style.transform = image.style.transform;
-            photoViewerImage.style.transformOrigin = image.style.transformOrigin;
+            photoViewerImage.style.transform = "none";
+            photoViewerImage.style.transformOrigin = "center center";
+            var hasMultiplePhotos = galleryButtons.length > 1;
+            photoViewerPrevious.hidden = !hasMultiplePhotos;
+            photoViewerNext.hidden = !hasMultiplePhotos;
+            photoViewerCounter.hidden = !hasMultiplePhotos;
+            photoViewerCounter.textContent = hasMultiplePhotos ? (activeGalleryIndex + 1) + " / " + galleryButtons.length : "";
             photoViewerReturnFocus = document.activeElement;
             photoViewer.hidden = false;
             document.body.classList.add("photo-viewer-open");
             photoViewerClose.focus();
         }
+        function showPreviousPhoto() { selectGalleryImage(activeGalleryIndex - 1, "previous"); }
+        function showNextPhoto() { selectGalleryImage(activeGalleryIndex + 1, "next"); }
         function closePhotoViewer() {
             if (!photoViewer || photoViewer.hidden) return;
             photoViewer.hidden = true;
@@ -186,19 +228,18 @@
             });
         }
         if (photoViewerClose) photoViewerClose.addEventListener("click", closePhotoViewer);
+        if (photoViewerPrevious) photoViewerPrevious.addEventListener("click", showPreviousPhoto);
+        if (photoViewerNext) photoViewerNext.addEventListener("click", showNextPhoto);
         if (photoViewer) photoViewer.addEventListener("click", function (event) { if (event.target === photoViewer) closePhotoViewer(); });
-        document.addEventListener("keydown", function (event) { if (event.key === "Escape") closePhotoViewer(); });
+        document.addEventListener("keydown", function (event) {
+            if (!photoViewer || photoViewer.hidden) return;
+            if (event.key === "Escape") closePhotoViewer();
+            else if (event.key === "ArrowLeft" && galleryButtons.length > 1) { event.preventDefault(); showPreviousPhoto(); }
+            else if (event.key === "ArrowRight" && galleryButtons.length > 1) { event.preventDefault(); showNextPhoto(); }
+        });
 
-        document.querySelectorAll(".gal-thumb").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                var img = document.getElementById("g-main");
-                var image = btn.querySelector("img");
-                img.src = image.src;
-                img.alt = image.alt;
-                img.style.transform = btn.dataset.transform;
-                img.style.transformOrigin = btn.dataset.origin;
-                document.querySelectorAll(".gal-thumb").forEach(function (b) { b.classList.toggle("active", b === btn); });
-            });
+        galleryButtons.forEach(function (btn, index) {
+            btn.addEventListener("click", function () { selectGalleryImage(index); });
         });
 
     </script>

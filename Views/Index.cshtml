@@ -1,11 +1,8 @@
-ï»¿@{
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewBag.Title = "Student Verification";
 }
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="@Url.Content("~/Content/admin-student-verification.css")" />
 
 <div class="asv-page" data-endpoint="@Url.Action("GetStudents", "AdminStudentVerification")">
@@ -90,7 +87,7 @@
         <header class="asv-queue-card__header">
             <div>
                 <h2 class="asv-queue-card__title">Queue: High Priority First</h2>
-                <p class="asv-queue-card__subtitle">Strict 24h Borrowing Active â€¢ Click any row to inspect student dossier</p>
+                <p class="asv-queue-card__subtitle">Strict 24h Borrowing Active • Click any row to inspect student dossier</p>
             </div>
             <div class="asv-queue-card__selected-count" data-asv-selected-count>Showing 0 Records</div>
         </header>
@@ -189,7 +186,7 @@
                                     <div class="asv-doc-preview__logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg></div>
                                     <div>
                                         <div class="asv-doc-preview__univ">QUEZON CITY UNIVERSITY</div>
-                                        <div class="asv-doc-preview__type">OFFICIAL STUDENT ID â€¢ SAN BARTOLOME</div>
+                                        <div class="asv-doc-preview__type">OFFICIAL STUDENT ID • SAN BARTOLOME</div>
                                     </div>
                                 </div>
                                 <span class="asv-doc-preview__sy">S.Y. 2026-2027</span>
@@ -219,7 +216,7 @@
                             <div class="asv-cor-preview__header">
                                 <div class="asv-cor-preview__univ">QUEZON CITY UNIVERSITY</div>
                                 <div class="asv-cor-preview__doc-title">CERTIFICATE OF REGISTRATION (CoR)</div>
-                                <div class="asv-cor-preview__term">Academic Year 2026-2027 â€¢ First Semester</div>
+                                <div class="asv-cor-preview__term">Academic Year 2026-2027 • First Semester</div>
                             </div>
                             <div class="asv-cor-preview__info-grid">
                                 <div><strong>Student:</strong> <span data-dossier-cor-name>--</span></div>

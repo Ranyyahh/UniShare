@@ -2,7 +2,7 @@
 @{ ViewBag.Title = "Account Restrictions"; ViewBag.ShowAdminSidebar = true; }
 @section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
 <main class="aa-page">
-    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN MANAGEMENT</p><h1>Account restrictions</h1><p>Record an admin-reviewed warning, temporary suspension, or permanent ban. Actions are written to the audit log.</p></div></header>
+    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN WORKSPACE</p><h1>Account restrictions</h1><p>Record an admin-reviewed warning, temporary suspension, or permanent ban. Actions are written to the audit log.</p></div></header>
     @if (TempData["Success"] != null) { <div class="aa-alert">@TempData["Success"]</div> }
     @if (TempData["Error"] != null) { <div class="aa-alert aa-alert--error">@TempData["Error"]</div> }
     @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">Account restrictions are unavailable. Check the database connection.</div> }

@@ -1271,8 +1271,9 @@
                     </div>
                     <div class="rm-condition-grid">
                         <label class="rm-condition-field" for="ownerHandoverCondition">Condition
-                            <select id="ownerHandoverCondition"><option value="GOOD">Good</option><option value="EXCELLENT">Excellent</option><option value="FAIR">Fair</option><option value="POOR">Poor</option><option value="DAMAGED">Damaged</option></select>
+                            <select id="ownerHandoverCondition" required aria-describedby="ownerHandoverConditionWarning"><option value="" selected disabled>Select the item's condition</option><option value="GOOD">Good</option><option value="EXCELLENT">Excellent</option><option value="FAIR">Fair</option><option value="POOR">Poor</option><option value="DAMAGED">Damaged</option></select>
                         </label>
+                        <p class="rm-condition-warning" id="ownerHandoverConditionWarning" role="note">Required before confirming handover. Please inspect the item with the borrower and record its current condition.</p>
                         <label class="rm-condition-field" for="ownerHandoverNotes">Notes
                             <textarea id="ownerHandoverNotes" maxlength="1000" rows="3" placeholder="Describe the item's condition or included accessories"></textarea>
                         </label>

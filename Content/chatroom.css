@@ -14,7 +14,7 @@
     background: #f5f5ff;
     padding: 20px 2.5%;
     color: #172033;
-    font-family: Arial, sans-serif;
+    font-family: var(--font-body, Inter, sans-serif);
 }
 
     .cr-page,
@@ -629,7 +629,7 @@
     padding: 32px 24px 40px;
     background: #f5f5ff;
     color: #172033;
-    font-family: Arial, sans-serif;
+    font-family: var(--font-body, Inter, sans-serif);
 }
 
 /* Center content while using available browser width */

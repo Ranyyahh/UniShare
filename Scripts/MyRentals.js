@@ -1219,6 +1219,12 @@
         if (!rental || rental.Status !== 'Accepted' || rental.OwnerHandoverConfirmed) {
             return;
         }
+        var conditionInput = document.getElementById('ownerHandoverCondition');
+        if (!conditionInput || !conditionInput.value) {
+            window.alert('Please select the handover condition before confirming the handover.');
+            if (conditionInput) conditionInput.focus();
+            return;
+        }
         elements.btnAcceptedConfirmHandover.disabled = true;
         postHandoverCondition(rental.BookingObjectId, function (conditionResult) {
             if (!conditionResult || !conditionResult.ok) {
@@ -1363,6 +1369,7 @@
         setText('completedLateFee', formatPeso(lateFee));
         document.getElementById('completedDisputeRow').style.display = rental.DisputeResolved ? '' : 'none';
         setText('completedDisputeNote', (rental.DisputeCategory || 'Reported issue') + ' \u2014 marked as resolved');
+        setText('completedFeeBreakdown', formatPeso(rental.RentalFee));
         setText('completedTotalFee', formatPeso((Number(rental.RentalFee) || 0) + lateFee));
 
         showFlowModal(elements.completedModal, elements.btnCloseCompletedModal);

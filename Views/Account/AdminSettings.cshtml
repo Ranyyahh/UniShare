@@ -9,27 +9,27 @@
 }
 
 <main class="aa-page">
-    <header class="aa-page-head" style="margin-bottom: 2rem;">
+    <header class="aa-page-head">
         <div>
-            <p class="aa-eyebrow" style="font-size: 0.95rem; letter-spacing: 0.08em; font-weight: 700;">ADMIN WORKSPACE</p>
-            <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.5rem; line-height: 1.2;">Account Settings</h1>
-            <p style="font-size: 1.15rem; color: var(--aa-text-muted, #4b5563); line-height: 1.5; margin-top: 0.25rem;">Manage your administrator account information and password.</p>
+            <p class="aa-eyebrow">ADMIN WORKSPACE</p>
+            <h1>Account Settings</h1>
+            <p>Manage your administrator account information and password.</p>
         </div>
     </header>
 
     @if (TempData["ProfileSaved"] != null)
     {
-        <div class="aa-alert aa-alert--ok" role="status" style="font-size: 1.05rem; padding: 1rem 1.25rem; margin-bottom: 2rem;">@TempData["ProfileSaved"]</div>
+        <div class="aa-alert aa-alert--ok" role="status">@TempData["ProfileSaved"]</div>
     }
 
     @using (Html.BeginForm("AdminSettings", "Account", FormMethod.Post))
     {
         @Html.AntiForgeryToken()
 
-        <div style="display:grid; gap:2rem; max-width:850px;">
+        <div style="display:grid; gap:20px; max-width:850px;">
 
             @* Read-only identity *@
-            <section class="aa-card" style="padding: 1.75rem 2rem;">
+            <section class="aa-card">
                 <h2 class="aa-card__title">Account Identity</h2>
                 <p class="aa-card__desc">These fields are set at account creation and cannot be changed here.</p>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1.5rem;">
@@ -45,7 +45,7 @@
             </section>
 
             @* Password change *@
-            <section class="aa-card" style="padding: 1.75rem 2rem;">
+            <section class="aa-card">
                 <h2 class="aa-card__title">Change Password</h2>
                 <p class="aa-card__desc">Enter your current password and your desired new password.</p>
                 <div style="display:grid; gap:1.25rem; max-width:520px; margin-top:1.5rem;">
@@ -68,7 +68,7 @@
             </section>
 
             <div style="margin-top: 0.5rem;">
-                <button type="submit" class="aa-btn aa-btn--primary" style="font-size: 1.05rem; padding: 0.75rem 1.75rem; border-radius: 8px;">Save changes</button>
+                <button type="submit" class="aa-btn aa-btn--primary">Save changes</button>
             </div>
         </div>
     }
