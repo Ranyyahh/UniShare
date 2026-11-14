@@ -41,8 +41,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 3. Block "Message Owner" button (Item Details)
-        if (text.includes('message owner') || text.includes('contact owner') || id.includes('messageowner') || id === 'd-msg' || className.includes('message-owner') || className.includes('contact-owner')) {
+        // 3. Block "View Profile" and "Message Owner" (Item Details / Borrowed Items)
+        if (text.includes('message owner') || 
+            text.includes('contact owner') || 
+            text.includes('message lender') || 
+            target.hasAttribute('data-msg-lender') || 
+            text.includes('view profile') || 
+            id.includes('messageowner') || 
+            id.includes('viewprofile') || 
+            id === 'd-msg' || 
+            className.includes('message-owner') || 
+            className.includes('contact-owner') ||
+            className.includes('view-profile') ||
+            href.includes('/messages') || 
+            href.includes('/profile') || 
+            href.includes('/user/profile') ||
+            href.includes('/users/profile') ||
+            href.includes('/account/profile')) {
             showPendingModal(e);
             return;
         }
@@ -53,13 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 5. Block "View Profile" button
-        if (text.includes('view profile') || id.includes('viewprofile') || className.includes('view-profile')) {
-            showPendingModal(e);
-            return;
-        }
-
-        // 6. Block "Leave a Review" button
+        // 5. Block "Leave a Review" button
         if (text.includes('leave a review') || text.includes('write a review') || id.includes('leavreview') || className.includes('leave-review') || className.includes('btn-review')) {
             showPendingModal(e);
             return;
