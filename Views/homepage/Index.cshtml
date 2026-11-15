@@ -1,0 +1,198 @@
+@{
+    Layout = null;
+    string logo = Url.Content("~/Content/images/unishare-logo.svg");
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniShare | Campus Marketplace</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/glyphicons.css")">
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage.css")">
+</head>
+<body>
+
+    <!-- Background Glows -->
+    <div class="glow glow-top-left"></div>
+    <div class="glow glow-right"></div>
+
+    <!-- NAVIGATION -->
+    <nav>
+        <div class="logo-container">
+            <img src="@logo" alt="UniShare Logo" class="logo-image">
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+
+        <div class="hero-content">
+            <div class="pill-badge">
+                <i class="fa-solid fa-bolt"></i> Exclusive for QCU Students
+            </div>
+
+            <h1>Borrow smarter.<br><span>Earn effortlessly.</span></h1>
+
+            <p>The ultimate campus marketplace. Rent out your unused calculators, books, and gadgets to fellow students, or grab exactly what you need for your next project.</p>
+
+            <div class="hero-cta">
+                <a href="#" class="btn-large-primary">Get Started</a>
+                <a href="#" class="btn-large-secondary">Browse Items</a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="visual-bg-circle"></div>
+
+            <div class="product-card-float card-1">
+                <img src="https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?q=80&w=400&auto=format&fit=crop" alt="Scientific Calculator">
+                <span class="tag">Scientific Calculator</span>
+            </div>
+
+            <div class="product-card-float card-2">
+                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=400&auto=format&fit=crop" alt="Headphones">
+                <span class="tag">Study Headphones</span>
+            </div>
+
+            <div class="product-card-float card-3">
+                <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=400&auto=format&fit=crop" alt="Textbook">
+                <span class="tag">Textbooks</span>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ORGANIZED FEATURES SECTION -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <h2>Everything you need.</h2>
+            <p>A streamlined platform designed specifically for the QCU community.</p>
+        </div>
+
+        <div class="features-grid">
+
+            <div class="feature-card">
+                <i class="fa-solid fa-shield-halved"></i>
+                <h3>100% Verified Students</h3>
+                <p>No strangers, no scammers. Every account is verified by the Admin using official QCU school IDs.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fa-solid fa-receipt"></i>
+                <h3>Secure Payment Ledger</h3>
+                <p>Record your transactions securely. The system automatically computes rental fees and late penalties.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fa-solid fa-calendar-check"></i>
+                <h3>Automated Bookings</h3>
+                <p>Say goodbye to double bookings. Dates are automatically blocked, and unanswered requests expire.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fa-solid fa-clock"></i>
+                <h3>24-Hour Limit</h3>
+                <p>Designed for short-term academic needs. Rent scientific calculators, books, or equipment overnight.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <h3>Dispute Mediation</h3>
+                <p>Report damaged or unreturned items directly to the Admin for proper mediation and resolution.</p>
+            </div>
+
+            <div class="feature-card">
+                <i class="fa-solid fa-star"></i>
+                <h3>Rating &amp; Review</h3>
+                <p>Build trust within the campus. Leave and receive ratings after every successful transaction.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS TIMELINE -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header">
+            <h2>Zero friction. Just sharing.</h2>
+            <p>Get started in minutes with our streamlined workflow.</p>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>1. Verify Your Identity</h3>
+                    <p>Create an account using your QCU credentials. Upload your school ID and wait for the Admin to approve your access.</p>
+                </div>
+                <div class="timeline-number">1</div>
+                <div class="timeline-spacer"></div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>2. List or Request</h3>
+                    <p>Browse the marketplace for the item you need and submit a booking request, or list your own gear to start earning.</p>
+                </div>
+                <div class="timeline-number">2</div>
+                <div class="timeline-spacer"></div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>3. Digital Handover</h3>
+                    <p>Once the owner accepts your request, meet up on campus. Confirm the digital handover to start the rental timer.</p>
+                </div>
+                <div class="timeline-number">3</div>
+                <div class="timeline-spacer"></div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>4. Return &amp; Review</h3>
+                    <p>Return the item within the 24-hour limit. The owner inspects the item, closes the rental, and you both leave a rating.</p>
+                </div>
+                <div class="timeline-number">4</div>
+                <div class="timeline-spacer"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="cta">
+        <div class="cta-box">
+            <h2>Ready to join the movement?</h2>
+            <p>Stop buying things you'll only use once. Start sharing, saving, and earning today.</p>
+            <a href="#" class="btn-large-primary" style="display: inline-flex;">
+                Create Free Account
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER (1280 x 77) -->
+    <footer>
+        <div class="logo-container">
+            <img src="@logo" alt="UniShare Logo" class="logo-image">
+        </div>
+
+        <div class="footer-links">
+            <a href="#">Browse Items</a>
+            <a href="#">List an Item</a>
+            <a href="#">Help Center</a>
+            <a href="#">Report a Dispute</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Privacy Policy</a>
+        </div>
+
+        <div class="footer-bottom">
+            &copy; 2026 UniShare &bull; Quezon City University.<br>All rights reserved.
+        </div>
+    </footer>
+
+</body>
+</html>

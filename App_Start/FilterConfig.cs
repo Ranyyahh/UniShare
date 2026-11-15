@@ -1,7 +1,6 @@
-﻿using System.Web;
 using System.Web.Mvc;
 
-namespace UniShare
+namespace UniShare_2._0
 {
     public class FilterConfig
     {
