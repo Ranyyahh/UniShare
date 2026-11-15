@@ -113,9 +113,11 @@ nav {
 }
 
 .hero h1 span {
+    --text-clip: text;
     background: linear-gradient(135deg, #c4b5fd, var(--primary), #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: var(--text-clip);
+    background-clip: var(--text-clip);
+    color: transparent;
 }
 
 .hero p {
@@ -146,6 +148,10 @@ nav {
 .btn-large-primary:hover {
     background: #7c3aed;
     transform: scale(1.05);
+}
+
+.cta .btn-large-primary {
+    display: inline-flex;
 }
 
 .btn-large-secondary {
@@ -275,7 +281,7 @@ nav {
     box-shadow: 0 10px 30px rgba(139, 92, 246, 0.1);
 }
 
-.feature-card i {
+.feature-card .feature-icon {
     font-size: 28px;
     color: var(--primary);
     background: rgba(139, 92, 246, 0.1);
@@ -286,6 +292,25 @@ nav {
     justify-content: center;
     border-radius: 14px;
     margin-bottom: 24px;
+}
+
+.feature-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.feature-icon svg,
+.pill-badge svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pill-badge svg {
+    width: 14px;
+    height: 14px;
 }
 
 .feature-card h3 {

@@ -15,30 +15,30 @@
     </filter>
   </defs>
 
-  <!-- Icon Badge (Option 2: Interlocking Dual Orbit "U") -->
+ 
   <g transform="translate(4, 4)">
     <rect width="40" height="40" rx="10" fill="#0F172A" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.2" />
     
     <g filter="url(#opt2-glow)">
-      <!-- Left Orbit Loop (Lending) -->
+      
       <path d="M 12 14 C 12 25, 15 30, 20 30 C 25 30, 26 24, 23 20 C 20 16, 17 19, 14 24" 
             stroke="url(#opt2-grad1)" 
             stroke-width="3.2" 
             stroke-linecap="round" />
 
-      <!-- Right Orbit Loop (Borrowing & Returning) -->
+     
       <path d="M 28 14 C 28 25, 25 30, 20 30 C 15 30, 14 24, 17 20 C 20 16, 23 19, 26 24" 
             stroke="url(#opt2-grad2)" 
             stroke-width="3.2" 
             stroke-linecap="round" />
 
-      <!-- Top Nodes -->
+      
       <circle cx="12" cy="14" r="2.5" fill="#38BDF8" />
       <circle cx="28" cy="14" r="2.5" fill="#EC4899" />
     </g>
   </g>
 
-  <!-- Typography -->
+  
   <text x="56" y="25" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="800" letter-spacing="-0.03em" fill="#FFFFFF">
     Uni<tspan fill="url(#opt2-grad1)">Share</tspan>
   </text>
