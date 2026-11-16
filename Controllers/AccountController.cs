@@ -20,6 +20,23 @@ namespace UniShare.Controllers
         [AllowAnonymous, HttpGet]
         public ActionResult Restricted() { return View(); }
 
+        public static void RefreshUserSession(HttpSessionStateBase session, string userIdString)
+        {
+            if (session == null || string.IsNullOrWhiteSpace(userIdString)) return;
+            ObjectId userId;
+            if (!ObjectId.TryParse(userIdString, out userId)) return;
+            try
+            {
+                var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
+                if (user != null)
+                {
+                    session["UserStatus"] = user.Status;
+                    session["VerificationStatus"] = user.VerificationStatus;
+                }
+            }
+            catch { }
+        }
+
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Login(LoginViewModel model, string returnUrl)
         {
@@ -50,6 +67,8 @@ namespace UniShare.Controllers
                     ModelState.AddModelError("", "The email/username or password is incorrect.");
                     return View(model);
                 }
+                Session["UserStatus"] = user.Status;
+                Session["VerificationStatus"] = user.VerificationStatus;
                 var ticket = new FormsAuthenticationTicket(1, user.Id.ToString(), DateTime.Now,
                     DateTime.Now.Add(model.RememberMe ? TimeSpan.FromDays(14) : TimeSpan.FromHours(8)), model.RememberMe, user.Role);
                 Response.Cookies.Add(new HttpCookie(FormsAuthentication.FormsCookieName, FormsAuthentication.Encrypt(ticket))

@@ -17,6 +17,11 @@ namespace UniShare.Controllers
             if (!ObjectId.TryParse(User.Identity.Name, out userId)) return new HttpUnauthorizedResult();
 
             var user = MongoDatabase.Users.Find(x => x.Id == userId).FirstOrDefault();
+            if (user != null)
+            {
+                Session["UserStatus"] = user.Status;
+                Session["VerificationStatus"] = user.VerificationStatus;
+            }
             var documents = MarketplaceService.GetApprovedItems();
             var ownerIds = documents.Select(x => x.OwnerId).Distinct().ToList();
             var owners = ownerIds.Count == 0

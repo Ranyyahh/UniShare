@@ -4,6 +4,7 @@ using System.Web.Routing;
 using System.Web.Security;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using UniShare.Controllers;
 
 namespace UniShare.Services
 {
@@ -17,7 +18,11 @@ namespace UniShare.Services
             if (!ObjectId.TryParse(principal.Identity.Name, out userId)) return;
             try
             {
-                if (!AdminAccountabilityService.IsUserRestricted(userId)) return;
+                if (!AdminAccountabilityService.IsUserRestricted(userId))
+                {
+                    AccountController.RefreshUserSession(filterContext.HttpContext.Session, principal.Identity.Name);
+                    return;
+                }
                 FormsAuthentication.SignOut();
                 filterContext.Result = new RedirectToRouteResult(new RouteValueDictionary(new { controller = "Account", action = "Restricted" }));
             }
