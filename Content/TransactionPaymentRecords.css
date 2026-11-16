@@ -3,6 +3,39 @@
    ========================================================================== */
 
 /* --- Stat Cards --- */
+.dispute-page-wrapper .stats-row {
+    display: grid;
+    box-sizing: border-box;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.dispute-page-wrapper .stats-row > .stats-card-column {
+    min-width: 0;
+}
+
+.dispute-page-wrapper .stat-card {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 92px;
+    width: 100%;
+}
+
+.dispute-page-wrapper .stat-value {
+    margin-top: auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .dispute-page-wrapper .stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 
 /* --- Filter Bar Flexbox --- */
 .filter-bar-flex {
@@ -28,9 +61,9 @@
     cursor: pointer;
 }
 
-.clear-filters-link:hover {
-    color: #0f172a;
-}
+    .clear-filters-link:hover {
+        color: #0f172a;
+    }
 
 /* --- Table Styles --- */
 
@@ -207,8 +240,13 @@
     border-top: 3px solid #10b981;
 }
 
-.role-borrower { color: #4f46e5; }
-.role-owner { color: #059669; }
+.role-borrower {
+    color: #4f46e5;
+}
+
+.role-owner {
+    color: #059669;
+}
 
 .party-name {
     font-size: 12.5px;
@@ -305,9 +343,17 @@
     flex-shrink: 0;
 }
 
-.icon-emerald { color: #059669; }
-.icon-blue    { color: #2563eb; }
-.icon-amber   { color: #d97706; }
+.icon-emerald {
+    color: #059669;
+}
+
+.icon-blue {
+    color: #2563eb;
+}
+
+.icon-amber {
+    color: #d97706;
+}
 
 .timeline-content {
     line-height: 1.35;
@@ -337,10 +383,10 @@
     transition: background-color 0.15s ease;
 }
 
-.btn-audit-verify:hover, .btn-audit-verify:focus {
-    background-color: #6d28d9;
-    color: #ffffff;
-}
+    .btn-audit-verify:hover, .btn-audit-verify:focus {
+        background-color: #6d28d9;
+        color: #ffffff;
+    }
 
 .btn-send-reminder {
     background-color: #ffffff;
@@ -353,11 +399,11 @@
     transition: all 0.15s ease;
 }
 
-.btn-send-reminder:hover, .btn-send-reminder:focus {
-    background-color: #f8fafc;
-    color: #0f172a;
-    border-color: #94a3b8;
-}
+    .btn-send-reminder:hover, .btn-send-reminder:focus {
+        background-color: #f8fafc;
+        color: #0f172a;
+        border-color: #94a3b8;
+    }
 
 .link-flag-dispute {
     color: #e11d48;
@@ -368,10 +414,10 @@
     padding: 6px 8px;
 }
 
-.link-flag-dispute:hover {
-    color: #be123c;
-    text-decoration: underline;
-}
+    .link-flag-dispute:hover {
+        color: #be123c;
+        text-decoration: underline;
+    }
 
 /* Modal Alert Box */
 .modal-alert-box {
@@ -401,4 +447,3 @@
 }
 
 /* Modal Loading & Error States */
-

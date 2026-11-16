@@ -5,9 +5,6 @@
 
 @section Styles {
     <!-- If your _Layout already loads Bootstrap 5 + Bootstrap Icons, remove those two links. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="@Url.Content("~/Content/items.css")" rel="stylesheet">
@@ -36,7 +33,7 @@
         <div class="d-flex align-items-center gap-3">
             <i class="bi bi-search"></i>
             <div>
-                <span id="banner-title" class="fw-bold" style="font-family:'Plus Jakarta Sans',sans-serif;"></span>
+                <span id="banner-title" class="browse-emphasis"></span>
                 <span id="banner-count" class="ms-2 small text-secondary"></span>
             </div>
         </div>
@@ -156,7 +153,7 @@
 
             <div id="empty-state" class="empty-state text-center py-5 d-none">
                 <i class="bi bi-search"></i>
-                <h3 class="h5 fw-bold mt-3">No items found</h3>
+                <h3 class="h5 mt-3 browse-emphasis">No items found</h3>
                 <p class="small text-secondary mb-3">Try changing your search or filters.</p>
                 <button type="button" id="empty-reset" class="btn btn-brand px-4">Clear search &amp; filters</button>
             </div>

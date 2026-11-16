@@ -1,8 +1,8 @@
 @model IEnumerable<UniShare.Models.VerificationReviewViewModel>
 @{ ViewBag.Title = "Student Verification"; ViewBag.ShowAdminSidebar = true; Layout = "~/Views/Shared/_Layout.cshtml"; }
+@section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
 <main class="container verification-admin">
-    <h1>Student Verification</h1>
-    <p>Review student ID and registration documents. Only approved students can use rental features.</p>
+    <header class="aa-page-head"><div><p class="aa-eyebrow">ADMIN WORKSPACE</p><h1>Student Verification</h1><p>Review student ID and registration documents. Only approved students can use rental features.</p></div></header>
     @if (ViewBag.DatabaseUnavailable == true) { <div class="alert alert-danger" role="alert">Verification records are unavailable. Check the MongoDB connection.</div> }
     @if (TempData["ReviewError"] != null) { <div class="alert alert-danger" role="alert">@TempData["ReviewError"]</div> }
     <nav class="verification-filters" aria-label="Filter applications">

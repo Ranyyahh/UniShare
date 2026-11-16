@@ -1,60 +1,87 @@
 @model UniShare.Models.OwnerProfileEditViewModel
 @{
-    ViewBag.Title = "Account Settings";
-    var isAdmin = ViewBag.ShowAdminSidebar != null && (bool)ViewBag.ShowAdminSidebar;
-}
-@if (isAdmin)
-{
-    @section Styles { <link rel="stylesheet" href="@Url.Content("~/Content/admin-accountability.css")" /> }
+    ViewBag.Title = "Change Password";
 }
 
-<main class="@(isAdmin ? "aa-page" : "container py-5")" style="@(isAdmin ? "" : "max-width: 760px")">
-    @if (isAdmin)
-    {
-        <header class="aa-page-head">
-            <div>
-                <p class="aa-eyebrow">ADMIN WORKSPACE</p>
-                <h1>Account Settings</h1>
-                <p>Update your administrator profile details.</p>
-            </div>
-        </header>
-    }
-    else
-    {
-        <h1 class="h2">Account Settings</h1>
-        <p class="text-secondary">Manage the public details borrowers see on your owner profile.</p>
-    }
+<main class="account-password-page">
+    <a class="account-password-back" href="@Url.Action("Index", "Dashboard")">&larr; Back to dashboard</a>
+    <header class="account-password-header">
+        <span class="account-password-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
+        <div>
+            <p class="account-password-eyebrow">ACCOUNT SECURITY</p>
+            <h1>Change Password</h1>
+            <p>Update your password to keep your UniShare account secure.</p>
+        </div>
+    </header>
 
     @if (TempData["ProfileSaved"] != null)
     {
-        <div class="@(isAdmin ? "aa-alert aa-alert--ok" : "alert alert-success")" role="status">@TempData["ProfileSaved"]</div>
+        <div class="account-password-success" role="status">@TempData["ProfileSaved"]</div>
     }
 
-    <section class="@(isAdmin ? "aa-card" : "card border-0 shadow-sm p-4 mt-4")">
-        @using (Html.BeginForm("Settings", "Account", FormMethod.Post))
+    <section class="account-password-card">
+        <h2>Set a new password</h2>
+        <p class="account-password-hint">Enter your current password, then choose a new password with at least 8 characters.</p>
+        @using (Html.BeginForm("AdminSettings", "Account", FormMethod.Post, new { @class = "account-password-form", autocomplete = "on" }))
         {
             @Html.AntiForgeryToken()
-            <div class="mb-3">
-                @Html.LabelFor(x => x.Program, new { @class = "form-label" })
-                @Html.TextBoxFor(x => x.Program, new { @class = "form-control", maxlength = "80", placeholder = "e.g. BSIT" })
-                @Html.ValidationMessageFor(x => x.Program, "", new { @class = "text-danger small" })
+            <div class="account-password-field">
+                <label for="CurrentPassword">Current password</label>
+                <input id="CurrentPassword" name="CurrentPassword" type="password" autocomplete="current-password" required />
             </div>
-            <div class="mb-3">
-                @Html.LabelFor(x => x.YearLevel, new { @class = "form-label" })
-                @Html.TextBoxFor(x => x.YearLevel, new { @class = "form-control", maxlength = "40", placeholder = "e.g. 3rd Year" })
-                @Html.ValidationMessageFor(x => x.YearLevel, "", new { @class = "text-danger small" })
+            <div class="account-password-field">
+                <label for="NewPassword">New password</label>
+                <input id="NewPassword" name="NewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="100" required />
             </div>
-            <div class="mb-3">
-                @Html.LabelFor(x => x.Campus, new { @class = "form-label" })
-                @Html.TextBoxFor(x => x.Campus, new { @class = "form-control", maxlength = "80", placeholder = "e.g. San Bartolome" })
-                @Html.ValidationMessageFor(x => x.Campus, "", new { @class = "text-danger small" })
+            <div class="account-password-field">
+                <label for="ConfirmNewPassword">Confirm new password</label>
+                <input id="ConfirmNewPassword" name="ConfirmNewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="100" required />
+                <span class="account-password-error" id="password-match-error" role="alert" hidden>Both new password fields must match.</span>
             </div>
-            <div class="mb-4">
-                @Html.LabelFor(x => x.Bio, new { @class = "form-label" })
-                @Html.TextAreaFor(x => x.Bio, 4, 1, new { @class = "form-control", maxlength = "500", placeholder = "A short introduction for other students." })
-                @Html.ValidationMessageFor(x => x.Bio, "", new { @class = "text-danger small" })
-            </div>
-            <button type="submit" class="@(isAdmin ? "aa-btn aa-btn--primary" : "btn btn-primary")">Save profile</button>
+            <button class="account-password-submit" type="submit">Update password</button>
         }
     </section>
 </main>
+
+@section Styles {
+    <style>
+        .account-password-page { width: min(100%, 820px); margin: 0 auto; padding: clamp(24px, 4vw, 56px) 20px 72px; color: #172033; }
+        .account-password-back { display: inline-block; margin-bottom: 26px; color: #4f46e5; font-weight: 650; text-decoration: none; }
+        .account-password-header { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
+        .account-password-icon { width: 58px; height: 58px; display: grid; place-items: center; flex: 0 0 58px; border-radius: 17px; color: #4338ca; background: #eef2ff; font-size: 25px; }
+        .account-password-eyebrow { margin: 0 0 5px; color: #6366f1; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
+        .account-password-header h1 { margin: 0; color: #111827; font-size: clamp(28px, 3vw, 38px); font-weight: 800; }
+        .account-password-header p:last-child { margin: 5px 0 0; color: #64748b; font-size: 16px; }
+        .account-password-card { padding: clamp(22px, 4vw, 36px); border: 1px solid #e1e6f0; border-radius: 20px; background: #fff; box-shadow: 0 12px 34px rgba(15, 23, 42, .07); }
+        .account-password-card h2 { margin: 0 0 6px; font-size: 22px; font-weight: 750; }
+        .account-password-hint { margin: 0 0 25px; color: #64748b; line-height: 1.6; }
+        .account-password-form { display: grid; gap: 20px; }
+        .account-password-field label { display: block; margin-bottom: 8px; color: #334155; font-size: 14px; font-weight: 700; }
+        .account-password-field input { width: 100%; min-height: 50px; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 10px; color: #172033; background: #fff; font: inherit; font-size: 16px; }
+        .account-password-field input:focus { border-color: #818cf8; outline: 3px solid rgba(99, 102, 241, .16); }
+        .account-password-error { display: block; margin-top: 7px; color: #b91c1c; font-size: 14px; }
+        .account-password-submit { min-height: 50px; justify-self: start; padding: 0 24px; border: 0; border-radius: 10px; color: #fff; background: #4f46e5; font: inherit; font-weight: 750; cursor: pointer; }
+        .account-password-submit:hover { background: #4338ca; }
+        .account-password-success { margin-bottom: 18px; padding: 14px 16px; border: 1px solid #a7f3d0; border-radius: 12px; color: #047857; background: #ecfdf5; }
+        @media (max-width: 520px) { .account-password-header { align-items: flex-start; } .account-password-icon { width: 48px; height: 48px; flex-basis: 48px; font-size: 21px; } .account-password-submit { width: 100%; } }
+    </style>
+}
+
+@section scripts {
+    <script>
+        (function () {
+            var form = document.querySelector('.account-password-form');
+            var password = document.getElementById('NewPassword');
+            var confirmation = document.getElementById('ConfirmNewPassword');
+            var error = document.getElementById('password-match-error');
+            if (!form || !password || !confirmation || !error) return;
+            form.addEventListener('submit', function (event) {
+                var matches = password.value === confirmation.value;
+                confirmation.setCustomValidity(matches ? '' : 'Both new password fields must match.');
+                error.hidden = matches;
+                if (!matches) { event.preventDefault(); confirmation.focus(); }
+            });
+            confirmation.addEventListener('input', function () { confirmation.setCustomValidity(''); error.hidden = true; });
+        }());
+    </script>
+}

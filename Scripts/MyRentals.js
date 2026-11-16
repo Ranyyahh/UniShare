@@ -1,4 +1,4 @@
-﻿/**
+﻿﻿/**
  * UniShare - MyRentals JavaScript
  * Handles:
  *  - Filter Modal open/close, focus management, backdrop click, Escape key
@@ -2272,4 +2272,3 @@
         init();
     }
 })();
-

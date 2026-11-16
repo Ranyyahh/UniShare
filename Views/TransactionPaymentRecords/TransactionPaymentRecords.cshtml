@@ -14,8 +14,8 @@
     </div>
 
     <!-- 4 Compact Stat Cards with Small Icons -->
-    <div class="row stats-row">
-        <div class="col-xs-6 col-sm-3 col-md-3">
+    <div class="stats-row">
+        <div class="stats-card-column">
             <div class="stat-card">
                 <div class="stat-header">
                     <span class="stat-title">Total</span>
@@ -24,7 +24,7 @@
                 <div class="stat-value">@(ViewBag.TotalTransactions ?? 0)</div>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-3 col-md-3">
+        <div class="stats-card-column">
             <div class="stat-card">
                 <div class="stat-header">
                     <span class="stat-title">Confirmed</span>
@@ -33,7 +33,7 @@
                 <div class="stat-value">@(ViewBag.ConfirmedPayments ?? 0)</div>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-3 col-md-3">
+        <div class="stats-card-column">
             <div class="stat-card">
                 <div class="stat-header">
                     <span class="stat-title">Pending</span>
@@ -42,7 +42,7 @@
                 <div class="stat-value">@(ViewBag.PendingConfirmation ?? 0)</div>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-3 col-md-3">
+        <div class="stats-card-column">
             <div class="stat-card">
                 <div class="stat-header">
                     <span class="stat-title">Total Fees</span>

@@ -3287,6 +3287,20 @@
     font-weight: 400;
 }
 
+.rm-condition-warning {
+    grid-column: 1 / -1;
+    margin: -2px 0 0;
+    padding: 11px 13px;
+    border: 1px solid #f4d58b;
+    border-radius: 9px;
+    color: #854d0e;
+    background: #fffbeb;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.rm-condition-field select:invalid { border-color: #d97706; }
+
 @media (max-width: 600px) {
     .rm-condition-grid { grid-template-columns: minmax(0, 1fr); }
     .rm-condition-field--photos { grid-column: auto; }
