@@ -127,13 +127,24 @@ namespace UniShare.Services
 
         public static bool Decide(ObjectId bookingId, ObjectId ownerId, bool accept, string reason, string notes)
         {
+            System.Diagnostics.Debug.WriteLine("===== BOOKING DECIDE STARTED =====");
+            System.Diagnostics.Debug.WriteLine("Booking ID: " + bookingId);
+            System.Diagnostics.Debug.WriteLine("Owner ID: " + ownerId);
+            System.Diagnostics.Debug.WriteLine("Accept: " + accept);
+
             EnsureLockIndex();
             var lockId = ObjectId.GenerateNewId();
             var now = DateTime.UtcNow;
             BsonDocument booking = null;
             var ownerFilter = Builders<BsonDocument>.Filter.Eq("_id", bookingId) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.In("status", new[] { "PENDING", "REQUESTED" });
             booking = MongoDatabase.Bookings.Find(ownerFilter).FirstOrDefault();
-            if (booking == null) return false;
+            if (booking == null)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    "DECIDE FAILED: Booking not found or owner/status mismatch");
+
+                return false;
+            }
             var borrowerId = booking.GetValue("borrowerId", BsonNull.Value);
             if ((borrowerId.IsObjectId && borrowerId.AsObjectId == ownerId) ||
                 (borrowerId.IsString && string.Equals(borrowerId.AsString, ownerId.ToString(), StringComparison.OrdinalIgnoreCase))) return false;

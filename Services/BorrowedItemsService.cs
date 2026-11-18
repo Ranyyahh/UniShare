@@ -67,6 +67,110 @@ namespace UniShare.Services
             return rental == null ? null : Map(rental, borrowerId);
         }
 
+        public static ReturnInspectionViewModel GetReturnInspection(
+        ObjectId ownerId,
+        string recordId)
+        {
+            ObjectId bookingId;
+
+            if (!ObjectId.TryParse(recordId, out bookingId))
+                return null;
+
+            // Verify that the current user owns this booking.
+            var booking = MongoDatabase.Bookings.Find(
+                Builders<BsonDocument>.Filter.Eq("_id", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("ownerId", ownerId)
+            ).FirstOrDefault();
+
+            if (booking == null)
+                return null;
+
+            // Retrieve the return record.
+            var returnDoc = MongoDatabase.Returns.Find(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId)
+            ).FirstOrDefault();
+
+            if (returnDoc == null ||
+                !returnDoc.GetValue("inspectionRequired", false).ToBoolean())
+            {
+                return null;
+            }
+
+            // Retrieve the item.
+            var itemValue = booking.GetValue("itemId", BsonNull.Value);
+
+            if (!itemValue.IsObjectId)
+                return null;
+
+            var item = MongoDatabase.Items.Find(
+                x => x.Id == itemValue.AsObjectId
+            ).FirstOrDefault();
+
+            if (item == null)
+                return null;
+
+            // Retrieve the latest BORROWER return condition.
+            var borrowerCondition = MongoDatabase.ConditionRecords.Find(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("phase", "RETURN") &
+                Builders<BsonDocument>.Filter.Eq("participantRole", "BORROWER")
+            ).SortByDescending(x => x["createdAt"]).FirstOrDefault();
+
+            // Retrieve the owner's original handover condition.
+            var handoverCondition = MongoDatabase.ConditionRecords.Find(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("phase", "HANDOVER") &
+                Builders<BsonDocument>.Filter.Eq("participantRole", "OWNER")
+            ).SortByDescending(x => x["createdAt"]).FirstOrDefault();
+
+            return new ReturnInspectionViewModel
+            {
+                BookingId = bookingId.ToString(),
+                ReturnId = returnDoc.GetValue("_id", BsonNull.Value).ToString(),
+                ItemId = item.Id.ToString(),
+
+                ItemName = item.Name,
+                ItemCategory = item.Category,
+                ItemConditionBefore = handoverCondition == null
+                    ? item.Condition
+                    : handoverCondition.GetValue("condition", item.Condition ?? "").ToString(),
+
+                ItemPhotos = item.Photos ?? new List<string>(),
+
+                HandoverConditionNotes = handoverCondition == null
+                    ? ""
+                    : handoverCondition.GetValue("notes", "").ToString(),
+
+                HandoverConditionPhotos = handoverCondition == null
+                    ? new List<string>()
+                    : handoverCondition.GetValue("photos", new BsonArray())
+                        .AsBsonArray.Select(x => x.ToString()).ToList(),
+
+                BorrowerConditionAfter = borrowerCondition == null
+                    ? ""
+                    : borrowerCondition.GetValue("condition", "").ToString(),
+
+                BorrowerConditionNotes = borrowerCondition == null
+                    ? ""
+                    : borrowerCondition.GetValue("notes", "").ToString(),
+
+                BorrowerConditionPhotos = borrowerCondition == null
+                    ? new List<string>()
+                    : borrowerCondition.GetValue("photos", new BsonArray())
+                        .AsBsonArray.Select(x => x.ToString()).ToList(),
+
+                ReturnStatus = returnDoc.GetValue("status", "").ToString(),
+
+                ReturnRequestedAt =
+                    ReadDate(returnDoc, "requestedAt") ??
+                    ReadDate(booking, "returnRequestedAt"),
+
+                InspectionDate = ReadDate(returnDoc, "confirmedAt"),
+
+                InspectionRequired = true
+            };
+        }
+
         public static bool ConfirmHandover(ObjectId borrowerId, string recordId)
         {
             EnsureLifecycleIndexes();
@@ -151,107 +255,656 @@ namespace UniShare.Services
             }
         }
 
-        public static bool RequestReturn(ObjectId borrowerId, string recordId)
+
+
+
+        public static bool RequestReturn(ObjectId actorId, string recordId)
         {
             EnsureLifecycleIndexes();
-            BsonDocument doc; bool isBooking;
-            if (!TryFind(borrowerId, recordId, out doc, out isBooking) || (Status(doc) != "ONGOING" && Status(doc) != "OVERDUE") || !doc.GetValue("handoverConfirmed", false).ToBoolean()) return false;
+
+            BsonDocument doc;
+            bool isBooking;
+
+            if (!TryFindParticipant(actorId, recordId, out doc, out isBooking))
+                return false;
+
+            var status = Status(doc);
+
+            if ((status != "ONGOING" && status != "OVERDUE") ||
+                !doc.GetValue("handoverConfirmed", false).ToBoolean())
+                return false;
+
             var now = DateTime.UtcNow;
-            UpdateRecord(doc, isBooking, borrowerId, Builders<BsonDocument>.Update.Set("status", "RETURN_REQUESTED").Set("returnRequestedAt", now).Set("updatedAt", now));
-            UpdateLinkedRental(doc, borrowerId, Builders<BsonDocument>.Update.Set("status", "RETURN_REQUESTED").Set("returnRequestedAt", now).Set("updatedAt", now));
-            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+
+            var collection = isBooking
+                ? MongoDatabase.Bookings
+                : MongoDatabase.Rentals;
+
+            var filter =
+                Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) &
+                ParticipantFilter(actorId) &
+                Builders<BsonDocument>.Filter.Eq(
+                    "status", doc.GetValue("status", ""));
+
+            var update = Builders<BsonDocument>.Update
+                .Set("status", "RETURN_REQUESTED")
+                .Set("returnRequestedAt", now)
+                .Set("returnRequestedBy", actorId)
+                .Set("updatedAt", now);
+
+            if (collection.UpdateOne(filter, update).ModifiedCount != 1)
+                return false;
+
+            var bookingId = doc.GetValue(
+                "bookingId",
+                doc.GetValue("_id", BsonNull.Value));
+
             if (bookingId.IsObjectId)
-                MongoDatabase.Returns.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
-                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", bookingId)
-                        .SetOnInsert("rentalId", doc.GetValue("_id", BsonNull.Value)).SetOnInsert("borrowerId", borrowerId)
-                        .Set("status", "RETURN_REQUESTED").Set("requestedAt", now).Set("updatedAt", now)
-                        .SetOnInsert("createdAt", now), new UpdateOptions { IsUpsert = true });
-            AdminAccountabilityService.LogActivity(borrowerId, "RETURN_REQUESTED", "BOOKING", ReadBookingId(doc), new BsonDocument());
+            {
+                var linkedFilter =
+                    Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                    ParticipantFilter(actorId);
+
+                MongoDatabase.Rentals.UpdateOne(
+                    linkedFilter,
+                    update);
+
+                var borrowerValue = doc.GetValue(
+                    "borrowerId",
+                    doc.GetValue("renterId", BsonNull.Value));
+
+                MongoDatabase.Returns.UpdateOne(
+                    Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                    Builders<BsonDocument>.Update
+                        .SetOnInsert("_id", ObjectId.GenerateNewId())
+                        .SetOnInsert("bookingId", bookingId)
+                        .SetOnInsert("rentalId", doc.GetValue("_id", BsonNull.Value))
+                        .SetOnInsert("borrowerId", borrowerValue)
+                        .SetOnInsert("createdAt", now)
+                        .Set("status", "RETURN_REQUESTED")
+                        .Set("requestedAt", now)
+                        .Set("requestedBy", actorId)
+                        .Set("updatedAt", now),
+                    new UpdateOptions { IsUpsert = true });
+            }
+
+            AdminAccountabilityService.LogActivity(
+                actorId,
+                "RETURN_REQUESTED",
+                "BOOKING",
+                bookingId.IsObjectId ? bookingId.AsObjectId : doc["_id"].AsObjectId,
+                new BsonDocument());
+
             return true;
         }
+
+
 
         public static bool ConfirmReturnByOwner(ObjectId ownerId, string recordId)
         {
             EnsureLifecycleIndexes();
-            ObjectId id;
-            if (!ObjectId.TryParse(recordId, out id)) return false;
-            var doc = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.In("status", new[] { "RETURN_REQUESTED", "RETURN PENDING" })).FirstOrDefault();
-            var isBooking = doc != null;
-            if (doc == null) doc = MongoDatabase.Rentals.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.In("status", new[] { "RETURN_REQUESTED", "RETURN PENDING" })).FirstOrDefault();
-            if (doc == null) return false;
-            var now = DateTime.UtcNow;
-            var update = Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("returnedAt", now).Set("completedAt", now).Set("updatedAt", now);
-            var filter = Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]);
-            var result = isBooking ? MongoDatabase.Bookings.UpdateOne(filter, update) : MongoDatabase.Rentals.UpdateOne(filter, update);
-            if (result.ModifiedCount != 1) return false;
-            UpdateLinkedRental(doc, ownerId, update);
-            PaymentFeeService.AssessLateFee(doc, now);
-            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
-            if (bookingId.IsObjectId)
-                MongoDatabase.Returns.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
-                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", bookingId)
-                        .Set("status", "COMPLETED").Set("confirmedBy", ownerId).Set("confirmedAt", now)
-                        .Set("returnedAt", now).Set("updatedAt", now).SetOnInsert("createdAt", now), new UpdateOptions { IsUpsert = true });
-            var itemValue = doc.GetValue("itemId", BsonNull.Value);
-            if (itemValue.IsObjectId && Status(doc) != "DISPUTED")
-                MongoDatabase.Items.UpdateOne(x => x.Id == itemValue.AsObjectId && x.AvailabilityStatus == "RENTED",
-                    Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, "AVAILABLE").Set(x => x.UpdatedAt, now));
-            AdminAccountabilityService.LogActivity(ownerId, "RETURN_CONFIRMED", "BOOKING", ReadBookingId(doc), new BsonDocument());
-            return true;
-        }
 
-        public static bool RecordCondition(ObjectId actorId, string recordId, string phase, string condition, string notes, IList<string> photos)
-        {
-            EnsureLifecycleIndexes();
             ObjectId id;
-            phase = (phase ?? "").Trim().ToUpperInvariant();
-            condition = (condition ?? "").Trim().ToUpperInvariant();
-            if (!ObjectId.TryParse(recordId, out id) || (phase != "HANDOVER" && phase != "RETURN") ||
-                !new[] { "EXCELLENT", "GOOD", "FAIR", "POOR", "DAMAGED" }.Contains(condition) ||
-                (notes ?? "").Length > 1000 || photos == null || photos.Count > 5) return false;
-            var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id)).FirstOrDefault();
-            if (booking == null) return false;
-            var ownerValue = booking.GetValue("ownerId", BsonNull.Value);
-            var borrowerValue = booking.GetValue("borrowerId", BsonNull.Value);
-            var isOwner = ownerValue.IsObjectId && ownerValue.AsObjectId == actorId;
-            var isBorrower = borrowerValue.IsObjectId && borrowerValue.AsObjectId == actorId;
-            if (!isOwner && !isBorrower) return false;
-            var status = Status(booking);
-            if (phase == "HANDOVER" && status != "ACCEPTED" && status != "ONGOING" && status != "ACTIVE") return false;
-            if (phase == "RETURN" && status != "RETURN_REQUESTED" && status != "RETURN PENDING" && status != "COMPLETED" &&
-                !(isBorrower && (status == "ONGOING" || status == "OVERDUE"))) return false;
-            if (photos.Any(x => !IsSavedConditionPhoto(x))) return false;
-            var now = DateTime.UtcNow;
-            MongoDatabase.ConditionRecords.InsertOne(new BsonDocument {
-                { "_id", ObjectId.GenerateNewId() }, { "bookingId", id }, { "itemId", booking.GetValue("itemId", BsonNull.Value) },
-                { "recordedBy", actorId }, { "participantRole", isOwner ? "OWNER" : "BORROWER" }, { "phase", phase },
-                { "condition", condition }, { "photos", new BsonArray(photos.Select(x => (BsonValue)x)) },
-                { "notes", (notes ?? "").Trim() }, { "createdAt", now }
-            });
-            if (phase == "RETURN")
+            if (!ObjectId.TryParse(recordId, out id))
+                return false;
+
+            var ownerFilter = Builders<BsonDocument>.Filter.Eq("ownerId", ownerId);
+
+            var returnStatuses = Builders<BsonDocument>.Filter.In(
+                "status",
+                new[] { "RETURN_REQUESTED", "RETURN PENDING", "OVERDUE" }
+            );
+
+            var doc = MongoDatabase.Bookings.Find(
+                Builders<BsonDocument>.Filter.Eq("_id", id) &
+                ownerFilter &
+                returnStatuses
+            ).FirstOrDefault();
+
+            var isBooking = doc != null;
+
+            if (doc == null)
             {
-                var rolePrefix = isOwner ? "owner" : "borrower";
-                MongoDatabase.Returns.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", id),
-                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", id)
-                        .SetOnInsert("borrowerId", borrowerValue).SetOnInsert("createdAt", now)
-                        .Set(rolePrefix + "ConditionAfter", condition).Set(rolePrefix + "ConditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
-                        .Set(rolePrefix + "ConditionNotes", (notes ?? "").Trim()).Set(rolePrefix + "ConditionAt", now)
-                        .Set("conditionAfter", condition).Set("conditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
-                        .Set("conditionNotes", (notes ?? "").Trim()).Set("conditionRecordedAt", now).Set("updatedAt", now), new UpdateOptions { IsUpsert = true });
+                doc = MongoDatabase.Rentals.Find(
+                    Builders<BsonDocument>.Filter.Eq("_id", id) &
+                    ownerFilter &
+                    returnStatuses
+                ).FirstOrDefault();
+            }
+
+            if (doc == null)
+                return false;
+
+            var bookingId = doc.GetValue(
+                "bookingId",
+                doc.GetValue("_id", BsonNull.Value)
+            );
+
+            if (!bookingId.IsObjectId)
+                return false;
+
+            // Only the borrower's RETURN condition record is required.
+            var borrowerCondition = MongoDatabase.ConditionRecords.Find(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("phase", "RETURN") &
+                Builders<BsonDocument>.Filter.Eq("participantRole", "BORROWER")
+            )
+            .SortByDescending(x => x["createdAt"])
+            .FirstOrDefault();
+
+            if (borrowerCondition == null)
+            {
+                System.Diagnostics.Debug.WriteLine("===== RETURN CONFIRMATION FAILED =====");
+                System.Diagnostics.Debug.WriteLine("Booking ID: " + bookingId);
+                System.Diagnostics.Debug.WriteLine("Borrower Condition Found: false");
+                System.Diagnostics.Debug.WriteLine("======================================");
+
+                return false;
+            }
+
+            // A condition of FAIR, POOR, or DAMAGED requires inspection.
+            var borrowerConditionValue = borrowerCondition
+                .GetValue("condition", "")
+                .ToString()
+                .ToUpperInvariant();
+
+            var requiresInspection =
+                new[] { "FAIR", "POOR", "DAMAGED" }
+                .Contains(borrowerConditionValue);
+
+            var now = DateTime.UtcNow;
+
+            if (requiresInspection)
+            {
+                // Record the return for inspection.
+                // Do not complete the rental or make the item available yet.
+                MongoDatabase.Returns.UpdateOne(
+                    Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                    Builders<BsonDocument>.Update
+                        .SetOnInsert("_id", ObjectId.GenerateNewId())
+                        .SetOnInsert("bookingId", bookingId)
+                        .Set("status", "INSPECTION_REQUIRED")
+                        .Set("damageReported", true)
+                        .Set("inspectionRequired", true)
+                        .Set("confirmedBy", ownerId)
+                        .Set("confirmedAt", now)
+                        .Set("updatedAt", now)
+                        .SetOnInsert("createdAt", now),
+                    new UpdateOptions { IsUpsert = true }
+                );
+
+                AdminAccountabilityService.LogActivity(
+                    ownerId,
+                    "RETURN_REQUIRES_INSPECTION",
+                    "BOOKING",
+                    bookingId.AsObjectId,
+                    new BsonDocument()
+                );
+
+                return true;
+            }
+
+            // No inspection issue: complete the rental.
+            var update = Builders<BsonDocument>.Update
+                .Set("status", "COMPLETED")
+                .Set("returnedAt", now)
+                .Set("completedAt", now)
+                .Set("updatedAt", now);
+
+            var filter =
+                Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) &
+                Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) &
+                Builders<BsonDocument>.Filter.Eq("status", doc["status"]);
+
+            var result = isBooking
+                ? MongoDatabase.Bookings.UpdateOne(filter, update)
+                : MongoDatabase.Rentals.UpdateOne(filter, update);
+
+            if (result.ModifiedCount != 1)
+            {
+                System.Diagnostics.Debug.WriteLine("===== BOOKING UPDATE FAILED =====");
+                System.Diagnostics.Debug.WriteLine("Booking ID: " + bookingId);
+                System.Diagnostics.Debug.WriteLine("Matched Count: " + result.MatchedCount);
+                System.Diagnostics.Debug.WriteLine("Modified Count: " + result.ModifiedCount);
+                System.Diagnostics.Debug.WriteLine("Is Booking: " + isBooking);
+                System.Diagnostics.Debug.WriteLine("=================================");
+
+                return false;
+            }
+
+            UpdateLinkedRental(doc, ownerId, update);
+
+            PaymentFeeService.AssessLateFee(doc, now);
+
+            MongoDatabase.Returns.UpdateOne(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId),
+                Builders<BsonDocument>.Update
+                    .SetOnInsert("_id", ObjectId.GenerateNewId())
+                    .SetOnInsert("bookingId", bookingId)
+                    .Set("status", "COMPLETED")
+                    .Set("damageReported", false)
+                    .Set("confirmedBy", ownerId)
+                    .Set("confirmedAt", now)
+                    .Set("returnedAt", now)
+                    .Set("updatedAt", now)
+                    .SetOnInsert("createdAt", now),
+                new UpdateOptions { IsUpsert = true }
+            );
+
+            var itemValue = doc.GetValue("itemId", BsonNull.Value);
+
+            if (itemValue.IsObjectId)
+            {
+                var itemId = itemValue.AsObjectId;
+
+                var itemBefore = MongoDatabase.Items
+                    .Find(x => x.Id == itemId)
+                    .FirstOrDefault();
+
+                System.Diagnostics.Debug.WriteLine("===== ITEM AVAILABILITY DEBUG =====");
+                System.Diagnostics.Debug.WriteLine("Item ID: " + itemId);
+
+                if (itemBefore == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Item not found.");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        "Availability Before: " + itemBefore.AvailabilityStatus
+                    );
+
+                    var itemUpdateResult = MongoDatabase.Items.UpdateOne(
+                        x => x.Id == itemId &&
+                             x.AvailabilityStatus == "RENTED",
+                        Builders<ItemDocument>.Update
+                            .Set(x => x.AvailabilityStatus, "AVAILABLE")
+                            .Set(x => x.UpdatedAt, now)
+                    );
+
+                    System.Diagnostics.Debug.WriteLine(
+                        "Matched Count: " + itemUpdateResult.MatchedCount
+                    );
+
+                    System.Diagnostics.Debug.WriteLine(
+                        "Modified Count: " + itemUpdateResult.ModifiedCount
+                    );
+
+                    var itemAfter = MongoDatabase.Items
+                        .Find(x => x.Id == itemId)
+                        .FirstOrDefault();
+
+                    System.Diagnostics.Debug.WriteLine(
+                        "Availability After: " +
+                        (itemAfter == null ? "ITEM NOT FOUND" : itemAfter.AvailabilityStatus)
+                    );
+                }
+
+                System.Diagnostics.Debug.WriteLine("==================================");
             }
             else
             {
-                var rolePrefix = isOwner ? "owner" : "borrower";
-                MongoDatabase.Handovers.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", id),
-                    Builders<BsonDocument>.Update.SetOnInsert("_id", ObjectId.GenerateNewId()).SetOnInsert("bookingId", id)
-                        .SetOnInsert("ownerId", ownerValue).SetOnInsert("borrowerId", borrowerValue).SetOnInsert("createdAt", now)
-                        .Set(rolePrefix + "ConditionBefore", condition).Set(rolePrefix + "ConditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
-                        .Set(rolePrefix + "ConditionNotes", (notes ?? "").Trim()).Set(rolePrefix + "ConditionAt", now)
-                        .Set("conditionBefore", condition).Set("conditionPhotos", new BsonArray(photos.Select(x => (BsonValue)x)))
-                        .Set("conditionNotes", (notes ?? "").Trim()).Set("updatedAt", now), new UpdateOptions { IsUpsert = true });
+                System.Diagnostics.Debug.WriteLine(
+                    "The booking itemId is not an ObjectId."
+                );
             }
+
+            AdminAccountabilityService.LogActivity(
+                ownerId,
+                "RETURN_CONFIRMED",
+                "BOOKING",
+                bookingId.AsObjectId,
+                new BsonDocument()
+            );
+
             return true;
         }
+
+
+
+        public static bool FinalizeInspectedReturn(ObjectId ownerId, string recordId)
+        {
+            EnsureLifecycleIndexes();
+
+            ObjectId id;
+
+            if (!ObjectId.TryParse(recordId, out id))
+                return false;
+
+            var ownerFilter =
+                Builders<BsonDocument>.Filter.Eq("ownerId", ownerId);
+
+            var returnStatuses =
+                Builders<BsonDocument>.Filter.In(
+                    "status",
+                    new[] { "RETURN_REQUESTED", "RETURN PENDING", "OVERDUE" }
+                );
+
+            // Find the booking first.
+            var doc = MongoDatabase.Bookings.Find(
+                Builders<BsonDocument>.Filter.Eq("_id", id) &
+                ownerFilter &
+                returnStatuses
+            ).FirstOrDefault();
+
+            var isBooking = doc != null;
+
+            // If it is not in Bookings, check Rentals.
+            if (doc == null)
+            {
+                doc = MongoDatabase.Rentals.Find(
+                    Builders<BsonDocument>.Filter.Eq("_id", id) &
+                    ownerFilter &
+                    returnStatuses
+                ).FirstOrDefault();
+            }
+
+            if (doc == null)
+                return false;
+
+            var bookingId = doc.GetValue(
+                "bookingId",
+                doc.GetValue("_id", BsonNull.Value)
+            );
+
+            if (!bookingId.IsObjectId)
+                return false;
+
+            // Only allow finalization after an inspection has been required.
+            var returnDoc = MongoDatabase.Returns.Find(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("status", "INSPECTION_REQUIRED") &
+                Builders<BsonDocument>.Filter.Eq("inspectionRequired", true)
+            ).FirstOrDefault();
+
+            if (returnDoc == null)
+                return false;
+
+            // Verify that the borrower has a return condition record.
+            var borrowerValue = doc.GetValue("borrowerId", BsonNull.Value);
+
+            if (!borrowerValue.IsObjectId)
+                return false;
+
+            var borrowerCondition = MongoDatabase.ConditionRecords.Find(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("phase", "RETURN") &
+                Builders<BsonDocument>.Filter.Eq("participantRole", "BORROWER") &
+                Builders<BsonDocument>.Filter.Eq("recordedBy", borrowerValue.AsObjectId)
+            )
+            .SortByDescending(x => x["updatedAt"])
+            .FirstOrDefault();
+
+            if (borrowerCondition == null)
+                return false;
+
+            var condition = borrowerCondition
+                .GetValue("condition", "")
+                .ToString()
+                .ToUpperInvariant();
+
+            // This method is specifically for conditions requiring inspection.
+            if (!new[] { "FAIR", "POOR", "DAMAGED" }.Contains(condition))
+                return false;
+
+            var now = DateTime.UtcNow;
+
+            var update = Builders<BsonDocument>.Update
+                .Set("status", "COMPLETED")
+                .Set("returnedAt", now)
+                .Set("completedAt", now)
+                .Set("updatedAt", now);
+
+            var bookingFilter =
+                Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) &
+                ownerFilter &
+                returnStatuses;
+
+            var collection = isBooking
+                ? MongoDatabase.Bookings
+                : MongoDatabase.Rentals;
+
+            var result = collection.UpdateOne(bookingFilter, update);
+
+            if (result.ModifiedCount != 1)
+                return false;
+
+            // Update the linked rental when the main record was a booking.
+            if (isBooking)
+            {
+                UpdateLinkedRental(doc, ownerId, update);
+            }
+
+            PaymentFeeService.AssessLateFee(doc, now);
+
+            // Finalize the return inspection.
+            MongoDatabase.Returns.UpdateOne(
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                Builders<BsonDocument>.Filter.Eq("status", "INSPECTION_REQUIRED"),
+                Builders<BsonDocument>.Update
+                    .Set("status", "COMPLETED")
+                    .Set("inspectionRequired", false)
+                    .Set("inspectionCompletedBy", ownerId)
+                    .Set("inspectionCompletedAt", now)
+                    .Set("damageReported", false)
+                    .Set("confirmedBy", ownerId)
+                    .Set("confirmedAt", now)
+                    .Set("returnedAt", now)
+                    .Set("updatedAt", now)
+            );
+
+            // Make the item available again.
+            var itemValue = doc.GetValue("itemId", BsonNull.Value);
+
+            if (itemValue.IsObjectId)
+            {
+                var itemId = itemValue.AsObjectId;
+
+                MongoDatabase.Items.UpdateOne(
+                    x => x.Id == itemId &&
+                         x.AvailabilityStatus == "RENTED",
+                    Builders<ItemDocument>.Update
+                        .Set(x => x.AvailabilityStatus, "AVAILABLE")
+                        .Set(x => x.UpdatedAt, now)
+                );
+            }
+
+            AdminAccountabilityService.LogActivity(
+                ownerId,
+                "RETURN_INSPECTION_COMPLETED",
+                "BOOKING",
+                bookingId.AsObjectId,
+                new BsonDocument()
+            );
+
+            return true;
+        }
+
+        public static bool RecordCondition(
+            ObjectId actorId,
+            string recordId,
+            string phase,
+            string condition,
+            string notes,
+            IList<string> photos)
+        {
+            EnsureLifecycleIndexes();
+
+            ObjectId id;
+
+            phase = (phase ?? "").Trim().ToUpperInvariant();
+            condition = (condition ?? "").Trim().ToUpperInvariant();
+
+            if (!ObjectId.TryParse(recordId, out id) ||
+                (phase != "HANDOVER" && phase != "RETURN") ||
+                !new[] { "EXCELLENT", "GOOD", "FAIR", "POOR", "DAMAGED" }.Contains(condition) ||
+                (notes ?? "").Length > 1000 ||
+                photos == null ||
+                photos.Count > 5)
+            {
+                return false;
+            }
+
+            var booking = MongoDatabase.Bookings
+                .Find(Builders<BsonDocument>.Filter.Eq("_id", id))
+                .FirstOrDefault();
+
+            if (booking == null) return false;
+
+            var ownerValue = booking.GetValue("ownerId", BsonNull.Value);
+            var borrowerValue = booking.GetValue("borrowerId", BsonNull.Value);
+
+            var isOwner = ownerValue.IsObjectId && ownerValue.AsObjectId == actorId;
+            var isBorrower = borrowerValue.IsObjectId && borrowerValue.AsObjectId == actorId;
+
+            // Only the booking owner or borrower can submit condition records.
+            if (!isOwner && !isBorrower) return false;
+
+            // RETURN condition records can only be submitted by the borrower.
+            // HANDOVER condition records remain available to both participants.
+            // RETURN condition records can only be submitted by the borrower.
+            if (phase == "RETURN" && !isBorrower)
+                return false;
+
+            var status = Status(booking);
+
+            if (phase == "HANDOVER" &&
+                status != "ACCEPTED" &&
+                status != "ONGOING" &&
+                status != "ACTIVE")
+            {
+                return false;
+            }
+
+            if (phase == "RETURN")
+            {
+                // Borrower may submit or edit the return condition
+                // only while the return is awaiting the owner's decision.
+                var isReturnStatus =
+                    status == "RETURN_REQUESTED" ||
+                    status == "RETURN PENDING" ||
+                    status == "OVERDUE";
+
+                if (!isReturnStatus)
+                    return false;
+            }
+
+            if (photos.Any(x => !IsSavedConditionPhoto(x)))
+                return false;
+
+            var now = DateTime.UtcNow;
+
+            // Save or update the participant's condition record.
+            var conditionFilter =
+            Builders<BsonDocument>.Filter.Eq("bookingId", id) &
+            Builders<BsonDocument>.Filter.Eq("phase", phase) &
+            Builders<BsonDocument>.Filter.Eq("recordedBy", actorId) &
+            Builders<BsonDocument>.Filter.Eq(
+                "participantRole",
+                isOwner ? "OWNER" : "BORROWER"
+            );
+
+            var conditionUpdate = Builders<BsonDocument>.Update
+            .SetOnInsert("_id", ObjectId.GenerateNewId())
+            .SetOnInsert("bookingId", id)
+            .SetOnInsert("itemId", booking.GetValue("itemId", BsonNull.Value))
+            .SetOnInsert("recordedBy", actorId)
+            .SetOnInsert("participantRole", isOwner ? "OWNER" : "BORROWER")
+            .SetOnInsert("phase", phase)
+            .SetOnInsert("createdAt", now)
+            .Set("condition", condition)
+            .Set("notes", (notes ?? "").Trim())
+            .Set("updatedAt", now);
+
+            // Preserve existing RETURN photos when no new photos are uploaded.
+            // HANDOVER behavior remains unchanged.
+            if (phase != "RETURN" || photos.Count > 0)
+            {
+                conditionUpdate = Builders<BsonDocument>.Update.Combine(
+                    conditionUpdate,
+                    Builders<BsonDocument>.Update.Set(
+                        "photos",
+                        new BsonArray(photos.Select(x => (BsonValue)x))
+                    )
+                );
+            }
+
+            MongoDatabase.ConditionRecords.UpdateOne(
+                conditionFilter,
+                conditionUpdate,
+                new UpdateOptions { IsUpsert = true }
+            );
+
+            if (phase == "RETURN")
+            {
+                // RETURN condition details are always submitted by the borrower.
+                const string rolePrefix = "borrower";
+
+                var returnUpdate = Builders<BsonDocument>.Update
+                    .SetOnInsert("_id", ObjectId.GenerateNewId())
+                    .SetOnInsert("bookingId", id)
+                    .SetOnInsert("borrowerId", borrowerValue)
+                    .SetOnInsert("createdAt", now)
+                    .Set(rolePrefix + "ConditionAfter", condition)
+                    .Set(rolePrefix + "ConditionNotes", (notes ?? "").Trim())
+                    .Set(rolePrefix + "ConditionAt", now)
+                    .Set("conditionAfter", condition)
+                    .Set("conditionNotes", (notes ?? "").Trim())
+                    .Set("conditionRecordedAt", now)
+                    .Set("updatedAt", now);
+
+                // Only replace stored photos when new photos are provided.
+                if (photos.Count > 0)
+                {
+                    var photoArray = new BsonArray(
+                        photos.Select(x => (BsonValue)x)
+                    );
+
+                    returnUpdate = Builders<BsonDocument>.Update.Combine(
+                        returnUpdate,
+                        Builders<BsonDocument>.Update
+                            .Set(rolePrefix + "ConditionPhotos", photoArray)
+                            .Set("conditionPhotos", photoArray)
+                    );
+                }
+
+                MongoDatabase.Returns.UpdateOne(
+                    Builders<BsonDocument>.Filter.Eq("bookingId", id),
+                    returnUpdate,
+                    new UpdateOptions { IsUpsert = true }
+                );
+            }
+            else
+            {
+                // HANDOVER condition records can still be submitted by either participant.
+                var rolePrefix = isOwner ? "owner" : "borrower";
+
+                MongoDatabase.Handovers.UpdateOne(
+                    Builders<BsonDocument>.Filter.Eq("bookingId", id),
+                    Builders<BsonDocument>.Update
+                        .SetOnInsert("_id", ObjectId.GenerateNewId())
+                        .SetOnInsert("bookingId", id)
+                        .SetOnInsert("ownerId", ownerValue)
+                        .SetOnInsert("borrowerId", borrowerValue)
+                        .SetOnInsert("createdAt", now)
+                        .Set(rolePrefix + "ConditionBefore", condition)
+                        .Set(rolePrefix + "ConditionPhotos",
+                            new BsonArray(photos.Select(x => (BsonValue)x)))
+                        .Set(rolePrefix + "ConditionNotes", (notes ?? "").Trim())
+                        .Set(rolePrefix + "ConditionAt", now)
+                        .Set("conditionBefore", condition)
+                        .Set("conditionPhotos",
+                            new BsonArray(photos.Select(x => (BsonValue)x)))
+                        .Set("conditionNotes", (notes ?? "").Trim())
+                        .Set("updatedAt", now),
+                    new UpdateOptions { IsUpsert = true }
+                );
+            }
+
+            return true;
+        }
+
+
 
         private static void SaveHandover(BsonDocument booking, ObjectId actorId, string role, DateTime at)
         {
@@ -383,6 +1036,96 @@ namespace UniShare.Services
             doc = FindOwned(MongoDatabase.Rentals, id, borrowerId);
             return doc != null;
         }
+
+        private static FilterDefinition<BsonDocument> ParticipantFilter(ObjectId actorId)
+        {
+            var actorString = actorId.ToString();
+
+            return
+                Builders<BsonDocument>.Filter.Eq("ownerId", actorId) |
+                Builders<BsonDocument>.Filter.Eq("borrowerId", actorId) |
+                Builders<BsonDocument>.Filter.Eq("renterId", actorId) |
+                Builders<BsonDocument>.Filter.Eq("ownerId", actorString) |
+                Builders<BsonDocument>.Filter.Eq("borrowerId", actorString) |
+                Builders<BsonDocument>.Filter.Eq("renterId", actorString);
+        }
+
+
+
+        private static bool TryFindParticipant(
+            ObjectId actorId,
+            string recordId,
+            out BsonDocument doc,
+            out bool isBooking)
+        {
+            ObjectId id;
+            doc = null;
+            isBooking = false;
+
+            if (!ObjectId.TryParse(recordId, out id))
+                return false;
+
+            var participantFilter = ParticipantFilter(actorId);
+
+            doc = MongoDatabase.Bookings.Find(
+                Builders<BsonDocument>.Filter.Eq("_id", id) & participantFilter
+            ).FirstOrDefault();
+
+            if (doc != null)
+            {
+                isBooking = true;
+                return true;
+            }
+
+            doc = MongoDatabase.Rentals.Find(
+                Builders<BsonDocument>.Filter.Eq("_id", id) & participantFilter
+            ).FirstOrDefault();
+
+            return doc != null;
+        }
+
+        private static void UpdateParticipantRecord(
+            BsonDocument doc,
+            bool isBooking,
+            ObjectId actorId,
+            UpdateDefinition<BsonDocument> update)
+        {
+            var collection = isBooking
+                ? MongoDatabase.Bookings
+                : MongoDatabase.Rentals;
+
+            var filter =
+                Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) &
+                ParticipantFilter(actorId) &
+                Builders<BsonDocument>.Filter.Eq(
+                    "status",
+                    doc.GetValue("status", "")
+                );
+
+            if (collection.UpdateOne(filter, update).ModifiedCount != 1)
+                throw new InvalidOperationException(
+                    "The borrowing record changed. Refresh and try again."
+                );
+        }
+
+        private static void UpdateLinkedRentalForParticipant(
+            BsonDocument doc,
+            ObjectId actorId,
+            UpdateDefinition<BsonDocument> update)
+        {
+            var id = doc.GetValue("_id", BsonNull.Value);
+            var bookingId = doc.GetValue("bookingId", id);
+
+            if (!bookingId.IsObjectId)
+                return;
+
+            var filter =
+                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) &
+                ParticipantFilter(actorId);
+
+            MongoDatabase.Rentals.UpdateOne(filter, update);
+        }
+
         private static void UpdateRecord(BsonDocument doc, bool isBooking, ObjectId borrowerId, UpdateDefinition<BsonDocument> update)
         {
             var collection = isBooking ? MongoDatabase.Bookings : MongoDatabase.Rentals;
