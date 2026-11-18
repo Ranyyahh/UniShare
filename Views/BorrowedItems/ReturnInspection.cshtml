@@ -1,0 +1,377 @@
+﻿
+@model UniShare.Models.ReturnInspectionViewModel
+
+@{
+    ViewBag.Title = "Return Inspection";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/ReturnInspection.css")" />
+
+<main class="return-inspection-page">
+
+    <div class="ri-page-header">
+        <div>
+            <span class="ri-eyebrow">UNISHARE - RENTAL MANAGEMENT</span>
+            <h1>Return Inspection</h1>
+            <p>Review the returned item's condition and compare it with its original condition.</p>
+        </div>
+
+        <a href="javascript:history.back()" class="ri-back-button">
+            <span aria-hidden="true">&#8592;</span>
+            Back
+        </a>
+    </div>
+
+    <section class="ri-status-banner">
+        <div class="ri-status-icon" aria-hidden="true">!</div>
+        <div>
+            <strong>Inspection Required</strong>
+            <p>This item was flagged for inspection because a reported condition requires further review.</p>
+        </div>
+    </section>
+
+    <!-- Item Information -->
+    <section class="ri-card">
+        <div class="ri-section-heading">
+            <div>
+                <span class="ri-section-kicker">ITEM INFORMATION</span>
+                <h2>Rental Item</h2>
+            </div>
+        </div>
+
+        <div class="ri-item-layout">
+
+            <div class="ri-item-gallery">
+                @if (Model.ItemPhotos != null && Model.ItemPhotos.Any())
+                {
+                    <div class="ri-item-main-photo">
+                        @{
+                            var mainPhotoUrl = Url.Content(
+                                "~/Uploads/" + System.IO.Path.GetFileName(Model.ItemPhotos.First())
+                            );
+                        }
+
+                        <img src="@mainPhotoUrl"
+                             alt="@Model.ItemName" />
+                    </div>
+
+                    <div class="ri-item-thumbnails">
+                        @foreach (var photo in Model.ItemPhotos)
+                        {
+                            var photoUrl = Url.Content(
+                                "~/Uploads/" + System.IO.Path.GetFileName(photo)
+                            );
+
+                            <img src="@photoUrl"
+                                 alt="Item photo"
+                                 loading="lazy" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="ri-item-no-photo">
+                        <span>No item photos available.</span>
+                    </div>
+                }
+            </div>
+
+
+            <div class="ri-item-details">
+                <span class="ri-item-category">
+                    @(String.IsNullOrWhiteSpace(Model.ItemCategory) ? "Uncategorized" : Model.ItemCategory)
+                </span>
+
+                <h3>@Model.ItemName</h3>
+
+                <div class="ri-detail-grid">
+                    <div class="ri-detail-item">
+                        <span>Booking ID</span>
+                        <strong>@Model.BookingId</strong>
+                    </div>
+
+                    <div class="ri-detail-item">
+                        <span>Return ID</span>
+                        <strong>@(String.IsNullOrWhiteSpace(Model.ReturnId) ? "—" : Model.ReturnId)</strong>
+                    </div>
+
+                    <div class="ri-detail-item">
+                        <span>Original Condition</span>
+                        <strong>@(String.IsNullOrWhiteSpace(Model.ItemConditionBefore) ? "Not recorded" : Model.ItemConditionBefore)</strong>
+                    </div>
+
+                    <div class="ri-detail-item">
+                        <span>Return Status</span>
+                        <strong>@(String.IsNullOrWhiteSpace(Model.ReturnStatus) ? "Pending" : Model.ReturnStatus)</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Inspection Timeline -->
+    <section class="ri-card">
+        <div class="ri-section-heading">
+            <div>
+                <span class="ri-section-kicker">RETURN DETAILS</span>
+                <h2>Inspection Overview</h2>
+                <p>Review the return information submitted by both participants.</p>
+            </div>
+        </div>
+
+        <div class="ri-overview-grid">
+            <div class="ri-overview-item">
+                <span class="ri-overview-label">Return Requested</span>
+                <strong>
+                    @(Model.ReturnRequestedAt.HasValue
+                        ? Model.ReturnRequestedAt.Value.ToLocalTime().ToString("MMM dd, yyyy • h:mm tt")
+                        : "Not available")
+                </strong>
+            </div>
+
+            <div class="ri-overview-item">
+                <span class="ri-overview-label">Inspection Date</span>
+                <strong>
+                    @(Model.InspectionDate.HasValue
+                        ? Model.InspectionDate.Value.ToLocalTime().ToString("MMM dd, yyyy • h:mm tt")
+                        : "Pending inspection")
+                </strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- Condition Comparison -->
+    <section class="ri-card">
+        <div class="ri-section-heading">
+            <div>
+                <span class="ri-section-kicker">CONDITION COMPARISON</span>
+                <h2>Return Condition Reports</h2>
+                <p>Compare the owner's and borrower's submitted assessments.</p>
+            </div>
+        </div>
+
+        <div class="ri-condition-grid">
+
+            <!-- Owner Report -->
+            <article class="ri-condition-card">
+                <div class="ri-condition-header">
+                    <div class="ri-participant-avatar">O</div>
+                    <div>
+                        <span class="ri-participant-role">ITEM OWNER</span>
+                        <h3>Original Handover Condition</h3>
+                    </div>
+                </div>
+
+                <div class="ri-condition-value">
+                    <span>Condition Before Rental</span>
+                    <strong class="ri-condition-badge">
+                        @(String.IsNullOrWhiteSpace(Model.ItemConditionBefore)
+                ? "Not recorded"
+                : Model.ItemConditionBefore)
+                    </strong>
+                </div>
+
+                <div class="ri-condition-notes">
+                    <span>Owner's Handover Notes</span>
+                    <p>
+                        @(String.IsNullOrWhiteSpace(Model.HandoverConditionNotes)
+                ? "No notes provided."
+                : Model.HandoverConditionNotes)
+                    </p>
+                </div>
+
+                <div class="ri-evidence-section">
+                    <span>Original Handover Photos</span>
+
+                    @if (Model.HandoverConditionPhotos != null &&
+                         Model.HandoverConditionPhotos.Any())
+                    {
+                        <div class="ri-evidence-grid">
+                            @foreach (var photo in Model.HandoverConditionPhotos)
+                            {
+                                var photoUrl = Url.Content(
+                                    "~/Uploads/" + System.IO.Path.GetFileName(photo)
+                                );
+
+                                <a href="@photoUrl" target="_blank" rel="noopener">
+                                    <img src="@photoUrl"
+                                         alt="Original handover condition"
+                                         loading="lazy" />
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="ri-no-evidence">No handover photos submitted.</p>
+                    }
+                </div>
+            </article>
+
+            <!--First Owner Item?-->
+            
+
+            <!-- Borrower Report -->
+            <article class="ri-condition-card">
+                <div class="ri-condition-header">
+                    <div class="ri-participant-avatar ri-borrower-avatar">B</div>
+                    <div>
+                        <span class="ri-participant-role">BORROWER</span>
+                        <h3>Borrower's Assessment</h3>
+                    </div>
+                </div>
+
+                <div class="ri-condition-value">
+                    <span>Reported Condition</span>
+                    <strong class="ri-condition-badge">
+                        @(String.IsNullOrWhiteSpace(Model.BorrowerConditionAfter)
+                            ? "Not submitted"
+                            : Model.BorrowerConditionAfter)
+                    </strong>
+                </div>
+
+                <div class="ri-condition-notes">
+                    <span>Inspection Notes</span>
+                    <p>
+                        @(String.IsNullOrWhiteSpace(Model.BorrowerConditionNotes)
+                        ? "No notes provided."
+                        : Model.BorrowerConditionNotes)
+                    </p>
+                </div>
+
+
+                <div class="ri-evidence-section">
+                    <span>Submitted Photos</span>
+
+                    @if (Model.BorrowerConditionPhotos != null && Model.BorrowerConditionPhotos.Any())
+                    {
+                        <div class="ri-evidence-grid">
+                            @foreach (var photo in Model.BorrowerConditionPhotos)
+                            {
+                                var photoUrl = Url.Content(
+                                    "~/Uploads/" + System.IO.Path.GetFileName(photo)
+                                );
+
+                                <a href="@photoUrl" target="_blank" rel="noopener">
+                                    <img src="@photoUrl"
+                                         alt="Borrower's return condition evidence"
+                                         loading="lazy" />
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="ri-no-evidence">No photos submitted.</p>
+                    }
+                </div>
+
+            </article>
+
+        </div>
+    </section>
+
+    <section class="ri-inspection-notice">
+        <strong>Inspection review</strong>
+        <p>
+            Review the submitted condition reports and evidence before deciding how to proceed.
+            This page currently displays the inspection information only; no return status or item
+            availability will be changed by viewing it.
+        </p>
+    </section>
+
+
+    <section class="ri-card ri-finalize-section">
+        <div class="ri-section-heading">
+            <div>
+                <span class="ri-section-kicker">FINAL INSPECTION DECISION</span>
+                <h2>Complete Return Inspection</h2>
+                <p>
+                    After physically inspecting the returned item and reviewing
+                    the submitted evidence, you can finalize the return.
+                </p>
+            </div>
+        </div>
+
+        <form id="riFinalizeForm"
+              data-url="@Url.Action("FinalizeInspectedReturn", "BorrowedItems")">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="id"
+                   value="@Model.BookingId" />
+
+            <button type="submit"
+                    id="riFinalizeButton"
+                    class="ri-finalize-button">
+                Mark as Completed
+            </button>
+
+            <p id="riFinalizeMessage"
+               role="status"
+               aria-live="polite"></p>
+        </form>
+    </section>
+</main>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('riFinalizeForm');
+    var button = document.getElementById('riFinalizeButton');
+    var message = document.getElementById('riFinalizeMessage');
+
+    if (!form || !button || !message) return;
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        if (!confirm(
+            'Have you physically inspected the item and confirmed that it can be marked as completed?'
+        )) {
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Processing...';
+        message.textContent = '';
+
+        var formData = new FormData(form);
+
+        fetch(form.getAttribute('data-url'), {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (result) {
+            if (!result || !result.ok) {
+                throw new Error(
+                    result && result.message
+                        ? result.message
+                        : 'The return could not be completed.'
+                );
+            }
+
+            message.textContent = result.message;
+
+            button.textContent = 'Completed';
+
+            // Return to the owner's completed rentals.
+            window.location.href =
+                '@Url.Action("Index", "BorrowedItems", new { side = "lent", status = "Completed" })';
+        })
+        .catch(function (error) {
+            message.textContent = error.message ||
+                'Something went wrong. Please try again.';
+
+            button.disabled = false;
+            button.textContent = 'Mark as Completed';
+        });
+    });
+});
+</script>

@@ -1,4 +1,4 @@
-@model UniShare.Controllers.RentalRecordDto
+@model UniShare.Models.RentalRecordDto
 @{ ViewBag.Title = "Rental Details"; }
 <main class="container py-4"><h1>Rental Details</h1>
 @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
@@ -44,9 +44,10 @@
     {
         <hr />
         <p>Late fee estimate: <strong>₱@Model.EstimatedLateFee.ToString("N2")</strong></p>
-        if (Model.FinalLateFee.HasValue) { <p>Final late fee: <strong>₱@Model.FinalLateFee.Value.ToString("N2")</strong></p> }
-        <p>Late fee status: @Model.LateFeeStatus</p>
-    }
+        if (Model.FinalLateFee.HasValue)
+        { <p>Final late fee: <strong>₱@Model.FinalLateFee.Value.ToString("N2")</strong></p> }
+    <p>Late fee status: @Model.LateFeeStatus</p>
+}
     @if (Model.CanFinalizeLateFee)
     {
         using (Html.BeginForm("FinalizeLateFee", "MyRentals", FormMethod.Post))

@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" href="~/Content/MyRentals.css" />
 
-<div class="my-rentals-page" data-history-url="@Url.Action("HistoryData", "MyRentals")" data-handover-url="@Url.Action("ConfirmHandover", "MyRentals")" data-return-url="@Url.Action("ConfirmReturn", "MyRentals")" data-decide-url="@Url.Action("Decide", "RentalRequests")" data-dispute-url="@Url.Action("Dispute", "BorrowedItems")" data-condition-url="@Url.Action("RecordCondition", "BorrowedItems")">
+<div class="my-rentals-page" data-history-url="@Url.Action("HistoryData", "MyRentals")" data-handover-url="@Url.Action("ConfirmHandover", "MyRentals")" data-return-url="@Url.Action("ConfirmReturn", "MyRentals")" data-return-inspection-url="@Url.Action("ReturnInspection", "BorrowedItems")" data-return-request-url="@Url.Action("ReturnItem", "BorrowedItems")" data-decide-url="@Url.Action("Decide", "RentalRequests")" data-dispute-url="@Url.Action("Dispute", "BorrowedItems")" data-condition-url="@Url.Action("RecordCondition", "BorrowedItems")">
     @Html.AntiForgeryToken()
     <!-- A. Page Header -->
     <header class="my-rentals-header">
@@ -15,18 +15,18 @@
             <p class="my-rentals-header__description">Manage rental requests, monitor active and overdue bookings, and keep track of returns and reported issues.</p>
         </div>
         <div class="my-rentals-header__actions">
-        <button type="button" id="btnRentalHistory" class="my-rentals-btn-history" aria-haspopup="dialog" aria-controls="myRentalsHistoryModal">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2"/><circle cx="18" cy="17" r="4" fill="white"/><path d="M18 15v2l1.5 1"/></svg>
-            <span>History</span>
-        </button>
-        <button type="button"
-                id="btnRefreshRentals"
-                class="my-rentals-btn-refresh"
-                title="Refresh rentals"
-                aria-label="Refresh rentals and reset the page">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            <span>Refresh</span>
-        </button>
+            <button type="button" id="btnRentalHistory" class="my-rentals-btn-history" aria-haspopup="dialog" aria-controls="myRentalsHistoryModal">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" /><circle cx="18" cy="17" r="4" fill="white" /><path d="M18 15v2l1.5 1" /></svg>
+                <span>History</span>
+            </button>
+            <button type="button"
+                    id="btnRefreshRentals"
+                    class="my-rentals-btn-refresh"
+                    title="Refresh rentals"
+                    aria-label="Refresh rentals and reset the page">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /><polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <span>Refresh</span>
+            </button>
         </div>
     </header>
 
@@ -789,7 +789,11 @@
             </div>
             <footer class="my-rentals-modal__footer">
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOngoingClose">Close</button>
-                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOngoingConfirmReturn" disabled title="The borrower must submit the return request first.">Awaiting Borrower Return</button>
+                <button type="button"
+                        class="my-rentals-btn rm-btn-accept"
+                        id="btnOngoingConfirmReturn">
+                    Request Return
+                </button>
             </footer>
         </div>
     </div>
@@ -924,10 +928,106 @@
             </div>
             <footer class="my-rentals-modal__footer">
                 <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOverdueClose">Close</button>
-                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnOverdueProceedReturn" disabled title="The borrower must submit the return request first.">Awaiting Borrower Return</button>
+                <button type="button"
+                        class="my-rentals-btn rm-btn-accept"
+                        id="btnOverdueProceedReturn">
+                    Request Return
+                </button>
             </footer>
         </div>
     </div>
+
+    <!--1st-->>
+    <div id="modalReturnInspection"
+         class="my-rentals-modal-overlay"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="returnInspectionTitle">
+
+        <div class="my-rentals-modal">
+
+            <header class="my-rentals-modal__header">
+                <div class="my-rentals-modal__header-copy">
+                    <span class="rm-modal-status-badge rm-modal-status-badge--ongoing">
+                        RETURN REQUEST
+                    </span>
+
+                    <h2 class="my-rentals-modal__title"
+                        id="returnInspectionTitle">
+                        Return Condition Inspection
+                    </h2>
+
+                    <p class="my-rentals-modal__description">
+                        Record the item's condition before submitting your return request.
+                    </p>
+                </div>
+
+                <button type="button"
+                        class="my-rentals-modal__close-btn"
+                        id="btnCloseReturnInspection"
+                        aria-label="Close">
+                    &times;
+                </button>
+            </header>
+
+            <div class="my-rentals-modal__body">
+
+                <div class="my-rentals-details-field">
+                    <label for="detailsReturnCondition">
+                        Item Condition
+                    </label>
+
+                    <select id="detailsReturnCondition">
+                        <option value="">Select item condition</option>
+                        <option value="EXCELLENT">Excellent - Like new</option>
+                        <option value="GOOD">Good - Normal condition</option>
+                        <option value="FAIR">Fair - Minor wear or issues</option>
+                        <option value="POOR">Poor - Significant wear or issues</option>
+                        <option value="DAMAGED">Damaged - Requires inspection</option>
+                    </select>
+                </div>
+
+                <div class="my-rentals-details-field">
+                    <label for="detailsReturnNotes">
+                        Inspection Notes
+                    </label>
+
+                    <textarea id="detailsReturnNotes"
+                              maxlength="1000"
+                              rows="3"
+                              placeholder="Describe the item's condition..."></textarea>
+                </div>
+
+                <div class="my-rentals-details-field">
+                    <label for="detailsReturnPhotos">
+                        Inspection Photos (Maximum 5)
+                    </label>
+
+                    <input type="file"
+                           id="detailsReturnPhotos"
+                           accept="image/*"
+                           multiple />
+                </div>
+
+            </div>
+
+            <footer class="my-rentals-modal__footer">
+                <button type="button"
+                        class="my-rentals-btn my-rentals-btn-secondary"
+                        id="btnCancelReturnInspection">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        class="my-rentals-btn rm-btn-accept"
+                        id="btnSubmitReturnInspection">
+                    Submit Return Request
+                </button>
+            </footer>
+
+        </div>
+    </div>
+
 
     <!-- MODAL F: Return Confirmation -->
     <div id="modalReturn"
@@ -1034,6 +1134,120 @@
                     </div>
                 </div>
 
+
+
+                <!-- BORROWER: Submit return condition -->
+                <div id="borrowerReturnConditionSection" style="display:none;">
+
+                    <div class="rm-section-label">SUBMIT RETURN CONDITION</div>
+
+                    <div class="rm-return-inspection">
+                        <p class="rm-detail-label">
+                            Describe the condition of the item after returning it.
+                            The owner will review your submission.
+                        </p>
+
+                        <div class="rm-detail-item">
+                            <label for="borrowerReturnCondition" class="rm-detail-label">
+                                Item Condition
+                            </label>
+                            <select id="borrowerReturnCondition">
+                                <option value="">Select item condition</option>
+                                <option value="EXCELLENT">Excellent - Like new</option>
+                                <option value="GOOD">Good - Normal condition</option>
+                                <option value="FAIR">Fair - Minor wear or issues</option>
+                                <option value="POOR">Poor - Significant wear or issues</option>
+                                <option value="DAMAGED">Damaged - Requires inspection</option>
+                            </select>
+                        </div>
+
+                        <div class="rm-detail-item">
+                            <label for="borrowerReturnNotes" class="rm-detail-label">
+                                Return Notes
+                            </label>
+                            <textarea id="borrowerReturnNotes"
+                                      maxlength="1000"
+                                      rows="3"
+                                      placeholder="Describe the item's condition or any observations..."></textarea>
+                        </div>
+
+                        <div class="rm-detail-item">
+                            <small>Upload photos showing the item's condition after return.</small>
+                            <div id="borrowerReturnExistingPhotos"
+                                 class="rm-condition-photos">
+                            </div>
+                            <label for="borrowerReturnPhotos" class="rm-detail-label">
+                                Return Photos (Maximum 5)
+                            </label>
+                            <input type="file"
+                                   id="borrowerReturnPhotos"
+                                   accept="image/*"
+                                   multiple />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OWNER: Review borrower's submitted condition -->
+                <div id="ownerReturnConditionSection" style="display:none;">
+
+                    <div class="rm-section-label">BORROWER'S RETURN CONDITION</div>
+
+                    <div class="rm-return-inspection">
+
+                        <div class="rm-detail-item">
+                            <span class="rm-detail-label">Submitted Condition</span>
+                            <strong id="ownerReviewReturnCondition">Not available</strong>
+                        </div>
+
+                        <div class="rm-detail-item">
+                            <span class="rm-detail-label">Borrower's Notes</span>
+                            <p id="ownerReviewReturnNotes">No notes provided.</p>
+                        </div>
+
+                        <div class="rm-detail-item">
+                            <span class="rm-detail-label">Submitted Photos</span>
+                            <div id="ownerReviewReturnPhotos">
+                                No photos submitted.
+                            </div>
+                        </div>
+
+                        <small id="ownerReviewReturnDate"></small>
+                    </div>
+                </div>
+
+                <!-- OWNER: Final confirmation -->
+                <div id="ownerReturnConditionSection"
+                     class="rm-return-confirmation-box"
+                     role="note"
+                     style="display:none;">
+
+                    <div class="rm-return-confirmation-box__header">
+                        <svg class="rm-notice-icon"
+                             viewBox="0 0 20 20"
+                             aria-hidden="true">
+                            <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2zm0 4v4m0 4h.01"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                  fill="none" />
+                        </svg>
+                        <strong>Final Confirmation</strong>
+                    </div>
+
+                    <p class="rm-return-confirmation-box__title">
+                        Confirm the item has been inspected
+                    </p>
+
+                    <p class="rm-return-confirmation-box__text">
+                        Review the borrower's submitted condition and physically inspect
+                        the returned item. Click <strong>Mark as Completed</strong> if
+                        everything is in order. If there is damage, missing parts, or
+                        another unresolved issue, use <strong>Report a Dispute</strong>.
+                    </p>
+                </div>
+
+
+
                 <!-- Return confirmation notice (visually distinct from the rental information above) -->
                 <div class="rm-return-confirmation-box" role="note">
                     <div class="rm-return-confirmation-box__header">
@@ -1044,16 +1258,50 @@
                     <p class="rm-return-confirmation-box__text">Click <strong>Mark as Completed</strong> once you have checked the item and everything is in order. If there is damage, missing parts, or any other unresolved issue, use <strong>Report a Dispute</strong> instead.</p>
                 </div>
             </div>
+
             <footer class="my-rentals-modal__footer rm-footer-split">
-                <button type="button" class="my-rentals-btn my-rentals-btn-secondary" id="btnReturnClose">Close</button>
+
+                <button type="button"
+                        class="my-rentals-btn my-rentals-btn-secondary"
+                        id="btnReturnClose">
+                    Close
+                </button>
+
                 <span class="rm-footer-group">
-                    <button type="button" class="my-rentals-btn rm-btn-report-dispute" id="btnReturnReportDispute">
-                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2 1.5 13.5h13L8 2zm0 4.5v3m0 2h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+
+                    <button type="button"
+                            class="my-rentals-btn rm-btn-report-dispute"
+                            id="btnReturnReportDispute">
+                        <svg viewBox="0 0 16 16"
+                             width="14"
+                             height="14"
+                             aria-hidden="true">
+                            <path d="M8 2 1.5 13.5h13L8 2zm0 4.5v3m0 2h.01"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  fill="none" />
+                        </svg>
                         Report a Dispute
                     </button>
-                    <button type="button" class="my-rentals-btn rm-btn-accept" id="btnReturnConfirm">&#10003; Mark as Completed</button>
+
+                    <button type="button"
+                            class="my-rentals-btn rm-btn-accept"
+                            id="btnBorrowerSubmitReturnCondition"
+                            style="display:none;">
+                        Submit Return Condition
+                    </button>
+
+                    <button type="button"
+                            class="my-rentals-btn rm-btn-accept"
+                            id="btnReturnConfirm">
+                        &#10003; Mark as Completed
+                    </button>
+
                 </span>
             </footer>
+
         </div>
     </div>
 
@@ -1270,13 +1518,16 @@
                         <p>Save the item's condition and photos before confirming the physical handover.</p>
                     </div>
                     <div class="rm-condition-grid">
-                        <label class="rm-condition-field" for="ownerHandoverCondition">Condition
+                        <label class="rm-condition-field" for="ownerHandoverCondition">
+                            Condition
                             <select id="ownerHandoverCondition"><option value="GOOD">Good</option><option value="EXCELLENT">Excellent</option><option value="FAIR">Fair</option><option value="POOR">Poor</option><option value="DAMAGED">Damaged</option></select>
                         </label>
-                        <label class="rm-condition-field" for="ownerHandoverNotes">Notes
+                        <label class="rm-condition-field" for="ownerHandoverNotes">
+                            Notes
                             <textarea id="ownerHandoverNotes" maxlength="1000" rows="3" placeholder="Describe the item's condition or included accessories"></textarea>
                         </label>
-                        <label class="rm-condition-field rm-condition-field--photos" for="ownerHandoverPhotos">Condition photos
+                        <label class="rm-condition-field rm-condition-field--photos" for="ownerHandoverPhotos">
+                            Condition photos
                             <input id="ownerHandoverPhotos" type="file" accept="image/jpeg,image/png" multiple />
                             <span class="rm-condition-help">JPG or PNG, up to 5 photos (5 MB each).</span>
                         </label>
@@ -1738,13 +1989,59 @@
                 </dl>
             </div>
 
+
+            <div id="detailsReturnInspection" hidden>
+                <hr />
+
+                <h3>Return Condition Inspection</h3>
+                <p>Record the condition of the item when requesting its return.</p>
+
+                <div class="my-rentals-details-field">
+                    <label for="detailsReturnCondition">Item Condition</label>
+                    <select id="detailsReturnCondition">
+                        <option value="">Select item condition</option>
+                        <option value="EXCELLENT">Excellent - Like new</option>
+                        <option value="GOOD">Good - Normal condition</option>
+                        <option value="FAIR">Fair - Minor wear or issues</option>
+                        <option value="POOR">Poor - Significant wear or issues</option>
+                        <option value="DAMAGED">Damaged - Requires inspection</option>
+                    </select>
+                </div>
+
+                <div class="my-rentals-details-field">
+                    <label for="detailsReturnNotes">Inspection Notes</label>
+                    <textarea id="detailsReturnNotes"
+                              maxlength="1000"
+                              rows="3"
+                              placeholder="Describe the item's condition..."></textarea>
+                </div>
+
+                <div class="my-rentals-details-field">
+                    <label for="detailsReturnPhotos">Inspection Photos (Maximum 5)</label>
+                    <input type="file"
+                           id="detailsReturnPhotos"
+                           accept="image/*"
+                           multiple />
+                </div>
+            </div>
+
+
+
             <footer class="my-rentals-modal__footer">
                 <button type="button"
                         class="my-rentals-btn my-rentals-btn-secondary"
                         id="btnDetailsClose">
                     Close
                 </button>
+
+                <button type="button"
+                        class="my-rentals-btn rm-btn-accept"
+                        id="btnDetailsRequestReturn"
+                        hidden>
+                    Request Return
+                </button>
             </footer>
+
         </div>
     </div>
 </div>
