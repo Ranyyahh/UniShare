@@ -57,7 +57,13 @@
     function today() { return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
     function byId(id) { for (var i = 0; i < items.length; i++) { if (items[i].id === id) { return items[i]; } } return null; }
     function isAwaiting(it) { return !!it.canConfirmHandover; }
-    function isInUse(it) { return (it.status === 'Ongoing' || it.status === 'Return Requested') && it.handover; }
+    function isInUse(it) {
+        return (
+            it.status === 'Ongoing' ||
+            it.status === 'Overdue' ||
+            it.status === 'Return Requested'
+        ) && it.handover;
+    }
     function lower(s) { return String(s).toLowerCase(); }
     function money(n) { return PESO + n.toFixed(2); }
     function human(ms) {
@@ -446,33 +452,157 @@
     function openDialog(d) { if (d && typeof d.showModal === 'function' && !d.open) { d.showModal(); } }
     function closeDialog(d) { if (d && d.open) { d.close(); } }
 
+
     function postAction(url, values, callback) {
         var token = root.querySelector('input[name="__RequestVerificationToken"]');
         var body = new URLSearchParams();
+
         body.append('__RequestVerificationToken', token ? token.value : '');
-        Object.keys(values).forEach(function (key) { body.append(key, values[key] === null || values[key] === undefined ? '' : values[key]); });
-        fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
-            .then(function (response) { return response.json().then(function (result) { if (!response.ok) { throw new Error(result.message || 'The request could not be completed.'); } return result; }); })
-            .then(function (result) { if (!result.ok) { throw new Error(result.message || 'The request could not be completed.'); } callback(result); })
-            .catch(function (error) { toast(error.message || 'The request could not be completed. Refresh and try again.'); });
+
+        Object.keys(values).forEach(function (key) {
+            body.append(
+                key,
+                values[key] === null || values[key] === undefined
+                    ? ''
+                    : values[key]
+            );
+        });
+
+        fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body.toString()
+        })
+            .then(function (response) {
+                return response.text().then(function (text) {
+                    var result;
+
+                    try {
+                        result = JSON.parse(text);
+                    } catch (error) {
+                        console.error('Borrowed Items: Expected JSON but received:', {
+                            status: response.status,
+                            url: response.url,
+                            redirected: response.redirected,
+                            response: text.substring(0, 1000)
+                        });
+
+                        throw new Error(
+                            'The server returned an unexpected page instead of JSON. HTTP ' +
+                            response.status +
+                            '. Check the browser console for details.'
+                        );
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(
+                            result.message || 'The request could not be completed.'
+                        );
+                    }
+
+                    return result;
+                });
+            })
+            .then(function (result) {
+                if (!result.ok) {
+                    throw new Error(
+                        result.message || 'The request could not be completed.'
+                    );
+                }
+
+                callback(result);
+            })
+            .catch(function (error) {
+                console.error('Borrowed Items request failed:', error);
+                toast(error.message || 'The request could not be completed. Refresh and try again.');
+            });
     }
+
+
 
     function postCondition(id, phase, formId, callback) {
         var formEl = $(formId);
-        var files = formEl.querySelector('[name="conditionPhotos"]').files;
-        if (files.length > 5) { toast('Upload no more than five condition photos.'); return; }
+
+        if (!formEl) {
+            toast('The condition form could not be found.');
+            return;
+        }
+
+        var photoInput = formEl.querySelector('[name="conditionPhotos"]');
+        var files = photoInput ? photoInput.files : [];
+
+        if (files.length > 5) {
+            toast('Upload no more than five condition photos.');
+            return;
+        }
+
         var body = new FormData();
         var token = root.querySelector('input[name="__RequestVerificationToken"]');
+
         body.append('id', id);
         body.append('phase', phase);
         body.append('condition', formEl.querySelector('[name="condition"]').value);
         body.append('notes', formEl.querySelector('[name="conditionNotes"]').value);
-        if (token) body.append('__RequestVerificationToken', token.value);
-        Array.prototype.forEach.call(files, function (file) { body.append('photos', file, file.name); });
-        fetch(root.getAttribute('data-condition-url'), { method: 'POST', credentials: 'same-origin', body: body })
-            .then(function (response) { return response.json().then(function (result) { if (!response.ok || !result.ok) throw new Error(result.message || 'Condition details could not be saved.'); return result; }); })
-            .then(callback)
-            .catch(function (error) { toast(error.message || 'Condition details could not be saved.'); });
+
+        if (token) {
+            body.append('__RequestVerificationToken', token.value);
+        }
+
+        Array.prototype.forEach.call(files, function (file) {
+            body.append('photos', file, file.name);
+        });
+
+        fetch(root.getAttribute('data-condition-url'), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body
+        })
+            .then(function (response) {
+                return response.text().then(function (text) {
+                    var result;
+
+                    try {
+                        result = JSON.parse(text);
+                    } catch (error) {
+                        console.error('Condition request returned unexpected content:', {
+                            status: response.status,
+                            url: response.url,
+                            redirected: response.redirected,
+                            response: text.substring(0, 1000)
+                        });
+
+                        throw new Error(
+                            'The server returned an unexpected page while saving condition details. HTTP ' +
+                            response.status +
+                            '. Check the browser console.'
+                        );
+                    }
+
+                    if (!response.ok || !result.ok) {
+                        throw new Error(
+                            result.message || 'Condition details could not be saved.'
+                        );
+                    }
+
+                    return result;
+                });
+            })
+            .then(function () {
+                callback();
+            })
+            .catch(function (error) {
+                console.error('Condition submission failed:', error);
+                toast(error.message || 'Condition details could not be saved.');
+            });
     }
 
     function openAsk(dialogId, formId, id, fields) {
@@ -502,18 +632,54 @@
         });
     }
 
+
     function doReturn(id) {
         var it = byId(id);
-        if (!it || !isInUse(it)) { return; }
-        postCondition(id, 'RETURN', 'bi-return-form', function () {
-            postAction(root.getAttribute('data-return-url'), { id: id, returned: true }, function (result) {
-                it.status = 'Return Requested'; it.returnRequested = true;
-                it.returnRequestedOn = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+        if (!it || !isInUse(it)) {
+            return;
+        }
+
+        var requestUrl = root.getAttribute('data-return-url');
+
+        if (!requestUrl) {
+            toast('The return-request URL could not be found.');
+            return;
+        }
+
+        // Step 1: Initiate the return first.
+        postAction(requestUrl, {
+            id: id,
+            returned: true
+        }, function (result) {
+
+            if (!result || !result.ok) {
+                toast(result && result.message
+                    ? result.message
+                    : 'The return request could not be submitted.');
+                return;
+            }
+
+            // Step 2: Update the local rental status.
+            it.status = 'Return Requested';
+            it.returnRequested = true;
+            it.returnRequestedOn = new Date().toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+
+            render();
+
+            // Step 3: Save the borrower's return condition.
+            postCondition(id, 'RETURN', 'bi-return-form', function () {
                 closeDialog($('bi-return'));
-                render(); toast(result.message);
+                toast('Return request and condition submitted successfully.');
             });
         });
     }
+
 
     function doDispute(id, reason, details) {
         var it = byId(id);

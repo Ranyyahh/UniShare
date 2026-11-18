@@ -77,6 +77,7 @@
         detailsModal: document.getElementById('myRentalsDetailsModal'),
         btnCloseDetailsModal: document.getElementById('btnCloseDetailsModal'),
         btnDetailsClose: document.getElementById('btnDetailsClose'),
+        btnDetailsRequestReturn: document.getElementById('btnDetailsRequestReturn'),
 
         // Pending / Accept / Decline / Ongoing modals
         pendingModal: document.getElementById('modalPendingDetails'),
@@ -99,6 +100,10 @@
 
         // Overdue / Return / Dispute modals
         overdueModal: document.getElementById('modalOverdue'),
+        returnInspectionModal: document.getElementById('modalReturnInspection'),
+        btnCloseReturnInspection: document.getElementById('btnCloseReturnInspection'),
+        btnCancelReturnInspection: document.getElementById('btnCancelReturnInspection'),
+        btnSubmitReturnInspection: document.getElementById('btnSubmitReturnInspection'),
         btnCloseOverdueModal: document.getElementById('btnCloseOverdueModal'),
         btnOverdueClose: document.getElementById('btnOverdueClose'),
         btnOverdueProceedReturn: document.getElementById('btnOverdueProceedReturn'),
@@ -154,6 +159,8 @@
     //  returnTo:    modal to go back to when a confirmation (Accept / Decline) is cancelled
     //  returnFocus: control that opened the confirmation, so focus can go back to it
     var flow = { rental: null, trigger: null, returnTo: null, returnFocus: null };
+    var returnInspectionSourceModal = null;
+    var returnRequestSubmitted = false;
     var countdownTimer = null;
     var overdueTimer = null;
     var thumbPlaceholders = {};
@@ -387,7 +394,7 @@
             if (m[7] !== 'Z') {
                 var sign = m[7].charAt(0) === '-' ? -1 : 1;
                 var digits = m[7].replace(/[^0-9]/g, '');
-                var offsetMinutes = sign * (parseInt(digits.substr(0, 2), 10) * 60 + parseInt(digits.substr(2, 2), 10));
+                var offsetMinutes = sign * (parseInt(digits.slice(0, 2), 10) * 60 + parseInt(digits.slice(2, 4), 10));
                 utc -= offsetMinutes * 60000;
             }
             return new Date(utc);
@@ -579,7 +586,7 @@
 
         // Escape key dismisses whichever modal is open
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' || e.key === 'Esc' || e.keyCode === 27) {
+            if (e.key === 'Escape' || e.key === 'Esc' || e.key === 27) {
                 var openFlowModal = getOpenFlowModal();
                 if (openFlowModal) {
                     dismissFlowModal(openFlowModal);
@@ -780,6 +787,35 @@
         ownerState.className = ownerConfirmed ? 'is-confirmed' : 'is-awaiting';
         borrowerState.className = borrowerConfirmed ? 'is-confirmed' : 'is-awaiting';
         activeDetailRental = rental;
+        //temp fix
+        console.log('=== REQUEST RETURN DEBUG ===');
+        console.log('Rental Status:', rental.Status);
+        console.log('Owner Confirmed:', rental.OwnerHandoverConfirmed);
+        console.log('Borrower Confirmed:', rental.BorrowerHandoverConfirmed);
+        console.log('Booking ID:', rental.BookingObjectId);
+        console.log('Return Button:', document.getElementById('btnDetailsRequestReturn'));
+        console.log('Return Inspection:', document.getElementById('detailsReturnInspection'));
+        var returnButton = document.getElementById('btnDetailsRequestReturn');
+        var returnInspection = document.getElementById('detailsReturnInspection');
+
+        var canRequestReturn =
+            (rental.Status === 'Ongoing' || rental.Status === 'Overdue') &&
+            ownerConfirmed &&
+            borrowerConfirmed;
+
+        if (returnButton) {
+            console.log('Return button found:', returnButton);
+            console.log('Can request return:', canRequestReturn);
+
+            returnButton.hidden = false;
+            returnButton.style.display = 'inline-flex';
+        } else {
+            console.log('ERROR: Request Return button not found in HTML.');
+        }
+
+        if (returnInspection) {
+            returnInspection.hidden = !canRequestReturn;
+        }
         var timerField = document.getElementById('detailsTimerField');
         if (timerField) timerField.hidden = !(ownerConfirmed && borrowerConfirmed && rental.HandoverDate);
         updateDetailsTimer();
@@ -792,11 +828,24 @@
         }
 
         detailsTrigger = triggerEl || null;
+        console.log('OPEN DETAILS MODAL CALLED');
+
         elements.detailsModal.classList.add('is-open');
+
+        console.log('After opening:', elements.detailsModal.className);
         elements.btnCloseDetailsModal.focus();
     }
 
     function hideDetailsModal() {
+        console.log('HIDE DETAILS MODAL CALLED');
+
+        elements.detailsModal.classList.remove('is-open');
+
+        console.log('After closing:', elements.detailsModal.className);
+
+        if (detailsTimer) clearInterval(detailsTimer);
+        detailsTimer = null;
+
         elements.detailsModal.classList.remove('is-open');
         if (detailsTimer) clearInterval(detailsTimer);
         detailsTimer = null;
@@ -866,10 +915,21 @@
     }
 
     function getFlowModals() {
-        return [elements.pendingModal, elements.acceptModal, elements.declineModal, elements.ongoingModal,
-        elements.overdueModal, elements.returnModal, elements.disputeModal,
-        elements.acceptedModal, elements.declinedModal, elements.disputedModal, elements.completedModal,
-        elements.statusConfirmModal];
+        return [
+            elements.pendingModal,
+            elements.acceptModal,
+            elements.declineModal,
+            elements.ongoingModal,
+            elements.overdueModal,
+            elements.returnModal,
+            elements.disputeModal,
+            elements.acceptedModal,
+            elements.declinedModal,
+            elements.disputedModal,
+            elements.completedModal,
+            elements.statusConfirmModal,
+            elements.returnInspectionModal
+        ];
     }
 
     function getOpenFlowModal() {
@@ -906,6 +966,129 @@
                 startOverdueTimer(flow.rental);
             }
         }
+    }
+
+    function openReturnInspectionModal(sourceModal) {
+        var rental = flow.rental;
+
+        if (!rental || !rental.BookingObjectId) {
+            window.alert('Rental information could not be found.');
+            return;
+        }
+
+        if (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue') {
+            window.alert('This rental cannot request a return from its current status.');
+            return;
+        }
+
+        returnInspectionSourceModal = sourceModal;
+        returnRequestSubmitted = false;
+
+        var conditionInput = document.getElementById('detailsReturnCondition');
+        var notesInput = document.getElementById('detailsReturnNotes');
+        var photoInput = document.getElementById('detailsReturnPhotos');
+
+        if (conditionInput) conditionInput.value = '';
+        if (notesInput) notesInput.value = '';
+        if (photoInput) photoInput.value = '';
+
+        elements.btnSubmitReturnInspection.disabled = false;
+        elements.btnSubmitReturnInspection.textContent = 'Submit Return Request';
+
+        showFlowModal(
+            elements.returnInspectionModal,
+            elements.btnCloseReturnInspection
+        );
+    }
+
+    function submitReturnInspection() {
+        var rental = flow.rental;
+        var button = elements.btnSubmitReturnInspection;
+
+        if (!rental || !rental.BookingObjectId) {
+            window.alert('Rental information could not be found.');
+            return;
+        }
+
+        var conditionInput = document.getElementById('detailsReturnCondition');
+        var photoInput = document.getElementById('detailsReturnPhotos');
+
+        if (!conditionInput || !conditionInput.value) {
+            window.alert('Please select the returned item condition.');
+            return;
+        }
+
+        var files = photoInput ? photoInput.files : [];
+
+        if (files.length > 5) {
+            window.alert('Upload no more than five condition photos.');
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Submitting...';
+
+        function saveCondition() {
+            postDetailsReturnCondition(
+                rental.BookingObjectId,
+                function (conditionResult) {
+
+                    if (!conditionResult || !conditionResult.ok) {
+                        button.disabled = false;
+                        button.textContent = 'Retry Condition Submission';
+
+                        window.alert(
+                            conditionResult && conditionResult.message
+                                ? conditionResult.message
+                                : 'The return request was sent, but the condition record could not be saved. Please retry.'
+                        );
+                        return;
+                    }
+
+                    window.alert(
+                        'Return request and condition inspection submitted successfully.'
+                    );
+
+                    window.location.reload();
+                }
+            );
+        }
+
+        // If the request was already submitted, only retry the condition record.
+        if (returnRequestSubmitted) {
+            saveCondition();
+            return;
+        }
+
+        // First, change the rental status to RETURN_REQUESTED.
+        postRentalAction(
+            'data-return-request-url',
+            rental.BookingObjectId,
+            function (result) {
+
+                if (!result || !result.ok) {
+                    button.disabled = false;
+                    button.textContent = 'Submit Return Request';
+
+                    window.alert(
+                        result && result.message
+                            ? result.message
+                            : 'The return request could not be submitted.'
+                    );
+                    return;
+                }
+
+                // The request succeeded. Do not send it again during a condition retry.
+                returnRequestSubmitted = true;
+
+                button.textContent = 'Saving Condition...';
+
+                saveCondition();
+            },
+            {
+                returned: true
+            }
+        );
     }
 
     function endFlow(restoreFocus) {
@@ -1035,6 +1218,14 @@
         setText('pendingReturnSchedule', rental.ExpectedReturnFormatted);
         setText('pendingFeeBreakdown', rental.RentalFeeFormatted);
         setText('pendingNote', rental.RequestNote);
+        // Only the item owner can accept or decline a pending request.
+        var canManageRequest = rental.CanManageRequest === true;
+
+        elements.btnPendingAccept.hidden = !canManageRequest;
+        elements.btnPendingDecline.hidden = !canManageRequest;
+
+        elements.btnPendingAccept.style.display = canManageRequest ? '' : 'none';
+        elements.btnPendingDecline.style.display = canManageRequest ? '' : 'none';
 
         showFlowModal(elements.pendingModal, elements.btnClosePendingDetails);
     }
@@ -1042,7 +1233,8 @@
     // --- Accept ---
     function openAcceptModal() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1063,7 +1255,8 @@
 
     function confirmAccept() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1105,7 +1298,8 @@
 
     function openDeclineModal() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1121,7 +1315,8 @@
 
     function confirmDecline() {
         var rental = flow.rental;
-        if (!rental || rental.Status !== 'Pending') {
+
+        if (!rental || rental.Status !== 'Pending' || rental.CanManageRequest !== true) {
             return;
         }
 
@@ -1271,6 +1466,135 @@
             .then(function (r) { return r.json(); }).then(callback)
             .catch(function () { callback({ ok: false, message: 'Handover condition could not be saved.' }); });
     }
+
+
+
+    function postReturnCondition(bookingId, callback) {
+        var conditionInput = document.getElementById('borrowerReturnCondition');
+        var notesInput = document.getElementById('borrowerReturnNotes');
+        var photoInput = document.getElementById('borrowerReturnPhotos');
+
+        if (!conditionInput || !conditionInput.value) {
+            callback({
+                ok: false,
+                message: 'Please select the returned item condition.'
+            });
+            return;
+        }
+
+        var files = photoInput ? photoInput.files : [];
+
+        if (files.length > 5) {
+            callback({
+                ok: false,
+                message: 'Upload no more than five condition photos.'
+            });
+            return;
+        }
+
+        var form = new FormData();
+        var token = document.querySelector(
+            'input[name="__RequestVerificationToken"]'
+        );
+
+        form.append('id', bookingId || '');
+        form.append('phase', 'RETURN');
+        form.append('condition', conditionInput.value);
+        form.append('notes', notesInput ? notesInput.value : '');
+
+        if (token) {
+            form.append('__RequestVerificationToken', token.value);
+        }
+
+        Array.prototype.forEach.call(files, function (file) {
+            form.append('photos', file, file.name);
+        });
+
+        var root = document.querySelector('.my-rentals-page');
+
+        fetch(root.getAttribute('data-condition-url'), {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: form
+        })
+            .then(function (r) {
+                return r.json();
+            })
+            .then(callback)
+            .catch(function () {
+                callback({
+                    ok: false,
+                    message: 'Your return condition could not be saved.'
+                });
+            });
+    }
+
+
+    function postDetailsReturnCondition(bookingId, callback) {
+        var conditionInput = document.getElementById('detailsReturnCondition');
+        var notesInput = document.getElementById('detailsReturnNotes');
+        var photoInput = document.getElementById('detailsReturnPhotos');
+
+        if (!conditionInput || !conditionInput.value) {
+            callback({
+                ok: false,
+                message: 'Please select the returned item condition.'
+            });
+            return;
+        }
+
+        var files = photoInput ? photoInput.files : [];
+
+        if (files.length > 5) {
+            callback({
+                ok: false,
+                message: 'Upload no more than five condition photos.'
+            });
+            return;
+        }
+
+        var form = new FormData();
+        var token = document.querySelector(
+            'input[name="__RequestVerificationToken"]'
+        );
+
+        form.append('id', bookingId || '');
+        form.append('phase', 'RETURN');
+        form.append('condition', conditionInput.value);
+        form.append('notes', notesInput ? notesInput.value : '');
+
+        if (token) {
+            form.append('__RequestVerificationToken', token.value);
+        }
+
+        Array.prototype.forEach.call(files, function (file) {
+            form.append('photos', file, file.name);
+        });
+
+        var root = document.querySelector('.my-rentals-page');
+
+        fetch(root.getAttribute('data-condition-url'), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: form
+        })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(callback)
+            .catch(function () {
+                callback({
+                    ok: false,
+                    message: 'The lender return condition could not be saved.'
+                });
+            });
+    }
+
+
 
     function startRental(rental) {
         var now = new Date();
@@ -1617,36 +1941,233 @@
 
     // --- Returned ---
     // Reached from the table (Returned rows) and right after Ongoing / Overdue -> Mark as Returned.
+
+
     function openReturnModal(rental, triggerEl) {
         if (!rental) {
             return;
         }
+
+        var isOwner = rental.CanConfirmReturn === true;
+        var hasSubmittedCondition =
+            rental.HasBorrowerReturnCondition === true;
+
+        console.log("RETURN MODAL DEBUG:", {
+            isOwner: isOwner,
+            canConfirmReturn: rental.CanConfirmReturn,
+            hasSubmittedCondition: hasSubmittedCondition,
+            borrowerSection: document.getElementById(
+                'borrowerReturnConditionSection'
+            )
+        });
+
+        // Only the owner can see the completion button.
+        elements.btnReturnConfirm.style.display =
+            isOwner ? '' : 'none';
+
+        var borrowerSection = document.getElementById(
+            'borrowerReturnConditionSection'
+        );
+
+        var ownerSection = document.getElementById(
+            'ownerReturnConditionSection'
+        );
+
+        var ownerConfirmationSection = document.getElementById(
+            'ownerReturnConfirmationSection'
+        );
+
+        var borrowerSubmitButton = document.getElementById(
+            'btnBorrowerSubmitReturnCondition'
+        );
+
+        // BORROWER:
+        // Keep the condition form visible even after submission.
+        if (borrowerSection) {
+            borrowerSection.style.display =
+                !isOwner ? '' : 'none';
+        }
+
+        // Restore the borrower's previously submitted values.
+        if (!isOwner && hasSubmittedCondition) {
+            var conditionInput = document.getElementById(
+                'borrowerReturnCondition'
+            );
+
+            var notesInput = document.getElementById(
+                'borrowerReturnNotes'
+            );
+
+            if (conditionInput) {
+                conditionInput.value =
+                    rental.BorrowerReturnCondition || '';
+            }
+
+            if (notesInput) {
+                notesInput.value =
+                    rental.BorrowerReturnNotes || '';
+            }
+
+            // Display previously submitted photos.
+            var existingPhotosContainer = document.getElementById(
+                'borrowerReturnExistingPhotos'
+            );
+
+            if (existingPhotosContainer) {
+                existingPhotosContainer.innerHTML = '';
+
+                var existingPhotos =
+                    rental.BorrowerReturnPhotos || [];
+
+                if (existingPhotos.length > 0) {
+                    existingPhotos.forEach(function (photo) {
+                        var img = document.createElement('img');
+
+                        var imageUrl = photo;
+
+                        if (imageUrl && imageUrl.indexOf('/') === -1) {
+                            imageUrl = '/Uploads/' + imageUrl;
+                        }
+
+                        img.src = imageUrl;
+                        img.alt = 'Previously submitted return-condition photo';
+                        img.className = 'rm-condition-photo';
+
+                        img.onerror = function () {
+                            img.style.display = 'none';
+                        };
+
+                        existingPhotosContainer.appendChild(img);
+                    });
+                } else {
+                    existingPhotosContainer.textContent =
+                        'No previously submitted photos.';
+                }
+            }
+        }
+
+        // Keep the submit button visible to the borrower.
+        if (borrowerSubmitButton) {
+            borrowerSubmitButton.style.display =
+                !isOwner ? '' : 'none';
+
+            borrowerSubmitButton.textContent =
+                hasSubmittedCondition
+                    ? 'Update Return Condition'
+                    : 'Submit Return Condition';
+        }
+
+        // OWNER:
+        // Show the borrower's submitted condition for inspection.
+        if (ownerSection) {
+            ownerSection.style.display =
+                isOwner && hasSubmittedCondition ? '' : 'none';
+        }
+
+        if (ownerConfirmationSection) {
+            ownerConfirmationSection.style.display =
+                isOwner && hasSubmittedCondition ? '' : 'none';
+        }
+
+        if (isOwner && hasSubmittedCondition) {
+            setText(
+                'ownerReviewReturnCondition',
+                rental.BorrowerReturnCondition || 'Not provided'
+            );
+
+            setText(
+                'ownerReviewReturnNotes',
+                rental.BorrowerReturnNotes ||
+                'No additional notes provided.'
+            );
+
+            setText(
+                'ownerReviewReturnDate',
+                rental.BorrowerReturnSubmittedAt || 'Date unavailable'
+            );
+
+            var photoContainer = document.getElementById(
+                'ownerReviewReturnPhotos'
+            );
+
+            if (photoContainer) {
+                photoContainer.innerHTML = '';
+
+                var photos = rental.BorrowerReturnPhotos || [];
+
+                if (photos.length > 0) {
+                    photos.forEach(function (photoUrl) {
+                        var img = document.createElement('img');
+
+                        var imageUrl = photoUrl;
+
+                        if (imageUrl && imageUrl.indexOf('/') === -1) {
+                            imageUrl = '/Uploads/' + imageUrl;
+                        }
+
+                        img.src = imageUrl;
+                        img.alt = 'Borrower return-condition photo';
+                        img.className = 'rm-condition-photo';
+
+                        img.onerror = function () {
+                            img.alt =
+                                'Unable to load return-condition photo';
+                            img.style.display = 'none';
+                        };
+
+                        photoContainer.appendChild(img);
+                    });
+                } else {
+                    photoContainer.textContent =
+                        'No photos submitted.';
+                }
+            }
+        }
+
         if (flow.rental !== rental) {
             flow.rental = rental;
             flow.trigger = triggerEl || null;
         }
+
         flow.returnTo = null;
         flow.returnFocus = null;
 
         fillRentalSummary('return', rental);
+
         setText('returnFeeBreakdown', rental.RentalFeeFormatted);
         setText('returnReturnedOn', rental.ReturnedAtFormatted);
-        setText('returnTiming', rental.ReturnOverdueMs > 0
-            ? formatSpan(rental.ReturnOverdueMs) + ' after the expected return'
-            : 'On time');
 
-        // A rental that came back overdue also shows what the delay cost
+        setText(
+            'returnTiming',
+            rental.ReturnOverdueMs > 0
+                ? formatSpan(rental.ReturnOverdueMs) +
+                ' after the expected return'
+                : 'On time'
+        );
+
         var lateRow = document.getElementById('returnLateRow');
+
         if (rental.WasOverdue) {
-            setText('returnLateText', formatSpan(rental.ReturnOverdueMs) + ' past the expected return');
+            setText(
+                'returnLateText',
+                formatSpan(rental.ReturnOverdueMs) +
+                ' past the expected return'
+            );
+
             setText('returnLateFee', formatPeso(rental.LateFee));
+
             lateRow.style.display = '';
         } else {
             lateRow.style.display = 'none';
         }
 
-        showFlowModal(elements.returnModal, elements.btnCloseReturnModal);
+        showFlowModal(
+            elements.returnModal,
+            elements.btnCloseReturnModal
+        );
     }
+
+
 
     // --- Shared confirmation step (Mark as Completed / Mark as Resolved) ---
     var CONFIRM_STEPS = {
@@ -1689,23 +2210,85 @@
         showFlowModal(elements.statusConfirmModal, elements.btnStatusConfirmCancel);
     }
 
+
     function runStatusConfirm() {
         var rental = flow.rental;
         var step = CONFIRM_STEPS[confirmKind];
-        // Ignore a second click (or a stale dialog): the record must still be in the expected status
+
+        // Ignore a second click or a stale dialog.
         if (!rental || !step || step.from.indexOf(rental.Status) === -1) {
             return;
         }
 
         if (confirmKind === 'completed') {
-            postRentalAction('data-return-url', rental.BookingObjectId, function (result) {
-                if (!result || !result.ok) { window.alert(result && result.message ? result.message : 'Return confirmation could not be saved.'); return; }
-                window.location.reload();
-            });
+
+            // The owner only confirms the return.
+            // The borrower's condition must already be submitted.
+            postRentalAction(
+                'data-return-url',
+                rental.BookingObjectId,
+                function (result) {
+
+                    if (!result || !result.ok) {
+                        window.alert(
+                            result && result.message
+                                ? result.message
+                                : 'Return confirmation could not be saved.'
+                        );
+                        return;
+                    }
+
+                    var condition = (
+                        rental.BorrowerReturnCondition || ''
+                    ).toUpperCase();
+
+                    if (
+                        condition === 'FAIR' ||
+                        condition === 'POOR' ||
+                        condition === 'DAMAGED'
+                    ) {
+                        var root = document.querySelector('.my-rentals-page');
+
+                        var inspectionUrl = root
+                            ? root.getAttribute('data-return-inspection-url')
+                            : '';
+
+                        if (inspectionUrl && rental.BookingObjectId) {
+                            window.location.href =
+                                inspectionUrl +
+                                '?id=' + encodeURIComponent(rental.BookingObjectId);
+                            return;
+                        }
+
+                        window.alert(
+                            'The return requires inspection, but the inspection page URL is unavailable.'
+                        );
+                        return;
+                    }
+
+                    // GOOD and EXCELLENT keep their existing reload behavior.
+                    window.location.reload();
+                }
+            );
+
+            console.log('RETURN CONFIRMATION DEBUG');
+            console.log('BookingObjectId:', rental.BookingObjectId);
+            console.log('RequestId:', rental.RequestId);
+            console.log('Rental Status:', rental.Status);
+            console.log(
+                'Confirmation URL:',
+                document.querySelector('.my-rentals-page')
+                    .getAttribute('data-return-url')
+            );
+
         } else if (confirmKind === 'resolved') {
-            window.alert('Only an administrator can resolve a dispute. Use Dispute Management to review and close it.');
+
+            window.alert(
+                'Only an administrator can resolve a dispute. Use Dispute Management to review and close it.'
+            );
         }
     }
+
 
     // Returned -> Completed (Mark as Completed) and Disputed -> Completed (Mark as Resolved)
     function markCompleted(rental, fromDispute) {
@@ -1999,6 +2582,63 @@
             endFlow(true);
         });
 
+        // Ongoing rental - Request Return
+        if (elements.btnOngoingConfirmReturn) {
+            elements.btnOngoingConfirmReturn.addEventListener('click', function (e) {
+                e.preventDefault();
+                openReturnInspectionModal(elements.ongoingModal);
+            });
+        }
+
+        // Overdue rental - Request Return
+        if (elements.btnOverdueProceedReturn) {
+            elements.btnOverdueProceedReturn.addEventListener('click', function (e) {
+                e.preventDefault();
+                openReturnInspectionModal(elements.overdueModal);
+            });
+        }
+
+        // Submit return inspection
+        if (elements.btnSubmitReturnInspection) {
+            elements.btnSubmitReturnInspection.addEventListener('click', function (e) {
+                e.preventDefault();
+                submitReturnInspection();
+            });
+        }
+
+        function closeReturnInspection() {
+
+            // Do not close while a submitted request still needs its condition record.
+            if (returnRequestSubmitted) {
+                window.alert(
+                    'Your return request has already been submitted. Please retry saving the condition inspection.'
+                );
+                return;
+            }
+
+            if (returnInspectionSourceModal === elements.ongoingModal) {
+                showFlowModal(
+                    elements.ongoingModal,
+                    elements.btnOngoingClose
+                );
+            } else if (returnInspectionSourceModal === elements.overdueModal) {
+                showFlowModal(
+                    elements.overdueModal,
+                    elements.btnOverdueClose
+                );
+            } else {
+                hideFlowModals();
+            }
+        }
+
+        if (elements.btnCloseReturnInspection) {
+            elements.btnCloseReturnInspection.addEventListener('click', closeReturnInspection);
+        }
+
+        if (elements.btnCancelReturnInspection) {
+            elements.btnCancelReturnInspection.addEventListener('click', closeReturnInspection);
+        }
+
         // Overdue
         elements.btnCloseOverdueModal.addEventListener('click', function (e) {
             e.preventDefault();
@@ -2026,6 +2666,129 @@
             e.preventDefault();
             openStatusConfirm('completed', elements.returnModal, elements.btnReturnConfirm);
         });
+
+        elements.btnReturnConfirm.addEventListener('click', function (e) {
+            e.preventDefault();
+            openStatusConfirm('completed', elements.returnModal, elements.btnReturnConfirm);
+        });
+
+        var borrowerSubmitButton = document.getElementById(
+            'btnBorrowerSubmitReturnCondition'
+        );
+
+        if (borrowerSubmitButton) {
+            borrowerSubmitButton.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                var rental = flow.rental;
+
+                if (!rental || !rental.BookingObjectId) {
+                    alert('Unable to identify the booking. Please reopen the rental.');
+                    return;
+                }
+
+                borrowerSubmitButton.disabled = true;
+                borrowerSubmitButton.textContent = 'Saving...';
+
+                postReturnCondition(
+                    rental.BookingObjectId,
+                    function (result) {
+
+                        borrowerSubmitButton.disabled = false;
+                        borrowerSubmitButton.textContent =
+                            rental.HasBorrowerReturnCondition
+                                ? 'Update Return Condition'
+                                : 'Submit Return Condition';
+
+                        if (!result || !result.ok) {
+                            alert(
+                                result && result.message
+                                    ? result.message
+                                    : 'Your return condition could not be saved.'
+                            );
+                            return;
+                        }
+
+                        alert('Return condition saved successfully.');
+
+                        // Reload to retrieve the latest condition and photos.
+                        window.location.reload();
+                    }
+                );
+            });
+        }
+
+        if (elements.btnDetailsRequestReturn) {
+            elements.btnDetailsRequestReturn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                var rental = activeDetailRental;
+
+                if (!rental || !rental.BookingObjectId) {
+                    window.alert('Rental information could not be found.');
+                    return;
+                }
+
+                if (rental.Status !== 'Ongoing' && rental.Status !== 'Overdue') {
+                    window.alert('This rental cannot request a return from its current status.');
+                    return;
+                }
+
+                var conditionInput = document.getElementById('detailsReturnCondition');
+
+                if (!conditionInput || !conditionInput.value) {
+                    window.alert('Please select the returned item condition.');
+                    return;
+                }
+
+                var requestButton = elements.btnDetailsRequestReturn;
+                requestButton.disabled = true;
+
+                postRentalAction(
+                    'data-return-request-url',
+                    rental.BookingObjectId,
+                    function (result) {
+
+                        if (!result || !result.ok) {
+                            requestButton.disabled = false;
+
+                            window.alert(
+                                result && result.message
+                                    ? result.message
+                                    : 'The return request could not be submitted.'
+                            );
+                            return;
+                        }
+
+                        postDetailsReturnCondition(
+                            rental.BookingObjectId,
+                            function (conditionResult) {
+
+                                if (!conditionResult || !conditionResult.ok) {
+                                    requestButton.disabled = false;
+
+                                    window.alert(
+                                        conditionResult && conditionResult.message
+                                            ? conditionResult.message
+                                            : 'The return request was sent, but the condition record could not be saved.'
+                                    );
+                                    return;
+                                }
+
+                                window.alert(
+                                    'Return request and condition inspection submitted successfully.'
+                                );
+
+                                window.location.reload();
+                            }
+                        );
+                    },
+                    {
+                        returned: true
+                    }
+                );
+            });
+        }
 
         // Accepted
         elements.btnCloseAcceptedModal.addEventListener('click', function (e) {
