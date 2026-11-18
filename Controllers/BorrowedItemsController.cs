@@ -55,14 +55,40 @@ namespace UniShare.Controllers
             return RedirectToAction("Ongoing", "MyListings");
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult ReturnItem(string id, bool returned)
         {
-            if (!returned) return Json(new { ok = false, message = "Confirm that you returned the item before continuing." });
-            ObjectId borrowerId;
-            if (!ObjectId.TryParse(User.Identity.Name, out borrowerId)) return Json(new { ok = false, message = "Please sign in again." });
-            return Run(() => BorrowedItemsService.RequestReturn(borrowerId, id), "Return request sent to the item owner.", "This rental cannot be returned from its current status.");
+            if (!returned)
+            {
+                return Json(new
+                {
+                    ok = false,
+                    message = "Confirm that you returned the item before continuing."
+                });
+            }
+
+            ObjectId actorId;
+
+            if (!ObjectId.TryParse(User.Identity.Name, out actorId))
+            {
+                return Json(new
+                {
+                    ok = false,
+                    message = "Please sign in again."
+                });
+            }
+
+            return Run(
+                () => BorrowedItemsService.RequestReturn(actorId, id),
+                "Return request sent successfully.",
+                "This rental cannot be returned from its current status."
+            );
         }
+
+
 
         // Owner confirmation is kept separate from the borrower's return request.
         [HttpPost, ValidateAntiForgeryToken]
@@ -71,6 +97,47 @@ namespace UniShare.Controllers
             ObjectId ownerId;
             if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return Json(new { ok = false, message = "Please sign in again." });
             return Run(() => BorrowedItemsService.ConfirmReturnByOwner(ownerId, id), "Return confirmed.", "This record is not awaiting your confirmation.");
+        }
+
+        [HttpGet]
+        public ActionResult ReturnInspection(string id)
+        {
+            ObjectId ownerId;
+
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId))
+                return new HttpStatusCodeResult(401);
+
+            var inspection = BorrowedItemsService.GetReturnInspection(
+                ownerId,
+                id
+            );
+
+            if (inspection == null)
+                return HttpNotFound("Return inspection not found or access denied.");
+
+            return View(inspection);
+        }
+
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult FinalizeInspectedReturn(string id)
+        {
+            ObjectId ownerId;
+
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId))
+            {
+                return Json(new
+                {
+                    ok = false,
+                    message = "Please sign in again."
+                });
+            }
+
+            return Run(
+                () => BorrowedItemsService.FinalizeInspectedReturn(ownerId, id),
+                "The inspected return has been completed successfully.",
+                "This return cannot be finalized. Please refresh the page and verify its inspection status."
+            );
         }
 
         [HttpPost, ValidateAntiForgeryToken]

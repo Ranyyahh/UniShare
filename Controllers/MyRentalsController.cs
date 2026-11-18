@@ -155,11 +155,30 @@ namespace UniShare.Controllers
         public ActionResult ConfirmReturn(string id)
         {
             ObjectId ownerId;
-            if (!ObjectId.TryParse(User.Identity.Name, out ownerId)) return Json(new { ok = false, message = "Please sign in again." });
-            var saved = BorrowedItemsService.ConfirmReturnByOwner(ownerId, id);
-            return Json(new { ok = saved, message = saved ? "The return confirmation has been saved." : "This rental is not awaiting your return confirmation." });
-        }
 
+            if (!ObjectId.TryParse(User.Identity.Name, out ownerId))
+            {
+                return Json(new
+                {
+                    ok = false,
+                    message = "Please sign in again.",
+                    debugIdentity = User.Identity.Name,
+                    debugId = id
+                });
+            }
+
+            var saved = BorrowedItemsService.ConfirmReturnByOwner(ownerId, id);
+
+            return Json(new
+            {
+                ok = saved,
+                message = saved
+                    ? "The return confirmation has been saved."
+                    : "This rental is not awaiting your return confirmation.",
+                debugBookingId = id,
+                debugOwnerId = ownerId.ToString()
+            });
+        }
         internal static RentalRecordDto MapBooking(BsonDocument booking)
         {
             return MapBooking(booking, ObjectId.Empty);
@@ -181,12 +200,74 @@ namespace UniShare.Controllers
             var feeValue = booking.GetValue("estimatedFee", booking.GetValue("rentalFee", booking.GetValue("totalFee", BsonInt32.Create(0))));
             decimal fee = feeValue.IsNumeric ? feeValue.ToDecimal() : 0m;
             var fullName = borrower == null ? "Student" : (borrower.FirstName + " " + borrower.LastName).Trim();
+
+            // Retrieve the borrower's submitted RETURN condition.
+            var bookingIdValue = booking.GetValue("_id", BsonNull.Value);
+
+            var borrowerReturnRecord = bookingIdValue.IsObjectId
+                ? MongoDatabase.ConditionRecords
+                    .Find(
+                        Builders<BsonDocument>.Filter.Eq("bookingId", bookingIdValue.AsObjectId) &
+                        Builders<BsonDocument>.Filter.Eq("phase", "RETURN") &
+                        Builders<BsonDocument>.Filter.Eq("participantRole", "BORROWER")
+                    )
+                    .Sort(Builders<BsonDocument>.Sort.Descending("updatedAt"))
+                    .FirstOrDefault()
+                : null;
+
+            // Extract the submitted condition details.
+            var borrowerReturnCondition = borrowerReturnRecord == null
+                ? ""
+                : borrowerReturnRecord.GetValue("condition", "").ToString();
+
+            var borrowerReturnNotes = borrowerReturnRecord == null
+                ? ""
+                : borrowerReturnRecord.GetValue("notes", "").ToString();
+
+            // Extract uploaded photo paths.
+            var returnPhotosValue = borrowerReturnRecord == null
+                ? BsonNull.Value
+                : borrowerReturnRecord.GetValue("photos", BsonNull.Value);
+
+            var borrowerReturnPhotos = returnPhotosValue.IsBsonArray
+                ? returnPhotosValue.AsBsonArray
+                    .Where(x => !x.IsBsonNull)
+                    .Select(x => x.ToString())
+                    .ToList()
+                : new List<string>();
+
+            // Get the submission date.
+            var returnSubmittedAtValue = borrowerReturnRecord == null
+                ? BsonNull.Value
+                : borrowerReturnRecord.GetValue(
+                    "updatedAt",
+                    borrowerReturnRecord.GetValue("createdAt", BsonNull.Value)
+                );
+
+            var borrowerReturnSubmittedAt = returnSubmittedAtValue.IsValidDateTime
+                ? returnSubmittedAtValue.ToUniversalTime()
+                    .ToLocalTime()
+                    .ToString("MMM d, yyyy h:mm tt")
+                : "";
             return new RentalRecordDto
             {
                 BookingObjectId = booking.GetValue("_id", ObjectId.Empty).ToString(),
                 CanManageRequest = !viewerId.Equals(ObjectId.Empty) &&
                     booking.GetValue("ownerId", BsonNull.Value).IsObjectId && booking["ownerId"].AsObjectId == viewerId &&
                     booking.GetValue("borrowerId", BsonNull.Value).IsObjectId && booking["borrowerId"].AsObjectId != viewerId,
+                CanConfirmReturn = !viewerId.Equals(ObjectId.Empty) &&
+                    booking.GetValue("ownerId", BsonNull.Value).IsObjectId &&
+                    booking["ownerId"].AsObjectId == viewerId &&
+                    booking.GetValue("borrowerId", BsonNull.Value).IsObjectId &&
+                    booking["borrowerId"].AsObjectId != viewerId,
+
+                // Borrower's return-condition submission
+                HasBorrowerReturnCondition = borrowerReturnRecord != null,
+                BorrowerReturnCondition = borrowerReturnCondition,
+                BorrowerReturnNotes = borrowerReturnNotes,
+                BorrowerReturnPhotos = borrowerReturnPhotos,
+                BorrowerReturnSubmittedAt = borrowerReturnSubmittedAt,
+
                 RequestId = booking.GetValue("requestId", booking.GetValue("_id", "").ToString()).ToString(),
                 ItemName = item == null ? booking.GetValue("itemName", "Item").ToString() : item.Name,
                 BorrowerName = fullName, BorrowerInitials = string.Concat(fullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0]))),
@@ -208,8 +289,14 @@ namespace UniShare.Controllers
                     new[] { "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING", "COMPLETED", "COMPLETE", "RETURNED", "DISPUTED" }.Contains(status.Trim().ToUpperInvariant()),
                 BorrowerHandoverConfirmedAt = FormatDate(booking, "borrowerHandoverConfirmedAt"),
                 OwnerHandoverConfirmedAt = FormatDate(booking, "ownerHandoverConfirmedAt"),
-                DeclineReason = booking.GetValue("declineReason", "").ToString(), DeclineNote = booking.GetValue("declineNotes", "").ToString(),
-                DeclinedAtFormatted = FormatDate(booking, "declinedAt"), AcceptedAtFormatted = FormatDate(booking, "acceptedAt")
+                DeclineReason = booking.GetValue("declineReason", "").ToString(),
+                DeclineNote = booking.GetValue("declineNotes", "").ToString(),
+                DeclinedAtFormatted = FormatDate(booking, "declinedAt"),
+                AcceptedAtFormatted = FormatDate(booking, "acceptedAt"),
+
+                // Return and completion timestamps
+                ReturnedAtFormatted = FormatDate(booking, "returnedAt"),
+                CompletedAtFormatted = FormatDate(booking, "completedAt")
             };
         }
 

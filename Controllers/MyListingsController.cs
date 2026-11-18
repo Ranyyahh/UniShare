@@ -17,6 +17,7 @@ namespace UniShare.Controllers
         public string Title { get; set; }
         public string ActiveTab { get; set; }
         public List<RentalRecordDto> Rentals { get; set; }
+
     }
 
     [Authorize]
