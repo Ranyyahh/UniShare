@@ -3419,3 +3419,209 @@
         grid-template-columns: 1fr;
     }
 }
+
+.rm-condition-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.rm-condition-photo {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin: 5px;
+}
+
+
+/* ==========================================================
+   BORROWER RETURN CONDITION - UI IMPROVEMENT
+   Scoped only to borrowerReturnConditionSection
+   ========================================================== */
+
+#borrowerReturnConditionSection {
+    margin-top: 18px;
+    padding: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+    /* Section heading */
+    #borrowerReturnConditionSection .rm-section-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        color: #4338ca;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .07em;
+    }
+
+        #borrowerReturnConditionSection .rm-section-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #cbd5e1;
+        }
+
+    /* Inspection form container */
+    #borrowerReturnConditionSection .rm-return-inspection {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+        /* Description */
+        #borrowerReturnConditionSection .rm-return-inspection > p {
+            margin: 0;
+            padding: 11px 13px;
+            color: #475569;
+            background: #f1f5f9;
+            border-left: 3px solid #6366f1;
+            border-radius: 5px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+    /* Individual fields */
+    #borrowerReturnConditionSection .rm-detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+        margin: 0;
+    }
+
+    /* Field labels */
+    #borrowerReturnConditionSection .rm-detail-label {
+        display: block;
+        margin: 0;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    /* Dropdown and notes */
+    #borrowerReturnConditionSection select,
+    #borrowerReturnConditionSection textarea {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        color: #1e293b;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 400;
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    #borrowerReturnConditionSection select {
+        min-height: 44px;
+        cursor: pointer;
+    }
+
+    #borrowerReturnConditionSection textarea {
+        min-height: 105px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+
+        #borrowerReturnConditionSection select:focus,
+        #borrowerReturnConditionSection textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, .13);
+        }
+
+        #borrowerReturnConditionSection textarea::placeholder {
+            color: #94a3b8;
+        }
+
+    /* Photo upload */
+    #borrowerReturnConditionSection input[type="file"] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 12px;
+        color: #475569;
+        background: #f8fafc;
+        border: 1px dashed #94a3b8;
+        border-radius: 9px;
+        font-family: inherit;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+        #borrowerReturnConditionSection input[type="file"]:hover {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+
+    /* Photo instructions */
+    #borrowerReturnConditionSection .rm-detail-item small {
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    /* Existing photo previews */
+    #borrowerReturnConditionSection .rm-condition-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+        margin-top: 5px;
+    }
+
+    #borrowerReturnConditionSection .rm-condition-photo {
+        display: block;
+        width: 100%;
+        height: 115px;
+        box-sizing: border-box;
+        margin: 0;
+        object-fit: cover;
+        border: 1px solid #e2e8f0;
+        border-radius: 9px;
+        background: #f1f5f9;
+        transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+
+        #borrowerReturnConditionSection .rm-condition-photo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .12);
+        }
+
+/* Mobile layout */
+@media (max-width: 600px) {
+    #borrowerReturnConditionSection {
+        padding: 12px;
+    }
+
+        #borrowerReturnConditionSection .rm-return-inspection {
+            padding: 12px;
+            gap: 14px;
+        }
+
+        #borrowerReturnConditionSection .rm-condition-photos {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #borrowerReturnConditionSection .rm-condition-photo {
+            height: 110px;
+        }
+}

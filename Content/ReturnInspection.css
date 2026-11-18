@@ -1,0 +1,630 @@
+﻿
+/* ==========================================================================
+   UniShare - Return Inspection
+   Scoped strictly to .return-inspection-page
+   External stylesheet for ReturnInspection.cshtml
+   ========================================================================== */
+
+.return-inspection-page {
+    --ri-primary: #4f46e5;
+    --ri-primary-dark: #4338ca;
+    --ri-primary-light: #eef2ff;
+    --ri-text: #172033;
+    --ri-muted: #64748b;
+    --ri-border: #e5e7eb;
+    --ri-surface: #ffffff;
+    --ri-background: #f8fafc;
+    --ri-warning: #b45309;
+    --ri-warning-bg: #fffbeb;
+    --ri-radius: 16px;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 32px 36px 56px;
+    color: var(--ri-text);
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+    .return-inspection-page *,
+    .return-inspection-page *::before,
+    .return-inspection-page *::after {
+        box-sizing: border-box;
+    }
+
+    /* ==========================================================================
+   Page Header
+   ========================================================================== */
+
+    .return-inspection-page .ri-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+    }
+
+    .return-inspection-page .ri-eyebrow {
+        display: inline-block;
+        margin-bottom: 9px;
+        color: var(--ri-primary);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.3px;
+    }
+
+    .return-inspection-page .ri-page-header h1 {
+        margin: 0;
+        color: var(--ri-text);
+        font-size: clamp(27px, 3vw, 34px);
+        font-weight: 800;
+        letter-spacing: -0.8px;
+        line-height: 1.2;
+    }
+
+    .return-inspection-page .ri-page-header p {
+        margin: 10px 0 0;
+        color: var(--ri-muted);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .return-inspection-page .ri-back-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        min-height: 42px;
+        padding: 0 16px;
+        border: 1px solid var(--ri-border);
+        border-radius: 10px;
+        background: #fff;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+        .return-inspection-page .ri-back-button:hover {
+            background: var(--ri-background);
+            border-color: #cbd5e1;
+            color: var(--ri-primary);
+            text-decoration: none;
+        }
+
+        .return-inspection-page .ri-back-button span {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+    /* ==========================================================================
+   Inspection Status Banner
+   ========================================================================== */
+
+    .return-inspection-page .ri-status-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 24px;
+        padding: 19px 21px;
+        border: 1px solid #fde68a;
+        border-radius: 13px;
+        background: var(--ri-warning-bg);
+    }
+
+    .return-inspection-page .ri-status-icon {
+        display: flex;
+        flex: 0 0 32px;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #fef3c7;
+        color: var(--ri-warning);
+        font-size: 17px;
+        font-weight: 800;
+    }
+
+    .return-inspection-page .ri-status-banner strong {
+        display: block;
+        margin: 1px 0 4px;
+        color: #92400e;
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .return-inspection-page .ri-status-banner p {
+        margin: 0;
+        color: #a16207;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* ==========================================================================
+   General Cards and Section Headings
+   ========================================================================== */
+
+    .return-inspection-page .ri-card {
+        margin-bottom: 22px;
+        padding: 25px;
+        border: 1px solid var(--ri-border);
+        border-radius: var(--ri-radius);
+        background: var(--ri-surface);
+        box-shadow: 0 3px 12px rgba(15, 23, 42, .035);
+    }
+
+    .return-inspection-page .ri-section-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .return-inspection-page .ri-section-kicker {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--ri-primary);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.15px;
+    }
+
+    .return-inspection-page .ri-section-heading h2 {
+        margin: 0;
+        color: var(--ri-text);
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: -.3px;
+    }
+
+    .return-inspection-page .ri-section-heading p {
+        margin: 7px 0 0;
+        color: var(--ri-muted);
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* ==========================================================================
+   Item Information
+   ========================================================================== */
+
+    .return-inspection-page .ri-item-layout {
+        display: grid;
+        grid-template-columns: minmax(230px, 310px) minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+    }
+
+    .return-inspection-page .ri-item-gallery {
+        min-width: 0;
+    }
+
+    .return-inspection-page .ri-item-main-photo {
+        width: 100%;
+        height: 230px;
+        overflow: hidden;
+        border: 1px solid var(--ri-border);
+        border-radius: 13px;
+        background: var(--ri-background);
+    }
+
+        .return-inspection-page .ri-item-main-photo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .return-inspection-page .ri-item-thumbnails {
+        display: flex;
+        gap: 9px;
+        margin-top: 11px;
+        overflow-x: auto;
+        padding-bottom: 3px;
+    }
+
+        .return-inspection-page .ri-item-thumbnails img {
+            flex: 0 0 62px;
+            width: 62px;
+            height: 58px;
+            object-fit: cover;
+            border: 1px solid var(--ri-border);
+            border-radius: 8px;
+            background: var(--ri-background);
+        }
+
+    .return-inspection-page .ri-no-photo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        height: 230px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 13px;
+        background: var(--ri-background);
+        color: var(--ri-muted);
+        font-size: 12px;
+    }
+
+        .return-inspection-page .ri-no-photo span:first-child {
+            font-size: 30px;
+        }
+
+    .return-inspection-page .ri-item-details {
+        min-width: 0;
+        padding-top: 5px;
+    }
+
+    .return-inspection-page .ri-item-category {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 7px;
+        background: var(--ri-primary-light);
+        color: var(--ri-primary-dark);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .return-inspection-page .ri-item-details h3 {
+        margin: 13px 0 21px;
+        color: var(--ri-text);
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+
+    .return-inspection-page .ri-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 17px 24px;
+    }
+
+    .return-inspection-page .ri-detail-item {
+        min-width: 0;
+    }
+
+        .return-inspection-page .ri-detail-item span,
+        .return-inspection-page .ri-detail-item strong {
+            display: block;
+        }
+
+        .return-inspection-page .ri-detail-item span {
+            margin-bottom: 6px;
+            color: var(--ri-muted);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .return-inspection-page .ri-detail-item strong {
+            color: var(--ri-text);
+            font-size: 13px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+    /* ==========================================================================
+   Inspection Overview
+   ========================================================================== */
+
+    .return-inspection-page .ri-overview-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .return-inspection-page .ri-overview-item {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        min-width: 0;
+        padding: 17px;
+        border: 1px solid var(--ri-border);
+        border-radius: 11px;
+        background: #fbfcfe;
+    }
+
+    .return-inspection-page .ri-overview-label {
+        color: var(--ri-muted);
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .return-inspection-page .ri-overview-item strong {
+        color: var(--ri-text);
+        font-size: 14px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    /* ==========================================================================
+   Condition Comparison
+   ========================================================================== */
+
+    .return-inspection-page .ri-condition-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .return-inspection-page .ri-condition-card {
+        min-width: 0;
+        padding: 21px;
+        border: 1px solid var(--ri-border);
+        border-radius: 13px;
+        background: #fff;
+    }
+
+    .return-inspection-page .ri-condition-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #edf0f4;
+    }
+
+    .return-inspection-page .ri-participant-avatar {
+        display: flex;
+        flex: 0 0 42px;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: var(--ri-primary-light);
+        color: var(--ri-primary);
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .return-inspection-page .ri-borrower-avatar {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .return-inspection-page .ri-participant-role {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--ri-muted);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .return-inspection-page .ri-condition-header h3 {
+        margin: 0;
+        color: var(--ri-text);
+        font-size: 15px;
+        font-weight: 800;
+    }
+
+    .return-inspection-page .ri-condition-value {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 17px 0;
+        border-bottom: 1px solid #edf0f4;
+    }
+
+        .return-inspection-page .ri-condition-value > span,
+        .return-inspection-page .ri-condition-notes > span,
+        .return-inspection-page .ri-evidence-section > span {
+            color: var(--ri-muted);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+    .return-inspection-page .ri-condition-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 60%;
+        padding: 6px 10px;
+        border-radius: 7px;
+        background: var(--ri-primary-light);
+        color: var(--ri-primary-dark);
+        font-size: 11px;
+        font-weight: 800;
+        text-align: center;
+        overflow-wrap: anywhere;
+    }
+
+    .return-inspection-page .ri-condition-notes {
+        padding: 17px 0;
+        border-bottom: 1px solid #edf0f4;
+    }
+
+        .return-inspection-page .ri-condition-notes p {
+            margin: 9px 0 0;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+    .return-inspection-page .ri-evidence-section {
+        padding-top: 17px;
+    }
+
+    .return-inspection-page .ri-evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 9px;
+        margin-top: 12px;
+    }
+
+        .return-inspection-page .ri-evidence-grid a {
+            display: block;
+            min-width: 0;
+            height: 105px;
+            overflow: hidden;
+            border: 1px solid var(--ri-border);
+            border-radius: 9px;
+            background: var(--ri-background);
+        }
+
+            .return-inspection-page .ri-evidence-grid a img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform .25s ease;
+            }
+
+            .return-inspection-page .ri-evidence-grid a:hover img {
+                transform: scale(1.06);
+            }
+
+    .return-inspection-page .ri-no-evidence {
+        margin: 12px 0 0;
+        padding: 14px;
+        border: 1px dashed #dbe1e8;
+        border-radius: 9px;
+        background: #fbfcfe;
+        color: var(--ri-muted);
+        font-size: 12px;
+        text-align: center;
+    }
+
+    /* ==========================================================================
+   Final Inspection Notice
+   ========================================================================== */
+
+    .return-inspection-page .ri-inspection-notice {
+        margin-top: 4px;
+        padding: 20px 22px;
+        border: 1px solid #c7d2fe;
+        border-radius: 12px;
+        background: #f5f7ff;
+    }
+
+        .return-inspection-page .ri-inspection-notice strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #3730a3;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .return-inspection-page .ri-inspection-notice p {
+            margin: 0;
+            color: #4b5563;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+/* ==========================================================================
+   Responsive Layout
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .return-inspection-page {
+        padding: 26px 22px 44px;
+    }
+
+        .return-inspection-page .ri-item-layout {
+            grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .return-inspection-page .ri-item-main-photo {
+            height: 200px;
+        }
+
+        .return-inspection-page .ri-condition-card {
+            padding: 17px;
+        }
+
+        .return-inspection-page .ri-evidence-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+}
+
+@media (max-width: 650px) {
+    .return-inspection-page {
+        padding: 22px 15px 36px;
+    }
+
+        .return-inspection-page .ri-page-header {
+            flex-direction: column;
+            gap: 17px;
+        }
+
+            .return-inspection-page .ri-page-header h1 {
+                font-size: 27px;
+            }
+
+        .return-inspection-page .ri-back-button {
+            min-height: 39px;
+        }
+
+        .return-inspection-page .ri-card {
+            padding: 19px 16px;
+            margin-bottom: 16px;
+            border-radius: 13px;
+        }
+
+        .return-inspection-page .ri-status-banner {
+            padding: 16px;
+            gap: 11px;
+        }
+
+        .return-inspection-page .ri-item-layout {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 19px;
+        }
+
+        .return-inspection-page .ri-item-main-photo {
+            height: 220px;
+        }
+
+        .return-inspection-page .ri-item-details h3 {
+            font-size: 21px;
+        }
+
+        .return-inspection-page .ri-condition-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .return-inspection-page .ri-overview-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+}
+
+@media (max-width: 420px) {
+    .return-inspection-page .ri-detail-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .return-inspection-page .ri-condition-card {
+        padding: 15px;
+    }
+
+    .return-inspection-page .ri-condition-value {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .return-inspection-page .ri-condition-badge {
+        max-width: 100%;
+    }
+
+    .return-inspection-page .ri-evidence-grid a {
+        height: 90px;
+    }
+
+    .return-inspection-page .ri-inspection-notice {
+        padding: 16px;
+    }
+}
+
