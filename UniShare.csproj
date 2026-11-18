@@ -211,6 +211,7 @@
     <Compile Include="Controllers\NotificationsController.cs" />
     <Compile Include="Controllers\ReportsAnalyticsController.cs" />
     <Compile Include="Controllers\AdminReportsAnalyticsController.cs" />
+    <Compile Include="Models\ReturnInspectionViewModel.cs" />
     <Compile Include="Services\MongoReportDataSource.cs" />
     <Compile Include="Controllers\SalesReportController.cs" />
     <Compile Include="Global.asax.cs">
@@ -253,6 +254,7 @@
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\engineering-mechanics-statics.jpg" />
+    <Content Include="Content\ReturnInspection.css" />
     <Content Include="Content\Site.css" />
     <Content Include="Content\MyRentals.css" />
     <Content Include="Content\ReportsAnalytics.css" />
@@ -278,6 +280,7 @@
     <Content Include="Scripts\admin-student-verification.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\borrowed-items.js" />
     <Content Include="Scripts\chatroom.js" />
     <Content Include="Scripts\Design.md" />
     <Content Include="Content\fonts\InterVariable.ttf" />
@@ -361,6 +364,7 @@
     <Content Include="Views\UserManagement\Index.cshtml" />
     <Content Include="Views\MyRentals\Details.cshtml" />
     <Content Include="Views\MyRentals\History.cshtml" />
+    <Content Include="Views\BorrowedItems\ReturnInspection.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
