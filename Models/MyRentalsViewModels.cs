@@ -32,6 +32,13 @@ namespace UniShare.Models
         public string RentalFeeFormatted { get; set; }
         public string Status { get; set; }
         public bool CanManageRequest { get; set; }
+        public bool CanConfirmReturn { get; set; }
+        // Borrower's submitted return condition
+        public bool HasBorrowerReturnCondition { get; set; }
+        public string BorrowerReturnCondition { get; set; }
+        public string BorrowerReturnNotes { get; set; }
+        public List<string> BorrowerReturnPhotos { get; set; }
+        public string BorrowerReturnSubmittedAt { get; set; }
         public string Category { get; set; }
         public string BackAction { get; set; }
         public string BackController { get; set; }
