@@ -6,11 +6,11 @@ using UniShare.Services;
 
 namespace UniShare.Controllers
 {
-    [Authorize]
+    [Authorize, VerifiedStudent]
     public class MessagesController : Controller
     {
         [HttpGet]
-        public ActionResult Index(string userId, string itemId, string conversationId)
+        public ActionResult Index(string userId, string itemId, string conversationId, string bookingId)
         {
             ObjectId currentUserId;
             if (!ObjectId.TryParse(User.Identity.Name, out currentUserId)) return new HttpStatusCodeResult(401);
@@ -23,7 +23,7 @@ namespace UniShare.Controllers
                     ViewBag.ChatNotice = "This item's conversation could not be opened.";
                 else
                 {
-                    var started = ChatroomService.StartOrFind(currentUserId, ownerId, listingId);
+                    var started = ChatroomService.StartOrFind(currentUserId, ownerId, listingId, bookingId);
                     if (started.HasValue) ViewBag.InitialConversationId = started.Value.ToString();
                     else ViewBag.ChatNotice = "You cannot start a conversation for this item.";
                 }

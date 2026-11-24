@@ -19,6 +19,9 @@ namespace UniShare.Services
         {
             MongoDatabase.Handovers.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId"), new CreateIndexOptions { Unique = true, Name = "bookingId_unique" }));
             MongoDatabase.Returns.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId"), new CreateIndexOptions { Unique = true, Name = "bookingId_unique" }));
+            MongoDatabase.Ratings.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(
+                Builders<BsonDocument>.IndexKeys.Ascending("bookingId").Ascending("reviewerId"),
+                new CreateIndexOptions { Unique = true, Name = "booking_reviewer_unique" }));
             MongoDatabase.ConditionRecords.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId").Ascending("phase").Ascending("createdAt")));
             return true;
         });
@@ -165,6 +168,12 @@ namespace UniShare.Services
             var isBooking = doc != null;
             if (doc == null) doc = MongoDatabase.Rentals.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.In("status", new[] { "RETURN_REQUESTED", "RETURN PENDING" })).FirstOrDefault();
             if (doc == null) return false;
+            var bookingIdValue = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+            if (bookingIdValue.IsObjectId)
+            {
+                var payment = MongoDatabase.Payments.Find(Builders<BsonDocument>.Filter.Eq("bookingId", bookingIdValue)).FirstOrDefault();
+                if (payment != null && Status(payment) != "PAID") return false;
+            }
             var now = DateTime.UtcNow;
             var update = Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("returnedAt", now).Set("completedAt", now).Set("updatedAt", now);
             var filter = Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) & Builders<BsonDocument>.Filter.Eq("status", doc["status"]);
@@ -296,7 +305,17 @@ namespace UniShare.Services
             if (collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id) & participantFilter &
                 Builders<BsonDocument>.Filter.In("status", new[] { "ONGOING", "OVERDUE", "ACCEPTED", "APPROVED", "RETURN_REQUESTED", "RETURN PENDING" }), update).ModifiedCount != 1) return false;
             UpdateLinkedRental(doc, participantId, update);
-            AdminAccountabilityService.RecordDispute(doc, participantId, reason.Trim(), (details ?? "").Trim());
+            try
+            {
+                AdminAccountabilityService.RecordDispute(doc, participantId, reason.Trim(), (details ?? "").Trim());
+            }
+            catch
+            {
+                var restore = Builders<BsonDocument>.Update.Set("status", Status(doc)).Set("updatedAt", DateTime.UtcNow).Unset("disputeReason").Unset("disputeCategory").Unset("disputeDetails").Unset("disputedAt");
+                collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id) & Builders<BsonDocument>.Filter.Eq("disputedAt", now), restore);
+                UpdateLinkedRental(doc, participantId, restore);
+                throw;
+            }
             return true;
         }
 
@@ -308,8 +327,8 @@ namespace UniShare.Services
             var itemId = doc.GetValue("itemId", BsonNull.Value);
             var ownerId = doc.GetValue("ownerId", BsonNull.Value);
             if (!itemId.IsObjectId || !ownerId.IsObjectId) return false;
-            var bookingId = doc.GetValue("_id", BsonNull.Value);
-            if (bookingId.IsObjectId && MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) & Builders<BsonDocument>.Filter.Eq("reviewerId", borrowerId)).Limit(1).Any()) return false;
+            var bookingId = doc.GetValue("bookingId", doc.GetValue("_id", BsonNull.Value));
+            if (!bookingId.IsObjectId || MongoDatabase.Ratings.Find(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId) & Builders<BsonDocument>.Filter.Eq("reviewerId", borrowerId)).Limit(1).Any()) return false;
             var now = DateTime.UtcNow;
             var update = Builders<BsonDocument>.Update.Set("itemRating", itemRating).Set("ownerRating", ownerRating).Set("review", (review ?? "").Trim()).Set("ratedAt", now).Set("updatedAt", now);
             var collection = isBooking ? MongoDatabase.Bookings : MongoDatabase.Rentals;
@@ -317,11 +336,26 @@ namespace UniShare.Services
                                  Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId.ToString()) | Builders<BsonDocument>.Filter.Eq("renterId", borrowerId.ToString());
             var statusFilter = Builders<BsonDocument>.Filter.In("status", new[] { "COMPLETED", "COMPLETE", "RETURNED" });
             var unratedFilter = Builders<BsonDocument>.Filter.Exists("itemRating", false) & Builders<BsonDocument>.Filter.Exists("ownerRating", false);
-            if (collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", bookingId) & borrowerFilter & statusFilter & unratedFilter, update).ModifiedCount != 1) return false;
+            if (collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & borrowerFilter & statusFilter & unratedFilter, update).ModifiedCount != 1) return false;
             var rating = new BsonDocument { { "_id", ObjectId.GenerateNewId() }, { "bookingId", bookingId },
                 { "itemId", itemId }, { "reviewerId", borrowerId }, { "reviewedUserId", ownerId }, { "itemRating", itemRating },
                 { "ownerRating", ownerRating }, { "rating", ownerRating }, { "review", (review ?? "").Trim() }, { "createdAt", now } };
-            MongoDatabase.Ratings.InsertOne(rating);
+            try
+            {
+                MongoDatabase.Ratings.InsertOne(rating);
+            }
+            catch (MongoWriteException ex) when (ex.WriteError != null && ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+            {
+                var rollback = Builders<BsonDocument>.Update.Unset("itemRating").Unset("ownerRating").Unset("review").Unset("ratedAt");
+                collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ratedAt", now), rollback);
+                return false;
+            }
+            catch
+            {
+                var rollback = Builders<BsonDocument>.Update.Unset("itemRating").Unset("ownerRating").Unset("review").Unset("ratedAt");
+                collection.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) & Builders<BsonDocument>.Filter.Eq("ratedAt", now), rollback);
+                throw;
+            }
             UpdateLinkedRental(doc, borrowerId, update);
             return true;
         }

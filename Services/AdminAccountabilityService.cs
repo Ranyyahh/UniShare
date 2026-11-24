@@ -20,16 +20,36 @@ namespace UniShare.Services
         public static AdminDashboardViewModel GetDashboard()
         {
             ImportLegacyDisputes();
-            var now = DateTime.UtcNow;
             var activeBookings = MongoDatabase.Bookings.CountDocuments(Builders<BsonDocument>.Filter.In("status", new[] { "ACCEPTED", "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED" }));
+            var rentalIds = new HashSet<string>(MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Empty).ToList()
+                .Select(x => x.GetValue("bookingId", x.GetValue("_id", BsonNull.Value)).ToString()), StringComparer.OrdinalIgnoreCase);
+            foreach (var rental in MongoDatabase.Rentals.Find(Builders<BsonDocument>.Filter.Empty).ToList())
+                rentalIds.Add(rental.GetValue("bookingId", rental.GetValue("_id", BsonNull.Value)).ToString());
             var recent = MongoDatabase.AuditLogs.Find(Builders<AuditLogDocument>.Filter.Empty).SortByDescending(x => x.CreatedAt).Limit(8).ToList();
+            var verifiedUsers = Builders<UserDocument>.Filter.Eq(x => x.VerificationStatus, "APPROVED") &
+                                Builders<UserDocument>.Filter.Eq(x => x.Status, "ACTIVE") &
+                                Builders<UserDocument>.Filter.Ne(x => x.Role, "ADMIN");
+            var pendingUsers = Builders<UserDocument>.Filter.Ne(x => x.Role, "ADMIN") &
+                               (Builders<UserDocument>.Filter.Eq(x => x.VerificationStatus, "PENDING") |
+                                Builders<UserDocument>.Filter.Exists(x => x.VerificationStatus, false) |
+                                Builders<UserDocument>.Filter.Eq(x => x.VerificationStatus, ""));
+            var concerns = MongoDatabase.NoShowIncidents.CountDocuments(Builders<BsonDocument>.Filter.Eq("status", "PENDING")) +
+                           MongoDatabase.Ratings.CountDocuments(Builders<BsonDocument>.Filter.Eq("isReported", true));
             return new AdminDashboardViewModel
             {
                 RegisteredUsers = MongoDatabase.Users.CountDocuments(Builders<UserDocument>.Filter.Empty),
+                VerifiedUsers = MongoDatabase.Users.CountDocuments(verifiedUsers),
+                TotalListedItems = MongoDatabase.Items.CountDocuments(Builders<ItemDocument>.Filter.Empty),
+                PendingAccountApprovals = MongoDatabase.Users.CountDocuments(pendingUsers),
+                PendingListingApprovals = MongoDatabase.Items.CountDocuments(Builders<ItemDocument>.Filter.In(x => x.ApprovalStatus, new[] { "PENDING", "Pending", "pending" }) | Builders<ItemDocument>.Filter.Exists(x => x.ApprovalStatus, false)),
                 ActiveBookings = activeBookings,
+                TotalBookings = MongoDatabase.Bookings.CountDocuments(Builders<BsonDocument>.Filter.Empty),
+                RentalTransactions = rentalIds.Count,
+                PaymentRecords = MongoDatabase.Payments.CountDocuments(Builders<BsonDocument>.Filter.Empty),
                 OpenDisputes = MongoDatabase.Disputes.CountDocuments(Builders<BsonDocument>.Filter.In("status", OpenDisputeStatuses)),
                 PendingNoShowReports = MongoDatabase.NoShowIncidents.CountDocuments(Builders<BsonDocument>.Filter.Eq("status", "PENDING")),
                 ReportedReviews = MongoDatabase.Ratings.CountDocuments(Builders<BsonDocument>.Filter.Eq("isReported", true)),
+                ReportedConcerns = concerns,
                 ActiveRestrictions = MongoDatabase.AccountRestrictions.CountDocuments(Builders<BsonDocument>.Filter.Eq("status", "ACTIVE") & Builders<BsonDocument>.Filter.In("type", BlockingRestrictionTypes)),
                 RecentActivity = recent.Select(ToAuditRow).ToList()
             };
@@ -69,15 +89,24 @@ namespace UniShare.Services
                 var bookingId = ReadObjectId(dispute, "bookingId");
                 if (bookingId.HasValue)
                 {
-                    var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED")).FirstOrDefault();
-                    MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED"),
-                        Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("completedAt", now).Set("disputeResolvedAt", now).Set("updatedAt", now));
-                    MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED"),
-                        Builders<BsonDocument>.Update.Set("status", "COMPLETED").Set("completedAt", now).Set("disputeResolvedAt", now).Set("updatedAt", now));
-                    var itemValue = booking == null ? BsonNull.Value : booking.GetValue("itemId", BsonNull.Value);
-                    if (itemValue.IsObjectId)
-                        MongoDatabase.Items.UpdateOne(x => x.Id == itemValue.AsObjectId && x.AvailabilityStatus == "RENTED",
-                            Builders<ItemDocument>.Update.Set(x => x.AvailabilityStatus, "AVAILABLE").Set(x => x.UpdatedAt, now));
+                    var remainingDispute = MongoDatabase.Disputes.Find(
+                        Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value) &
+                        Builders<BsonDocument>.Filter.In("status", OpenDisputeStatuses)
+                    ).FirstOrDefault();
+
+                    if (remainingDispute == null)
+                    {
+                        var previousStatus = ReadString(dispute, "previousStatus").ToUpperInvariant();
+                        var restorableStatuses = new[] { "ONGOING", "OVERDUE", "ACCEPTED", "APPROVED", "ACTIVE", "RETURN_REQUESTED", "RETURN PENDING" };
+                        if (restorableStatuses.Contains(previousStatus))
+                        {
+                            var restore = Builders<BsonDocument>.Update.Set("status", previousStatus).Set("updatedAt", now);
+                            MongoDatabase.Bookings.UpdateOne(
+                                Builders<BsonDocument>.Filter.Eq("_id", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED"), restore);
+                            MongoDatabase.Rentals.UpdateOne(
+                                Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value) & Builders<BsonDocument>.Filter.Eq("status", "DISPUTED"), restore);
+                        }
+                    }
                 }
             }
             WriteAudit(adminId, "DISPUTE_" + status, "DISPUTE", disputeId, new BsonDocument { { "notes", notes ?? "" } });
@@ -141,6 +170,10 @@ namespace UniShare.Services
                 if (cancelled.ModifiedCount != 1) return false;
                 MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value),
                     Builders<BsonDocument>.Update.Set("status", "CANCELLED").Set("cancelReason", "CONFIRMED_NO_SHOW").Set("cancelledAt", now).Set("updatedAt", now));
+                MongoDatabase.Payments.UpdateMany(
+                    Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value) &
+                    Builders<BsonDocument>.Filter.In("status", new[] { "UNPAID", "PENDING" }),
+                    Builders<BsonDocument>.Update.Set("voidedAt", now).Set("voidReason", "CONFIRMED_NO_SHOW").Set("updatedAt", now));
             }
             var finalStatus = confirm ? "CONFIRMED" : "REJECTED";
             var update = Builders<BsonDocument>.Update.Set("status", finalStatus).Set("adminNotes", notes ?? "").Set("reviewedBy", adminId).Set("reviewedAt", now);
@@ -324,7 +357,7 @@ namespace UniShare.Services
                 { "_id", id }, { "bookingId", bookingId.Value }, { "requestId", ReadString(booking, "requestId") },
                 { "itemName", ReadString(booking, "itemName") }, { "reporterId", reporterId },
                 { "respondentId", ownerId.HasValue && reporterId == ownerId.Value ? (borrowerId.HasValue ? (BsonValue)borrowerId.Value : BsonNull.Value) : (ownerId.HasValue ? (BsonValue)ownerId.Value : BsonNull.Value) },
-                { "category", category ?? "Other" }, { "details", details ?? "" }, { "incidentStatement", String.IsNullOrWhiteSpace(details) ? category ?? "" : (category ?? "") + ": " + details.Trim() },
+                { "category", category ?? "Other" }, { "previousStatus", ReadString(booking, "status").ToUpperInvariant() }, { "details", details ?? "" }, { "incidentStatement", String.IsNullOrWhiteSpace(details) ? category ?? "" : (category ?? "") + ": " + details.Trim() },
                 { "priority", "MEDIUM" }, { "status", "OPEN" }, { "evidenceUrls", new BsonArray((evidenceUrls ?? Enumerable.Empty<string>()).Select(x => (BsonValue)x)) }, { "events", new BsonArray() },
                 { "createdAt", now }, { "updatedAt", now }
             });

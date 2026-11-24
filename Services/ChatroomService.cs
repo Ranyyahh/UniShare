@@ -25,18 +25,33 @@ namespace UniShare.Services
             return true;
         });
 
-        public static ObjectId? StartOrFind(ObjectId currentUserId, ObjectId ownerId, ObjectId itemId)
+        public static ObjectId? StartOrFind(ObjectId currentUserId, ObjectId ownerId, ObjectId itemId, string bookingId = null)
         {
             EnsureIndexes();
             if (currentUserId == ownerId) return null;
             var item = MongoDatabase.Items.Find(x => x.Id == itemId && x.OwnerId == ownerId).FirstOrDefault();
             if (item == null) return null;
+            ObjectId rentalId = ObjectId.Empty;
+            if (!String.IsNullOrWhiteSpace(bookingId))
+            {
+                if (!ObjectId.TryParse(bookingId, out rentalId)) return null;
+                var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", rentalId) &
+                    Builders<BsonDocument>.Filter.Eq("itemId", itemId) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId) &
+                    (Builders<BsonDocument>.Filter.Eq("borrowerId", currentUserId) | Builders<BsonDocument>.Filter.Eq("renterId", currentUserId))).FirstOrDefault();
+                if (booking == null) return null;
+            }
             var participants = new[] { currentUserId, ownerId }.OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
             var filter = Builders<BsonDocument>.Filter.Eq("itemId", itemId) &
                          Builders<BsonDocument>.Filter.Eq("participantA", participants[0]) &
                          Builders<BsonDocument>.Filter.Eq("participantB", participants[1]);
             var found = MongoDatabase.Conversations.Find(filter).FirstOrDefault();
-            if (found != null) return found.GetValue("_id").AsObjectId;
+            if (found != null)
+            {
+                if (!String.IsNullOrWhiteSpace(bookingId))
+                    MongoDatabase.Conversations.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", found["_id"]),
+                        Builders<BsonDocument>.Update.AddToSet("bookingIds", rentalId).Set("updatedAt", DateTime.UtcNow));
+                return found.GetValue("_id").AsObjectId;
+            }
 
             var now = DateTime.UtcNow;
             var conversation = new BsonDocument
@@ -46,6 +61,7 @@ namespace UniShare.Services
                 { "createdAt", now }, { "updatedAt", now }, { "lastMessage", "" },
                 { "lastMessageAt", BsonNull.Value }, { "lastMessageBy", BsonNull.Value }
             };
+            if (!String.IsNullOrWhiteSpace(bookingId)) conversation.Add("bookingIds", new BsonArray { rentalId });
             try { MongoDatabase.Conversations.InsertOne(conversation); return conversation["_id"].AsObjectId; }
             catch (MongoWriteException ex) when (ex.WriteError != null && ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
             {
@@ -81,6 +97,7 @@ namespace UniShare.Services
                     ItemName = item == null ? "Rental item" : item.Name,
                     LastMessage = lastMessage, Time = RelativeTime(lastAt), Unread = unread,
                     ItemId = item == null ? "" : item.Id.ToString(),
+                    BookingIds = ReadBookingIds(conversation),
                     ItemImage = item == null || item.Photos == null || item.Photos.Count == 0 ? "" : MarketplaceService.ToImageUrl(item.Photos[0]),
                     ItemUrl = item == null ? "" : VirtualPathUtility.ToAbsolute("~/BrowseItems/ItemDetails/" + item.Id),
                     ItemPrice = item == null ? "" : FormatPrice(item),
@@ -115,6 +132,7 @@ namespace UniShare.Services
                 Id = id.ToString(), With = person == null ? "Student" : FullName(person),
                 Initials = person == null ? "ST" : Initials(person), ItemName = item == null ? "Rental item" : item.Name,
                 ItemId = item == null ? "" : item.Id.ToString(),
+                BookingIds = ReadBookingIds(conversation),
                 ItemImage = item == null || item.Photos == null || item.Photos.Count == 0 ? "" : MarketplaceService.ToImageUrl(item.Photos[0]),
                 ItemUrl = item == null ? "" : VirtualPathUtility.ToAbsolute("~/BrowseItems/ItemDetails/" + item.Id),
                 ItemPrice = item == null ? "" : FormatPrice(item), RentalUrl = VirtualPathUtility.ToAbsolute("~/BorrowedItems"),
@@ -143,9 +161,24 @@ namespace UniShare.Services
                 { "text", text }, { "readBy", new BsonArray { userId } }, { "createdAt", now }
             };
             MongoDatabase.Messages.InsertOne(message);
-            MongoDatabase.Conversations.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", id),
-                Builders<BsonDocument>.Update.Set("lastMessage", text).Set("lastMessageAt", now)
-                    .Set("lastMessageBy", userId).Set("updatedAt", now));
+            try
+            {
+                var update = MongoDatabase.Conversations.UpdateOne(
+                    Builders<BsonDocument>.Filter.Eq("_id", id) &
+                    (Builders<BsonDocument>.Filter.Eq("participantA", userId) | Builders<BsonDocument>.Filter.Eq("participantB", userId)),
+                    Builders<BsonDocument>.Update.Set("lastMessage", text).Set("lastMessageAt", now)
+                        .Set("lastMessageBy", userId).Set("updatedAt", now));
+                if (update.MatchedCount != 1)
+                {
+                    MongoDatabase.Messages.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", message["_id"]));
+                    return null;
+                }
+            }
+            catch
+            {
+                MongoDatabase.Messages.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", message["_id"]));
+                throw;
+            }
             return new ChatMessageViewModel { Id = message["_id"].AsObjectId.ToString(), Mine = true, Text = text, CreatedAt = now, Time = now.ToLocalTime().ToString("h:mm tt", CultureInfo.InvariantCulture), Day = now.ToLocalTime().ToString("MMM d, yyyy", CultureInfo.InvariantCulture) };
         }
 
@@ -165,6 +198,12 @@ namespace UniShare.Services
             else if (b.AsObjectId == userId) otherId = a.AsObjectId;
             else return false;
             return true;
+        }
+
+        private static List<string> ReadBookingIds(BsonDocument conversation)
+        {
+            var values = conversation.GetValue("bookingIds", new BsonArray());
+            return values.IsBsonArray ? values.AsBsonArray.Where(x => x.IsObjectId).Select(x => x.AsObjectId.ToString()).ToList() : new List<string>();
         }
 
         private static string FullName(UserDocument user)

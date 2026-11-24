@@ -8,13 +8,17 @@ namespace UniShare.Services
     /// <summary>Payment and separately tracked late-fee records for a booking.</summary>
     public static class PaymentFeeService
     {
-        private static readonly string[] ClosedBookingStatuses = { "CANCELLED", "CANCELED", "DECLINED", "REJECTED", "EXPIRED" };
         private static readonly Lazy<bool> IndexesReady = new Lazy<bool>(() =>
         {
             MongoDatabase.Payments.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId"), new CreateIndexOptions { Unique = true, Name = "bookingId_unique" }));
             MongoDatabase.LateFees.Indexes.CreateOne(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("bookingId"), new CreateIndexOptions { Unique = true, Name = "bookingId_unique" }));
             return true;
         });
+
+        public static void EnsureIndexesInitialized()
+        {
+            var initialized = IndexesReady.Value;
+        }
 
         public static BsonDocument GetPayment(string bookingId, ObjectId participantId)
         {
@@ -32,12 +36,13 @@ namespace UniShare.Services
             if (!ObjectId.TryParse(bookingId, out id)) return false;
             var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) &
                 Builders<BsonDocument>.Filter.Eq("borrowerId", borrowerId)).FirstOrDefault();
-            if (booking == null || ClosedBookingStatuses.Contains(Status(booking))) return false;
+            if (booking == null || !CanReceivePayment(Status(booking))) return false;
             var now = DateTime.UtcNow;
             var amount = Number(booking, "estimatedFee", Number(booking, "rentalFee", Number(booking, "totalFee", 0d)));
             var filter = Builders<BsonDocument>.Filter.Eq("bookingId", id);
             var existing = MongoDatabase.Payments.Find(filter).FirstOrDefault();
-            if (existing != null && Status(existing) != "UNPAID" && Status(existing) != "PENDING") return false;
+            if (existing != null && (Status(existing) != "UNPAID" && Status(existing) != "PENDING" ||
+                existing.GetValue("voidedAt", BsonNull.Value).IsValidDateTime)) return false;
             var update = Builders<BsonDocument>.Update.Set("bookingId", id).Set("payerId", borrowerId)
                 .Set("ownerId", booking.GetValue("ownerId", BsonNull.Value)).Set("amount", amount)
                 .Set("paymentMethod", "CASH").Unset("transactionReference")
@@ -56,7 +61,7 @@ namespace UniShare.Services
             ObjectId id;
             if (!ObjectId.TryParse(bookingId, out id)) return false;
             var booking = MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) & Builders<BsonDocument>.Filter.Eq("ownerId", ownerId)).FirstOrDefault();
-            if (booking == null || ClosedBookingStatuses.Contains(Status(booking))) return false;
+            if (booking == null || !CanReceivePayment(Status(booking))) return false;
             var payment = MongoDatabase.Payments.Find(Builders<BsonDocument>.Filter.Eq("bookingId", id) & Builders<BsonDocument>.Filter.In("status", new[] { "UNPAID", "PENDING" })).FirstOrDefault();
             if (payment == null || String.IsNullOrWhiteSpace(payment.GetValue("paymentMethod", "").ToString())) return false;
             var now = DateTime.UtcNow;
@@ -145,10 +150,14 @@ namespace UniShare.Services
             return MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Eq("_id", id) &
                 (Builders<BsonDocument>.Filter.Eq("ownerId", participantId) | Builders<BsonDocument>.Filter.Eq("borrowerId", participantId))).FirstOrDefault();
         }
+        private static bool CanReceivePayment(string status)
+        {
+            return new[] { "PENDING", "REQUESTED", "ACCEPTED", "APPROVED", "ACTIVE", "ONGOING", "OVERDUE", "RETURN_REQUESTED", "RETURN PENDING" }.Contains(status);
+        }
         private static string Status(BsonDocument doc) { return doc.GetValue("status", "").ToString().Trim().ToUpperInvariant(); }
         private static double Number(BsonDocument doc, string field, double fallback) { var value = doc.GetValue(field, BsonNull.Value); return value.IsNumeric ? value.ToDouble() : fallback; }
         private static int Number(BsonDocument doc, string field, int fallback) { var value = doc.GetValue(field, BsonNull.Value); return value.IsNumeric ? value.ToInt32() : fallback; }
         private static DateTime Date(BsonDocument doc, string field, DateTime fallback) { var value = doc.GetValue(field, BsonNull.Value); return value.IsValidDateTime ? value.ToUniversalTime() : fallback; }
-        private static void EnsureIndexes() { var initialized = IndexesReady.Value; }
+        private static void EnsureIndexes() { EnsureIndexesInitialized(); }
     }
 }
