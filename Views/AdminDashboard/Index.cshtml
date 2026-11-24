@@ -13,10 +13,17 @@
     @if (ViewBag.DatabaseUnavailable == true) { <div class="aa-alert aa-alert--error">Dashboard data is unavailable. Check the database connection.</div> }
     <section class="aa-stats" aria-label="Platform summary">
         <article class="aa-stat"><span>Registered users</span><strong>@Model.RegisteredUsers</strong><a href="@Url.Action("Index", "UserManagement")">Open directory →</a></article>
+        <article class="aa-stat"><span>Verified users</span><strong>@Model.VerifiedUsers</strong><a href="@Url.Action("Index", "UserManagement")">View users →</a></article>
+        <article class="aa-stat"><span>Listed items</span><strong>@Model.TotalListedItems</strong><a href="@Url.Action("Index", "AdminItemBooking")">Manage listings →</a></article>
+        <article class="aa-stat aa-stat--warn"><span>Pending account approvals</span><strong>@Model.PendingAccountApprovals</strong><a href="@Url.Action("Index", "AdminStudentVerification")">Review accounts →</a></article>
+        <article class="aa-stat aa-stat--warn"><span>Pending listing approvals</span><strong>@Model.PendingListingApprovals</strong><a href="@Url.Action("Index", "AdminItemBooking")">Review listings →</a></article>
         <article class="aa-stat"><span>Active bookings</span><strong>@Model.ActiveBookings</strong><a href="@Url.Action("Index", "AdminItemBooking")">Monitor bookings →</a></article>
+        <article class="aa-stat"><span>All bookings</span><strong>@Model.TotalBookings</strong><a href="@Url.Action("Index", "AdminItemBooking")">View activity →</a></article>
+        <article class="aa-stat"><span>Payment records</span><strong>@Model.PaymentRecords</strong><a href="@Url.Action("Index", "TransactionPaymentRecords")">View payments →</a></article>
         <article class="aa-stat aa-stat--warn"><span>Open disputes</span><strong>@Model.OpenDisputes</strong><a href="@Url.Action("Index", "DisputeManagement")">Review disputes →</a></article>
         <article class="aa-stat aa-stat--warn"><span>Pending no-show reports</span><strong>@Model.PendingNoShowReports</strong><a href="@Url.Action("Index", "NoShowReports")">Review reports →</a></article>
         <article class="aa-stat"><span>Reported reviews</span><strong>@Model.ReportedReviews</strong><a href="@Url.Action("Index", "RatingsReviews", new { filter = "reported" })">Moderate reviews →</a></article>
+        <article class="aa-stat aa-stat--warn"><span>Reported concerns</span><strong>@Model.ReportedConcerns</strong><a href="@Url.Action("Index", "NoShowReports")">Review concerns →</a></article>
         <article class="aa-stat aa-stat--danger"><span>Active restrictions</span><strong>@Model.ActiveRestrictions</strong><a href="@Url.Action("Index", "AccountRestriction")">Manage restrictions →</a></article>
     </section>
     <section class="aa-panel">
