@@ -70,12 +70,40 @@ namespace UniShare.Controllers
                 var activity = userCounts.Select(x => new { user = userNames.ContainsKey(x.Key) && userNames[x.Key].Length > 0 ? userNames[x.Key] : "User " + x.Key.Substring(0, Math.Min(6, x.Key.Length)), renting = x.Value[0], borrowing = x.Value[1] })
                     .OrderByDescending(x => x.renting + x.borrowing).Take(12).ToList();
 
+                var payments = MongoDatabase.Payments.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+                var lateFees = MongoDatabase.LateFees.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+                var disputes = MongoDatabase.Disputes.Find(Builders<BsonDocument>.Filter.Empty).ToList();
+                var paymentSummary = new
+                {
+                    total = payments.Count,
+                    paid = payments.Count(x => Status(x) == "PAID"),
+                    unpaid = payments.Count(x => Status(x) == "UNPAID" || Status(x) == "PENDING"),
+                    disputed = payments.Count(x => Status(x) == "DISPUTED"),
+                    refunded = payments.Count(x => Status(x) == "REFUNDED"),
+                    confirmedAmount = payments.Where(x => Status(x) == "PAID").Sum(x => Number(x, "amount"))
+                };
+                var lateReturnSummary = new
+                {
+                    assessed = lateFees.Count(x => Number(x, "chargeableMinutes") > 0),
+                    estimated = lateFees.Count(x => Status(x) == "ESTIMATED"),
+                    finalized = lateFees.Count(x => Status(x) == "FINALIZED"),
+                    estimatedAmount = lateFees.Where(x => Status(x) == "ESTIMATED").Sum(x => Number(x, "amount")),
+                    finalizedAmount = lateFees.Where(x => Status(x) == "FINALIZED").Sum(x => Number(x, "finalAmount"))
+                };
+                var disputeSummary = new
+                {
+                    total = disputes.Count,
+                    open = disputes.Count(x => new[] { "OPEN", "UNDER_REVIEW", "INFO_REQUESTED" }.Contains(Status(x))),
+                    resolved = disputes.Count(x => Status(x) == "RESOLVED")
+                };
+
                 return Json(new
                 {
                     cards = new { platformRevenue = (decimal?)null, totalRentals = bookings.Count, totalUsers = verifiedUsers, totalItems = items.Count },
                     revenueAvailable = false,
                     revenueNote = "Platform fees or commission are not recorded in the current payment data.",
                     rentalsByDate, listingStatuses, topItems, activity,
+                    paymentSummary, lateReturnSummary, disputeSummary,
                     activityNote = "Renting counts requests initiated by the renter. Borrowing counts transactions for which the user is the item owner.",
                     period = period.ToLowerInvariant()
                 }, JsonRequestBehavior.AllowGet);
@@ -89,6 +117,11 @@ namespace UniShare.Controllers
 
         private static string BookingKey(BsonDocument booking) { return booking.GetValue("_id", booking.GetValue("requestId", BsonNull.Value)).ToString(); }
         private static string Status(BsonDocument booking) { return booking.GetValue("status", "").ToString().Trim().ToUpperInvariant(); }
+        private static double Number(BsonDocument document, string field)
+        {
+            var value = document.GetValue(field, BsonNull.Value);
+            return value.IsNumeric ? value.ToDouble() : 0d;
+        }
         private static bool StatusIs(string status, string expected) { return string.Equals(status, expected, StringComparison.OrdinalIgnoreCase); }
         private static string IdValue(BsonDocument doc, params string[] fields)
         {

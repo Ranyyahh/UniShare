@@ -6,10 +6,17 @@ namespace UniShare.Models
     public class AdminDashboardViewModel
     {
         public long RegisteredUsers { get; set; }
+        public long VerifiedUsers { get; set; }
+        public long TotalListedItems { get; set; }
+        public long PendingAccountApprovals { get; set; }
+        public long PendingListingApprovals { get; set; }
         public long ActiveBookings { get; set; }
+        public long TotalBookings { get; set; }
+        public long PaymentRecords { get; set; }
         public long OpenDisputes { get; set; }
         public long PendingNoShowReports { get; set; }
         public long ReportedReviews { get; set; }
+        public long ReportedConcerns { get; set; }
         public long ActiveRestrictions { get; set; }
         public IList<AuditLogRowViewModel> RecentActivity { get; set; } = new List<AuditLogRowViewModel>();
     }
