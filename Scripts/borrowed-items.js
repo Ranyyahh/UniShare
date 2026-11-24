@@ -304,7 +304,7 @@
             '<div><strong>' + esc(it.lender) + '</strong><small>Lender &bull; ' + esc(it.program) + '</small></div>' +
             '<span style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:2px;">' + (it.ownerRating ? '<span style="color:#f59e0b; font-size:14px;">&#9733;</span> ' + ratingText(it.ownerRating) : 'New') + '</span>' +
             '</div></div>' +
-            '<button type="button" class="us-btn us-btn--outline us-btn--block" data-msg-lender="' + esc(it.lender) + '" data-msg-item="' + esc(it.name) + '" data-owner-id="' + esc(it.ownerId) + '" data-item-id="' + esc(it.itemId) + '">' + SVG_MSG + ' Message Lender</button></div>' +
+            '<button type="button" class="us-btn us-btn--outline us-btn--block" data-msg-lender="' + esc(it.lender) + '" data-msg-item="' + esc(it.name) + '" data-owner-id="' + esc(it.ownerId) + '" data-item-id="' + esc(it.itemId) + '" data-booking-id="' + esc(it.bookingId) + '">' + SVG_MSG + ' Message Lender</button></div>' +
             '<div class="bi-about"><h4>About this item</h4><p>' + esc(it.about) + '</p></div></aside>' +
             '<section class="bi-dialog__main">' + statusPill(it, true) + '<span class="bi-cat">' + esc(it.category) + '</span>' +
             '<h3 class="bi-dialog__name" style="display:flex; justify-content:space-between; align-items:flex-start;">' +
@@ -561,7 +561,7 @@
         var messageButton = e.target.closest('[data-msg-lender]');
         if (messageButton) {
             e.stopPropagation();
-            var params = new URLSearchParams({ userId: messageButton.getAttribute('data-owner-id') || '', itemId: messageButton.getAttribute('data-item-id') || '' });
+            var params = new URLSearchParams({ userId: messageButton.getAttribute('data-owner-id') || '', itemId: messageButton.getAttribute('data-item-id') || '', bookingId: messageButton.getAttribute('data-booking-id') || '' });
             window.location.href = root.getAttribute('data-messages-url') + '?' + params.toString();
             return;
         }

@@ -13,6 +13,7 @@ namespace UniShare.Models
         public string Time { get; set; }
         public bool Unread { get; set; }
         public string ItemId { get; set; }
+        public List<string> BookingIds { get; set; } = new List<string>();
         public string ItemImage { get; set; }
         public string ItemUrl { get; set; }
         public string ItemPrice { get; set; }
@@ -36,6 +37,7 @@ namespace UniShare.Models
         public string Initials { get; set; }
         public string ItemName { get; set; }
         public string ItemId { get; set; }
+        public List<string> BookingIds { get; set; } = new List<string>();
         public string ItemImage { get; set; }
         public string ItemUrl { get; set; }
         public string ItemPrice { get; set; }

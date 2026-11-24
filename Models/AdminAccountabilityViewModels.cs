@@ -12,6 +12,7 @@ namespace UniShare.Models
         public long PendingListingApprovals { get; set; }
         public long ActiveBookings { get; set; }
         public long TotalBookings { get; set; }
+        public long RentalTransactions { get; set; }
         public long PaymentRecords { get; set; }
         public long OpenDisputes { get; set; }
         public long PendingNoShowReports { get; set; }

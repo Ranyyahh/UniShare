@@ -18,6 +18,8 @@ namespace UniShare.Services
         public static BsonDocument Submit(ObjectId renterId, string itemId, DateTime handoverDate, string handoverTime, int durationHours, string notes)
         {
             ExpirePending();
+            if (String.IsNullOrWhiteSpace(notes) == false && notes.Trim().Length > 500)
+                throw new BookingException("Request notes must be 500 characters or fewer.");
             ObjectId parsedItemId;
             if (!ObjectId.TryParse(itemId, out parsedItemId)) throw new BookingException("The selected item is invalid.");
             if (durationHours != 1 && durationHours != 2 && durationHours != 3 && durationHours != 4 && durationHours != 6 && durationHours != 8 && durationHours != 12 && durationHours != 24)
@@ -51,18 +53,28 @@ namespace UniShare.Services
                 { "itemId", item.Id }, { "borrowerId", renterId }, { "ownerId", item.OwnerId }, { "startDate", start }, { "endDate", end },
                 { "handoverDate", start }, { "handoverTime", handoverTime }, { "durationHours", durationHours }, { "duration", durationHours + " hours" },
                 { "estimatedFee", Math.Round(rate * durationHours, 2, MidpointRounding.AwayFromZero) }, { "status", "PENDING" }, { "lateGraceMinutes", 30 },
-                { "createdAt", now }, { "expiresAt", now.AddHours(24) }, { "notes", (notes ?? "").Trim() }, { "itemName", item.Name }
+                { "createdAt", now }, { "expiresAt", now.AddHours(24) }, { "notes", (notes ?? "").Trim() }, { "itemName", item.Name }, { "paymentMethod", "CASH" }
             };
             MongoDatabase.Bookings.InsertOne(doc);
-            // Create the unpaid ledger entry with the request so payment history and
-            // booking state stay linked from the start of the transaction.
-            MongoDatabase.Payments.InsertOne(new BsonDocument {
-                { "_id", ObjectId.GenerateNewId() }, { "bookingId", doc["_id"] }, { "payerId", renterId },
-                { "ownerId", item.OwnerId }, { "amount", doc["estimatedFee"] }, { "paymentMethod", "CASH" },
-                { "status", "UNPAID" }, { "createdAt", now }, { "updatedAt", now }
-            });
-            MongoDatabase.Bookings.UpdateOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]),
-                Builders<BsonDocument>.Update.Set("paymentMethod", "CASH"));
+            try
+            {
+                PaymentFeeService.EnsureIndexesInitialized();
+                MongoDatabase.Payments.InsertOne(new BsonDocument {
+                    { "_id", ObjectId.GenerateNewId() }, { "bookingId", doc["_id"] }, { "payerId", renterId },
+                    { "ownerId", item.OwnerId }, { "amount", doc["estimatedFee"] }, { "paymentMethod", "CASH" },
+                    { "status", "UNPAID" }, { "createdAt", now }, { "updatedAt", now }
+                });
+            }
+            catch
+            {
+                try
+                {
+                    MongoDatabase.Bookings.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]) &
+                        Builders<BsonDocument>.Filter.Eq("status", "PENDING"));
+                }
+                catch (MongoException) { }
+                throw;
+            }
             return doc;
             }
             finally { MongoDatabase.BookingLocks.DeleteOne(Builders<BsonDocument>.Filter.Eq("_id", item.Id) & Builders<BsonDocument>.Filter.Eq("token", lockToken)); }
@@ -125,7 +137,8 @@ namespace UniShare.Services
             var borrowerId = booking.GetValue("borrowerId", BsonNull.Value);
             if ((borrowerId.IsObjectId && borrowerId.AsObjectId == ownerId) ||
                 (borrowerId.IsString && string.Equals(borrowerId.AsString, ownerId.ToString(), StringComparison.OrdinalIgnoreCase))) return false;
-            if (!accept && string.IsNullOrWhiteSpace(reason)) return false;
+            if (!accept && (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 100)) return false;
+            if ((notes ?? "").Length > 1000) return false;
             if (IsExpired(booking, now)) { ExpirePending(); return false; }
             var itemId = booking.GetValue("itemId", BsonNull.Value);
             if (!itemId.IsObjectId) return false;
