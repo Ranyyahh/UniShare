@@ -21,6 +21,10 @@ namespace UniShare.Services
         {
             ImportLegacyDisputes();
             var activeBookings = MongoDatabase.Bookings.CountDocuments(Builders<BsonDocument>.Filter.In("status", new[] { "ACCEPTED", "ONGOING", "ACTIVE", "OVERDUE", "RETURN_REQUESTED" }));
+            var rentalIds = new HashSet<string>(MongoDatabase.Bookings.Find(Builders<BsonDocument>.Filter.Empty).ToList()
+                .Select(x => x.GetValue("bookingId", x.GetValue("_id", BsonNull.Value)).ToString()), StringComparer.OrdinalIgnoreCase);
+            foreach (var rental in MongoDatabase.Rentals.Find(Builders<BsonDocument>.Filter.Empty).ToList())
+                rentalIds.Add(rental.GetValue("bookingId", rental.GetValue("_id", BsonNull.Value)).ToString());
             var recent = MongoDatabase.AuditLogs.Find(Builders<AuditLogDocument>.Filter.Empty).SortByDescending(x => x.CreatedAt).Limit(8).ToList();
             var verifiedUsers = Builders<UserDocument>.Filter.Eq(x => x.VerificationStatus, "APPROVED") &
                                 Builders<UserDocument>.Filter.Eq(x => x.Status, "ACTIVE") &
@@ -37,9 +41,10 @@ namespace UniShare.Services
                 VerifiedUsers = MongoDatabase.Users.CountDocuments(verifiedUsers),
                 TotalListedItems = MongoDatabase.Items.CountDocuments(Builders<ItemDocument>.Filter.Empty),
                 PendingAccountApprovals = MongoDatabase.Users.CountDocuments(pendingUsers),
-                PendingListingApprovals = MongoDatabase.Items.CountDocuments(Builders<ItemDocument>.Filter.Eq(x => x.ApprovalStatus, "PENDING")),
+                PendingListingApprovals = MongoDatabase.Items.CountDocuments(Builders<ItemDocument>.Filter.In(x => x.ApprovalStatus, new[] { "PENDING", "Pending", "pending" }) | Builders<ItemDocument>.Filter.Exists(x => x.ApprovalStatus, false)),
                 ActiveBookings = activeBookings,
                 TotalBookings = MongoDatabase.Bookings.CountDocuments(Builders<BsonDocument>.Filter.Empty),
+                RentalTransactions = rentalIds.Count,
                 PaymentRecords = MongoDatabase.Payments.CountDocuments(Builders<BsonDocument>.Filter.Empty),
                 OpenDisputes = MongoDatabase.Disputes.CountDocuments(Builders<BsonDocument>.Filter.In("status", OpenDisputeStatuses)),
                 PendingNoShowReports = MongoDatabase.NoShowIncidents.CountDocuments(Builders<BsonDocument>.Filter.Eq("status", "PENDING")),
@@ -165,6 +170,10 @@ namespace UniShare.Services
                 if (cancelled.ModifiedCount != 1) return false;
                 MongoDatabase.Rentals.UpdateOne(Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value),
                     Builders<BsonDocument>.Update.Set("status", "CANCELLED").Set("cancelReason", "CONFIRMED_NO_SHOW").Set("cancelledAt", now).Set("updatedAt", now));
+                MongoDatabase.Payments.UpdateMany(
+                    Builders<BsonDocument>.Filter.Eq("bookingId", bookingId.Value) &
+                    Builders<BsonDocument>.Filter.In("status", new[] { "UNPAID", "PENDING" }),
+                    Builders<BsonDocument>.Update.Set("voidedAt", now).Set("voidReason", "CONFIRMED_NO_SHOW").Set("updatedAt", now));
             }
             var finalStatus = confirm ? "CONFIRMED" : "REJECTED";
             var update = Builders<BsonDocument>.Update.Set("status", finalStatus).Set("adminNotes", notes ?? "").Set("reviewedBy", adminId).Set("reviewedAt", now);
