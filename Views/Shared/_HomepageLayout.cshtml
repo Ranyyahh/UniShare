@@ -1,0 +1,41 @@
+﻿
+@{
+    string logo = Url.Content("~/Content/images/unishare-logo.svg");
+    string footerLogo = Url.Content("~/Content/images/unishare-logo-text.svg");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <link rel="stylesheet" href="@Url.Content("~/Content/css/homepage.css")">
+</head>
+<body>
+    <div class="glow glow-top-left"></div>
+    <div class="glow glow-right"></div>
+
+    <nav>
+        <div class="logo-container">
+            <img src="@logo" alt="UniShare Logo" class="logo-image">
+        </div>
+    </nav>
+
+    @RenderBody()
+
+    <footer>
+        <div class="logo-container">
+            <img src="@footerLogo" alt="UniShare Logo" class="logo-image">
+        </div>
+
+        <div class="footer-bottom">
+            &copy; 2026 UniShare &bull; Quezon City University.<br>
+            All rights reserved.
+        </div>
+    </footer>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>
