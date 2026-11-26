@@ -1,0 +1,145 @@
+﻿@{
+    Layout = "~/Views/Shared/_HomepageLayout.cshtml";
+    ViewBag.Title = "UniShare | Campus Marketplace";
+}
+
+<!-- HERO SECTION -->
+<section class="hero">
+
+    <div class="hero-content">
+        <div class="pill-badge">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> Exclusive for QCU Students
+        </div>
+
+        <h1>Borrow smarter.<br><span>Earn effortlessly.</span></h1>
+
+        <p>The ultimate campus marketplace. Rent out your unused calculators, books, and gadgets to fellow students, or grab exactly what you need for your next project.</p>
+
+        <div class="hero-cta">
+            <a href="@Url.Action("Register", "Account")" class="btn-large-primary">Get Started</a>
+            <a href="@Url.Action("Index", "BrowseItems")" class="btn-large-secondary">Browse Items</a>        </div>
+    </div>
+
+    <div class="hero-visual">
+        <div class="visual-bg-circle"></div>
+
+        <div class="product-card-float card-1">
+            <img src="https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?q=80&w=400&auto=format&fit=crop" alt="Scientific Calculator">
+            <span class="tag">Scientific Calculator</span>
+        </div>
+
+        <div class="product-card-float card-2">
+            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=400&auto=format&fit=crop" alt="Headphones">
+            <span class="tag">Study Headphones</span>
+        </div>
+
+        <div class="product-card-float card-3">
+            <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=400&auto=format&fit=crop" alt="Textbook">
+            <span class="tag">Textbooks</span>
+        </div>
+    </div>
+
+</section>
+
+<!-- ORGANIZED FEATURES SECTION -->
+<section class="features-section" id="features">
+    <div class="section-header">
+        <h2>Everything you need.</h2>
+        <p>A streamlined platform designed specifically for the QCU community.</p>
+    </div>
+
+    <div class="features-grid">
+
+        <div class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></svg></div>
+            <h3>100% Verified Students</h3>
+            <p>No strangers, no scammers. Every account is verified by the Admin using official QCU school IDs.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 17.5v-11" /></svg></div>
+            <h3>Secure Payment Ledger</h3>
+            <p>Record your transactions securely. The system automatically computes rental fees and late penalties.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /><path d="m9 16 2 2 4-4" /></svg></div>
+            <h3>Automated Bookings</h3>
+            <p>Say goodbye to double bookings. Dates are automatically blocked, and unanswered requests expire.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg></div>
+            <h3>Flexible Rental Periods</h3>
+            <p>Choose a rental period that suits your needs, based on the item's availability and agreed rental duration.</p>        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></svg></div>
+            <h3>Dispute Mediation</h3>
+            <p>Report damaged or unreturned items directly to the Admin for proper mediation and resolution.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg></div>
+            <h3>Rating &amp; Review</h3>
+            <p>Build trust within the campus. Leave and receive ratings after every successful transaction.</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- HOW IT WORKS TIMELINE -->
+<section class="how-it-works" id="how-it-works">
+    <div class="section-header">
+        <h2>Zero friction. Just sharing.</h2>
+        <p>Get started in minutes with our streamlined workflow.</p>
+    </div>
+
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-content">
+                <h3>1. Verify Your Identity</h3>
+                <p>Create an account using your QCU credentials. Upload your school ID and wait for the Admin to approve your access.</p>
+            </div>
+            <div class="timeline-number">1</div>
+            <div class="timeline-spacer"></div>
+        </div>
+
+        <div class="timeline-item">
+            <div class="timeline-content">
+                <h3>2. List or Request</h3>
+                <p>Browse the marketplace for the item you need and submit a booking request, or list your own gear to start earning.</p>
+            </div>
+            <div class="timeline-number">2</div>
+            <div class="timeline-spacer"></div>
+        </div>
+
+        <div class="timeline-item">
+            <div class="timeline-content">
+                <h3>3. Digital Handover</h3>
+                <p>Once the owner accepts your request, meet up on campus. Confirm the digital handover to start the rental timer.</p>
+            </div>
+            <div class="timeline-number">3</div>
+            <div class="timeline-spacer"></div>
+        </div>
+
+        <div class="timeline-item">
+            <div class="timeline-content">
+                <h3>4. Return &amp; Review</h3>
+                <p>Return the item by the agreed return time. The owner inspects the item, confirms the return, and you both leave a rating.</p>            </div>
+            <div class="timeline-number">4</div>
+            <div class="timeline-spacer"></div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA SECTION -->
+<section class="cta">
+    <div class="cta-box">
+        <h2>Ready to join the movement?</h2>
+        <p>Stop buying things you'll only use once. Start sharing, saving, and earning today.</p>
+        <a href="@Url.Action("Register", "Account")" class="btn-large-primary">
+            Create Free Account
+        </a>
+    </div>
+</section>
