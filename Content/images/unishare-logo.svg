@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" width="240" height="48" fill="none">
+  <defs>
+    <linearGradient id="opt2-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="60%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+    <linearGradient id="opt2-grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EC4899" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+    <filter id="opt2-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#6366F1" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+ 
+  <g transform="translate(4, 4)">
+    <rect width="40" height="40" rx="10" fill="#0F172A" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.2" />
+    
+    <g filter="url(#opt2-glow)">
+      
+      <path d="M 12 14 C 12 25, 15 30, 20 30 C 25 30, 26 24, 23 20 C 20 16, 17 19, 14 24" 
+            stroke="url(#opt2-grad1)" 
+            stroke-width="3.2" 
+            stroke-linecap="round" />
+
+     
+      <path d="M 28 14 C 28 25, 25 30, 20 30 C 15 30, 14 24, 17 20 C 20 16, 23 19, 26 24" 
+            stroke="url(#opt2-grad2)" 
+            stroke-width="3.2" 
+            stroke-linecap="round" />
+
+      
+      <circle cx="12" cy="14" r="2.5" fill="#38BDF8" />
+      <circle cx="28" cy="14" r="2.5" fill="#EC4899" />
+    </g>
+  </g>
+
+  
+  <text x="56" y="25" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="800" letter-spacing="-0.03em" fill="#FFFFFF">
+    Uni<tspan fill="url(#opt2-grad1)">Share</tspan>
+  </text>
+  <text x="56.5" y="38" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8.5" font-weight="600" letter-spacing="0.14em" fill="#94A3B8">
+    QUEZON CITY UNIVERSITY
+  </text>
+</svg>
