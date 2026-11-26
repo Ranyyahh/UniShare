@@ -192,6 +192,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\HomepageController.cs" />
     <Compile Include="Controllers\VerificationController.cs" />
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AdminDashboardController.cs" />
@@ -252,7 +253,11 @@
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\css\glyphicons.css" />
+    <Content Include="Content\css\homepage.css" />
     <Content Include="Content\engineering-mechanics-statics.jpg" />
+    <Content Include="Content\images\unishare-logo-text.svg" />
+    <Content Include="Content\images\unishare-logo.svg" />
     <Content Include="Content\Site.css" />
     <Content Include="Content\MyRentals.css" />
     <Content Include="Content\ReportsAnalytics.css" />
@@ -362,6 +367,8 @@
     <Content Include="Views\UserManagement\Index.cshtml" />
     <Content Include="Views\MyRentals\Details.cshtml" />
     <Content Include="Views\MyRentals\History.cshtml" />
+    <Content Include="Views\Homepage\Index.cshtml" />
+    <Content Include="Views\Shared\_HomepageLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
